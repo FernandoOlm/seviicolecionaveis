@@ -78,17 +78,20 @@ export function normalizeRedeemPoints(
 }
 
 // ---------------- Resgate restrito a cartas avulsas ----------------
-const SINGLE_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Itens não-carta usam um prefixo no id ("sealed:", "accessory:", "videogame:",
+// "panel:", "stack:", etc). Cartas avulsas usam o uuid da tabela `cards` OU o id
+// composto do catálogo (`nome__colecao__numero`), que nunca contém ":".
+const NON_SINGLE_PREFIX_RE = /^[a-z_]+:/i;
 
 /**
- * Cartas avulsas têm cardId = UUID do registro em `cards`.
- * Produtos não elegíveis a resgate de pontos usam prefixos:
- * "sealed:", "accessory:", "videogame:", "panel:" (e outros virtuais).
- * Esses produtos acumulam pontos, mas não podem ser pagos com pontos.
+ * Cartas avulsas acumulam e aceitam resgate de pontos.
+ * Produtos lacrados, acessórios, videogames, painéis e pilhas acumulam pontos,
+ * mas não podem ser pagos com pontos.
  */
 export function isSingleCardId(cardId: string | null | undefined): boolean {
-  return typeof cardId === "string" && SINGLE_UUID_RE.test(cardId);
+  return typeof cardId === "string" && cardId.length > 0 && !NON_SINGLE_PREFIX_RE.test(cardId);
 }
+
 
 /** Subtotal (em centavos) apenas das cartas avulsas do carrinho. unitPrice em reais. */
 export function singlesSubtotalCents(
