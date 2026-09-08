@@ -107,7 +107,10 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
                   onClick={onNavigate}
                   activeOptions={{ exact: l.exact }}
                   className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold text-foreground transition hover:bg-secondary"
-                  activeProps={{ className: "bg-black text-[#58d3f3] hover:bg-black" }}
+                  activeProps={{
+                    className:
+                      "!bg-admin-active !text-admin-active-foreground hover:!bg-admin-active [&>svg]:!text-admin-active-foreground",
+                  }}
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
                   {l.label}
