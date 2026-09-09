@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Radio, Clock, CheckCircle2, Trash2, Pencil, Eye } from "lucide-react";
+import { Plus, Radio, Clock, CheckCircle2, Trash2, Pencil, Eye, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/admin/leiloes-whatsapp")({
   head: () => ({ meta: [{ title: "Leilões WhatsApp — Admin" }] }),
@@ -92,6 +92,56 @@ function AuctionsListPage() {
     load();
   };
 
+  const duplicate = async (id: string) => {
+    if (!confirm("Copiar este leilão? Uma cópia em rascunho será criada.")) return;
+    setLoading(true);
+    try {
+      const [{ data: a }, { data: its }] = await Promise.all([
+        (supabase as any).from("auctions").select("*").eq("id", id).maybeSingle(),
+        (supabase as any).from("auction_items").select("*").eq("auction_id", id).order("sequence"),
+      ]);
+      if (!a) return toast.error("Leilão não encontrado.");
+
+      const { data: created, error: insertErr } = await (supabase as any)
+        .from("auctions")
+        .insert({
+          title: `${a.title} (Cópia)`,
+          description: a.description,
+          group_jid: a.group_jid,
+          status: "draft",
+          scheduled_start: null,
+          scheduled_end: null,
+          closing_message: a.closing_message,
+        })
+        .select("id")
+        .single();
+      if (insertErr) throw insertErr;
+
+      if (its?.length) {
+        const copied = its.map((i: any, idx: number) => ({
+          auction_id: created.id,
+          sequence: idx + 1,
+          name: i.name,
+          description: i.description,
+          image_url: i.image_url,
+          starting_price: i.starting_price,
+          bid_increment: i.bid_increment,
+          buyout_price: i.buyout_price,
+          quantity: i.quantity,
+          extra_prices: i.extra_prices,
+        }));
+        const { error } = await (supabase as any).from("auction_items").insert(copied);
+        if (error) throw error;
+      }
+
+      toast.success("Leilão copiado. Ajuste as datas e itens antes de programar.");
+      nav({ to: "/admin/criar-leilao", search: { id: created.id } });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao copiar leilão.");
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -169,6 +219,12 @@ function AuctionsListPage() {
                   >
                     <Eye className="h-3.5 w-3.5" /> Acompanhar
                   </Link>
+                  <button
+                    onClick={() => duplicate(r.id)}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-secondary"
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Copiar
+                  </button>
                   {(r.status === "draft" || r.status === "scheduled") && (
                     <Link
                       to="/admin/criar-leilao"
