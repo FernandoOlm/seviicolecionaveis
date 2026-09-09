@@ -394,6 +394,21 @@ export const adminPartialCancelItem = createServerFn({ method: "POST" })
         throw new Response("Erro ao gerar cupom de reembolso.", { status: 500 });
       }
       refundDetails = `Cupom ${couponCode} (válido 1 ano)`;
+
+      // Envia o e-mail do vale-presente assim que o cupom é gerado
+      if (order.email) {
+        await sendTransactionalEmailSafe({
+          templateName: "gift-voucher",
+          recipientEmail: order.email,
+          idempotencyKey: `refund-voucher:${couponCode}`,
+          templateData: {
+            recipientName: null,
+            code: couponCode,
+            amountCents: refundCents,
+            expiresAt: expires,
+          },
+        });
+      }
     } else {
       refundDetails = "Reembolso manual (a processar fora do sistema)";
     }

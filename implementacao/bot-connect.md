@@ -16,7 +16,7 @@ Este documento define **todas as diretrizes, tabelas de banco de dados, endpoint
 |---|---|
 | **`PROCESS_NAME`** | `bot_seviicolecionaveis` |
 | **`PM2_PROCESS_NAME`** | `bot_seviicolecionaveis` |
-| **`BOT_API_SECRET`** | `aA4zE0J7RDcC5g5wG3wz` *(ou segredo configurado no painel)* |
+| **`BOT_API_SECRET`** | `<BOT_API_SECRET>` *(ou segredo configurado no painel)* |
 | **Porta API Bot (VPS)** | `3025` |
 | **Porta Health Bot (VPS)** | `3026` |
 | **Porta Comandos Bot (VPS)**| `3075` |

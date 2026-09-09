@@ -42,7 +42,7 @@ export function SiteNav({ className = "" }: { className?: string }) {
             type="button"
             className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition ${
               cartasActive
-                ? "bg-foreground text-background"
+                ? "!bg-admin-active !text-admin-active-foreground"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
             aria-haspopup="menu"
@@ -72,7 +72,7 @@ export function SiteNav({ className = "" }: { className?: string }) {
           key={l.to}
           to={l.to}
           className="whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-          activeProps={{ className: "bg-foreground text-background hover:bg-foreground hover:text-background" }}
+          activeProps={{ className: "!bg-admin-active !text-admin-active-foreground hover:!bg-admin-active hover:!text-admin-active-foreground" }}
         >
           {l.label}
         </Link>
@@ -84,7 +84,7 @@ export function SiteNav({ className = "" }: { className?: string }) {
             type="button"
             className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition ${
               faqActive
-                ? "bg-foreground text-background"
+                ? "!bg-admin-active !text-admin-active-foreground"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             }`}
             aria-haspopup="menu"
@@ -112,7 +112,7 @@ export function SiteNav({ className = "" }: { className?: string }) {
       <Link
         to="/avisos"
         className="whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-        activeProps={{ className: "bg-foreground text-background hover:bg-foreground hover:text-background" }}
+        activeProps={{ className: "!bg-admin-active !text-admin-active-foreground hover:!bg-admin-active hover:!text-admin-active-foreground" }}
       >
         Avisos
       </Link>
@@ -120,7 +120,7 @@ export function SiteNav({ className = "" }: { className?: string }) {
       <Link
         to="/comunidade"
         className="whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-        activeProps={{ className: "bg-foreground text-background hover:bg-foreground hover:text-background" }}
+        activeProps={{ className: "!bg-admin-active !text-admin-active-foreground hover:!bg-admin-active hover:!text-admin-active-foreground" }}
       >
         Comunidade
       </Link>
@@ -128,7 +128,7 @@ export function SiteNav({ className = "" }: { className?: string }) {
       <Link
         to="/sorteios"
         className="whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-        activeProps={{ className: "bg-foreground text-background hover:bg-foreground hover:text-background" }}
+        activeProps={{ className: "!bg-admin-active !text-admin-active-foreground hover:!bg-admin-active hover:!text-admin-active-foreground" }}
       >
         Sorteios
       </Link>

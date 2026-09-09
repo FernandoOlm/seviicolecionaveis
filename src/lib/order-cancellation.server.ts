@@ -123,7 +123,7 @@ export async function refundEntireOrder(orderId: string, method: RefundMethod) {
 
   const { data: order } = await supabaseAdmin
     .from("orders")
-    .select("id, user_id, total_cents, refunded_cents, mercadopago_payment_id")
+    .select("id, user_id, email, total_cents, refunded_cents, mercadopago_payment_id")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) throw new Response("Pedido não encontrado", { status: 404 });
@@ -164,6 +164,22 @@ export async function refundEntireOrder(orderId: string, method: RefundMethod) {
       throw new Response("Erro ao gerar cupom de reembolso.", { status: 500 });
     }
     details = `Cupom ${couponCode} (válido 1 ano)`;
+
+    // Envia o e-mail do vale-presente assim que o cupom é gerado
+    if (order.email) {
+      const { sendTransactionalEmailSafe } = await import("@/lib/email/send.server");
+      await sendTransactionalEmailSafe({
+        templateName: "gift-voucher",
+        recipientEmail: order.email,
+        idempotencyKey: `refund-voucher:${couponCode}`,
+        templateData: {
+          recipientName: null,
+          code: couponCode,
+          amountCents: refundCents,
+          expiresAt: expires,
+        },
+      });
+    }
   } else {
     details = "Reembolso manual (a processar fora do sistema)";
   }

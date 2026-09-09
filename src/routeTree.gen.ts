@@ -36,13 +36,18 @@ import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as TiposDeCartaRouteImport } from './routes/tipos-de-carta'
 import { Route as VideogamesRouteImport } from './routes/videogames'
 import { Route as AdminAccessoriesRouteImport } from './routes/admin.accessories'
+import { Route as AdminAcompanharLeilaoRouteImport } from './routes/admin.acompanhar-leilao'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
+import { Route as AdminComandosRouteImport } from './routes/admin.comandos'
+import { Route as AdminConectarBotRouteImport } from './routes/admin.conectar-bot'
 import { Route as AdminCouponsRouteImport } from './routes/admin.coupons'
+import { Route as AdminCriarLeilaoRouteImport } from './routes/admin.criar-leilao'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminEmailsRouteImport } from './routes/admin.emails'
 import { Route as AdminEventoRouteImport } from './routes/admin.evento'
 import { Route as AdminIntegrationsRouteImport } from './routes/admin.integrations'
 import { Route as AdminLeiloesRouteImport } from './routes/admin.leiloes'
+import { Route as AdminLeiloesWhatsappRouteImport } from './routes/admin.leiloes-whatsapp'
 import { Route as AdminLoyaltyRouteImport } from './routes/admin.loyalty'
 import { Route as AdminManageCardsRouteImport } from './routes/admin.manage-cards'
 import { Route as AdminOfertasRelampagoRouteImport } from './routes/admin.ofertas-relampago'
@@ -75,6 +80,7 @@ import { Route as SorteiosRaffleIdRouteImport } from './routes/sorteios.$raffleI
 import { Route as AdminOrdersOrderIdRouteImport } from './routes/admin.orders.$orderId'
 import { Route as ApiPublicSitemapDotxmlRouteImport } from './routes/api/public/sitemap[.]xml'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
+import { Route as ApiPublicBotStatusRouteImport } from './routes/api/public/bot/status'
 import { Route as ApiPublicHooksAutoCancelUnpaidRouteImport } from './routes/api/public/hooks/auto-cancel-unpaid'
 import { Route as ApiPublicHooksExpireLoyaltyPointsRouteImport } from './routes/api/public/hooks/expire-loyalty-points'
 import { Route as ApiPublicHooksPriceDropCheckRouteImport } from './routes/api/public/hooks/price-drop-check'
@@ -88,6 +94,20 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as ApiPublicBotAuctionsIdRouteImport } from './routes/api/public/bot/auctions/$id'
+import { Route as ApiPublicBotBidsApprovedRouteImport } from './routes/api/public/bot/bids/approved'
+import { Route as ApiPublicBotBidsCreateRouteImport } from './routes/api/public/bot/bids/create'
+import { Route as ApiPublicBotBidsMarkRouteImport } from './routes/api/public/bot/bids/mark'
+import { Route as ApiPublicBotCommandsPendingRouteImport } from './routes/api/public/bot/commands/pending'
+import { Route as ApiPublicBotGroupsIndexRouteImport } from './routes/api/public/bot/groups/index'
+import { Route as ApiPublicBotGroupsActivateRouteImport } from './routes/api/public/bot/groups/activate'
+import { Route as ApiPublicBotGroupsActiveRouteImport } from './routes/api/public/bot/groups/active'
+import { Route as ApiPublicBotGroupsSyncRouteImport } from './routes/api/public/bot/groups/sync'
+import { Route as ApiPublicBotGroupsUpsertRouteImport } from './routes/api/public/bot/groups/upsert'
+import { Route as ApiPublicBotSchedulesPendingRouteImport } from './routes/api/public/bot/schedules/pending'
+import { Route as ApiPublicBotUsersSenhaRouteImport } from './routes/api/public/bot/users/senha'
+import { Route as ApiPublicBotCommandsIdMarkRouteImport } from './routes/api/public/bot/commands/$id.mark'
+import { Route as ApiPublicBotSchedulesIdMarkRouteImport } from './routes/api/public/bot/schedules/$id.mark'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -224,14 +244,34 @@ const AdminAccessoriesRoute = AdminAccessoriesRouteImport.update({
   path: '/accessories',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAcompanharLeilaoRoute = AdminAcompanharLeilaoRouteImport.update({
+  id: '/acompanhar-leilao',
+  path: '/acompanhar-leilao',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBannersRoute = AdminBannersRouteImport.update({
   id: '/banners',
   path: '/banners',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminComandosRoute = AdminComandosRouteImport.update({
+  id: '/comandos',
+  path: '/comandos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminConectarBotRoute = AdminConectarBotRouteImport.update({
+  id: '/conectar-bot',
+  path: '/conectar-bot',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCouponsRoute = AdminCouponsRouteImport.update({
   id: '/coupons',
   path: '/coupons',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCriarLeilaoRoute = AdminCriarLeilaoRouteImport.update({
+  id: '/criar-leilao',
+  path: '/criar-leilao',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
@@ -257,6 +297,11 @@ const AdminIntegrationsRoute = AdminIntegrationsRouteImport.update({
 const AdminLeiloesRoute = AdminLeiloesRouteImport.update({
   id: '/leiloes',
   path: '/leiloes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLeiloesWhatsappRoute = AdminLeiloesWhatsappRouteImport.update({
+  id: '/leiloes-whatsapp',
+  path: '/leiloes-whatsapp',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminLoyaltyRoute = AdminLoyaltyRouteImport.update({
@@ -419,6 +464,11 @@ const LovableEmailEventsRoute = LovableEmailEventsRouteImport.update({
   path: '/lovable/email/events',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBotStatusRoute = ApiPublicBotStatusRouteImport.update({
+  id: '/api/public/bot/status',
+  path: '/api/public/bot/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksAutoCancelUnpaidRoute =
   ApiPublicHooksAutoCancelUnpaidRouteImport.update({
     id: '/api/public/hooks/auto-cancel-unpaid',
@@ -495,6 +545,84 @@ const LovableEmailTransactionalPreviewRoute =
     path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBotAuctionsIdRoute = ApiPublicBotAuctionsIdRouteImport.update({
+  id: '/api/public/bot/auctions/$id',
+  path: '/api/public/bot/auctions/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotBidsApprovedRoute =
+  ApiPublicBotBidsApprovedRouteImport.update({
+    id: '/api/public/bot/bids/approved',
+    path: '/api/public/bot/bids/approved',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicBotBidsCreateRoute = ApiPublicBotBidsCreateRouteImport.update({
+  id: '/api/public/bot/bids/create',
+  path: '/api/public/bot/bids/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotBidsMarkRoute = ApiPublicBotBidsMarkRouteImport.update({
+  id: '/api/public/bot/bids/mark',
+  path: '/api/public/bot/bids/mark',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotCommandsPendingRoute =
+  ApiPublicBotCommandsPendingRouteImport.update({
+    id: '/api/public/bot/commands/pending',
+    path: '/api/public/bot/commands/pending',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicBotGroupsIndexRoute = ApiPublicBotGroupsIndexRouteImport.update({
+  id: '/api/public/bot/groups/',
+  path: '/api/public/bot/groups/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotGroupsActivateRoute =
+  ApiPublicBotGroupsActivateRouteImport.update({
+    id: '/api/public/bot/groups/activate',
+    path: '/api/public/bot/groups/activate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicBotGroupsActiveRoute =
+  ApiPublicBotGroupsActiveRouteImport.update({
+    id: '/api/public/bot/groups/active',
+    path: '/api/public/bot/groups/active',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicBotGroupsSyncRoute = ApiPublicBotGroupsSyncRouteImport.update({
+  id: '/api/public/bot/groups/sync',
+  path: '/api/public/bot/groups/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotGroupsUpsertRoute =
+  ApiPublicBotGroupsUpsertRouteImport.update({
+    id: '/api/public/bot/groups/upsert',
+    path: '/api/public/bot/groups/upsert',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicBotSchedulesPendingRoute =
+  ApiPublicBotSchedulesPendingRouteImport.update({
+    id: '/api/public/bot/schedules/pending',
+    path: '/api/public/bot/schedules/pending',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicBotUsersSenhaRoute = ApiPublicBotUsersSenhaRouteImport.update({
+  id: '/api/public/bot/users/senha',
+  path: '/api/public/bot/users/senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBotCommandsIdMarkRoute =
+  ApiPublicBotCommandsIdMarkRouteImport.update({
+    id: '/api/public/bot/commands/$id/mark',
+    path: '/api/public/bot/commands/$id/mark',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicBotSchedulesIdMarkRoute =
+  ApiPublicBotSchedulesIdMarkRouteImport.update({
+    id: '/api/public/bot/schedules/$id/mark',
+    path: '/api/public/bot/schedules/$id/mark',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -524,13 +652,18 @@ export interface FileRoutesByFullPath {
   '/tipos-de-carta': typeof TiposDeCartaRoute
   '/videogames': typeof VideogamesRoute
   '/admin/accessories': typeof AdminAccessoriesRoute
+  '/admin/acompanhar-leilao': typeof AdminAcompanharLeilaoRoute
   '/admin/banners': typeof AdminBannersRoute
+  '/admin/comandos': typeof AdminComandosRoute
+  '/admin/conectar-bot': typeof AdminConectarBotRoute
   '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/criar-leilao': typeof AdminCriarLeilaoRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/evento': typeof AdminEventoRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/leiloes': typeof AdminLeiloesRoute
+  '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
   '/admin/loyalty': typeof AdminLoyaltyRoute
   '/admin/manage-cards': typeof AdminManageCardsRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
@@ -563,6 +696,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
+  '/api/public/bot/status': typeof ApiPublicBotStatusRoute
   '/api/public/hooks/auto-cancel-unpaid': typeof ApiPublicHooksAutoCancelUnpaidRoute
   '/api/public/hooks/expire-loyalty-points': typeof ApiPublicHooksExpireLoyaltyPointsRoute
   '/api/public/hooks/price-drop-check': typeof ApiPublicHooksPriceDropCheckRoute
@@ -576,6 +710,20 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/api/public/bot/auctions/$id': typeof ApiPublicBotAuctionsIdRoute
+  '/api/public/bot/bids/approved': typeof ApiPublicBotBidsApprovedRoute
+  '/api/public/bot/bids/create': typeof ApiPublicBotBidsCreateRoute
+  '/api/public/bot/bids/mark': typeof ApiPublicBotBidsMarkRoute
+  '/api/public/bot/commands/pending': typeof ApiPublicBotCommandsPendingRoute
+  '/api/public/bot/groups/activate': typeof ApiPublicBotGroupsActivateRoute
+  '/api/public/bot/groups/active': typeof ApiPublicBotGroupsActiveRoute
+  '/api/public/bot/groups/sync': typeof ApiPublicBotGroupsSyncRoute
+  '/api/public/bot/groups/upsert': typeof ApiPublicBotGroupsUpsertRoute
+  '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
+  '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
+  '/api/public/bot/groups/': typeof ApiPublicBotGroupsIndexRoute
+  '/api/public/bot/commands/$id/mark': typeof ApiPublicBotCommandsIdMarkRoute
+  '/api/public/bot/schedules/$id/mark': typeof ApiPublicBotSchedulesIdMarkRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -602,13 +750,18 @@ export interface FileRoutesByTo {
   '/tipos-de-carta': typeof TiposDeCartaRoute
   '/videogames': typeof VideogamesRoute
   '/admin/accessories': typeof AdminAccessoriesRoute
+  '/admin/acompanhar-leilao': typeof AdminAcompanharLeilaoRoute
   '/admin/banners': typeof AdminBannersRoute
+  '/admin/comandos': typeof AdminComandosRoute
+  '/admin/conectar-bot': typeof AdminConectarBotRoute
   '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/criar-leilao': typeof AdminCriarLeilaoRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/evento': typeof AdminEventoRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/leiloes': typeof AdminLeiloesRoute
+  '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
   '/admin/loyalty': typeof AdminLoyaltyRoute
   '/admin/manage-cards': typeof AdminManageCardsRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
@@ -641,6 +794,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
+  '/api/public/bot/status': typeof ApiPublicBotStatusRoute
   '/api/public/hooks/auto-cancel-unpaid': typeof ApiPublicHooksAutoCancelUnpaidRoute
   '/api/public/hooks/expire-loyalty-points': typeof ApiPublicHooksExpireLoyaltyPointsRoute
   '/api/public/hooks/price-drop-check': typeof ApiPublicHooksPriceDropCheckRoute
@@ -654,6 +808,20 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/api/public/bot/auctions/$id': typeof ApiPublicBotAuctionsIdRoute
+  '/api/public/bot/bids/approved': typeof ApiPublicBotBidsApprovedRoute
+  '/api/public/bot/bids/create': typeof ApiPublicBotBidsCreateRoute
+  '/api/public/bot/bids/mark': typeof ApiPublicBotBidsMarkRoute
+  '/api/public/bot/commands/pending': typeof ApiPublicBotCommandsPendingRoute
+  '/api/public/bot/groups/activate': typeof ApiPublicBotGroupsActivateRoute
+  '/api/public/bot/groups/active': typeof ApiPublicBotGroupsActiveRoute
+  '/api/public/bot/groups/sync': typeof ApiPublicBotGroupsSyncRoute
+  '/api/public/bot/groups/upsert': typeof ApiPublicBotGroupsUpsertRoute
+  '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
+  '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
+  '/api/public/bot/groups': typeof ApiPublicBotGroupsIndexRoute
+  '/api/public/bot/commands/$id/mark': typeof ApiPublicBotCommandsIdMarkRoute
+  '/api/public/bot/schedules/$id/mark': typeof ApiPublicBotSchedulesIdMarkRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -684,13 +852,18 @@ export interface FileRoutesById {
   '/tipos-de-carta': typeof TiposDeCartaRoute
   '/videogames': typeof VideogamesRoute
   '/admin/accessories': typeof AdminAccessoriesRoute
+  '/admin/acompanhar-leilao': typeof AdminAcompanharLeilaoRoute
   '/admin/banners': typeof AdminBannersRoute
+  '/admin/comandos': typeof AdminComandosRoute
+  '/admin/conectar-bot': typeof AdminConectarBotRoute
   '/admin/coupons': typeof AdminCouponsRoute
+  '/admin/criar-leilao': typeof AdminCriarLeilaoRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/evento': typeof AdminEventoRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/leiloes': typeof AdminLeiloesRoute
+  '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
   '/admin/loyalty': typeof AdminLoyaltyRoute
   '/admin/manage-cards': typeof AdminManageCardsRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
@@ -723,6 +896,7 @@ export interface FileRoutesById {
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
+  '/api/public/bot/status': typeof ApiPublicBotStatusRoute
   '/api/public/hooks/auto-cancel-unpaid': typeof ApiPublicHooksAutoCancelUnpaidRoute
   '/api/public/hooks/expire-loyalty-points': typeof ApiPublicHooksExpireLoyaltyPointsRoute
   '/api/public/hooks/price-drop-check': typeof ApiPublicHooksPriceDropCheckRoute
@@ -736,6 +910,20 @@ export interface FileRoutesById {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/api/public/bot/auctions/$id': typeof ApiPublicBotAuctionsIdRoute
+  '/api/public/bot/bids/approved': typeof ApiPublicBotBidsApprovedRoute
+  '/api/public/bot/bids/create': typeof ApiPublicBotBidsCreateRoute
+  '/api/public/bot/bids/mark': typeof ApiPublicBotBidsMarkRoute
+  '/api/public/bot/commands/pending': typeof ApiPublicBotCommandsPendingRoute
+  '/api/public/bot/groups/activate': typeof ApiPublicBotGroupsActivateRoute
+  '/api/public/bot/groups/active': typeof ApiPublicBotGroupsActiveRoute
+  '/api/public/bot/groups/sync': typeof ApiPublicBotGroupsSyncRoute
+  '/api/public/bot/groups/upsert': typeof ApiPublicBotGroupsUpsertRoute
+  '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
+  '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
+  '/api/public/bot/groups/': typeof ApiPublicBotGroupsIndexRoute
+  '/api/public/bot/commands/$id/mark': typeof ApiPublicBotCommandsIdMarkRoute
+  '/api/public/bot/schedules/$id/mark': typeof ApiPublicBotSchedulesIdMarkRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -767,13 +955,18 @@ export interface FileRouteTypes {
     | '/tipos-de-carta'
     | '/videogames'
     | '/admin/accessories'
+    | '/admin/acompanhar-leilao'
     | '/admin/banners'
+    | '/admin/comandos'
+    | '/admin/conectar-bot'
     | '/admin/coupons'
+    | '/admin/criar-leilao'
     | '/admin/dashboard'
     | '/admin/emails'
     | '/admin/evento'
     | '/admin/integrations'
     | '/admin/leiloes'
+    | '/admin/leiloes-whatsapp'
     | '/admin/loyalty'
     | '/admin/manage-cards'
     | '/admin/ofertas-relampago'
@@ -806,6 +999,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$orderId'
     | '/api/public/sitemap.xml'
     | '/lovable/email/events'
+    | '/api/public/bot/status'
     | '/api/public/hooks/auto-cancel-unpaid'
     | '/api/public/hooks/expire-loyalty-points'
     | '/api/public/hooks/price-drop-check'
@@ -819,6 +1013,20 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/api/public/bot/auctions/$id'
+    | '/api/public/bot/bids/approved'
+    | '/api/public/bot/bids/create'
+    | '/api/public/bot/bids/mark'
+    | '/api/public/bot/commands/pending'
+    | '/api/public/bot/groups/activate'
+    | '/api/public/bot/groups/active'
+    | '/api/public/bot/groups/sync'
+    | '/api/public/bot/groups/upsert'
+    | '/api/public/bot/schedules/pending'
+    | '/api/public/bot/users/senha'
+    | '/api/public/bot/groups/'
+    | '/api/public/bot/commands/$id/mark'
+    | '/api/public/bot/schedules/$id/mark'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -845,13 +1053,18 @@ export interface FileRouteTypes {
     | '/tipos-de-carta'
     | '/videogames'
     | '/admin/accessories'
+    | '/admin/acompanhar-leilao'
     | '/admin/banners'
+    | '/admin/comandos'
+    | '/admin/conectar-bot'
     | '/admin/coupons'
+    | '/admin/criar-leilao'
     | '/admin/dashboard'
     | '/admin/emails'
     | '/admin/evento'
     | '/admin/integrations'
     | '/admin/leiloes'
+    | '/admin/leiloes-whatsapp'
     | '/admin/loyalty'
     | '/admin/manage-cards'
     | '/admin/ofertas-relampago'
@@ -884,6 +1097,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$orderId'
     | '/api/public/sitemap.xml'
     | '/lovable/email/events'
+    | '/api/public/bot/status'
     | '/api/public/hooks/auto-cancel-unpaid'
     | '/api/public/hooks/expire-loyalty-points'
     | '/api/public/hooks/price-drop-check'
@@ -897,6 +1111,20 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/api/public/bot/auctions/$id'
+    | '/api/public/bot/bids/approved'
+    | '/api/public/bot/bids/create'
+    | '/api/public/bot/bids/mark'
+    | '/api/public/bot/commands/pending'
+    | '/api/public/bot/groups/activate'
+    | '/api/public/bot/groups/active'
+    | '/api/public/bot/groups/sync'
+    | '/api/public/bot/groups/upsert'
+    | '/api/public/bot/schedules/pending'
+    | '/api/public/bot/users/senha'
+    | '/api/public/bot/groups'
+    | '/api/public/bot/commands/$id/mark'
+    | '/api/public/bot/schedules/$id/mark'
   id:
     | '__root__'
     | '/'
@@ -926,13 +1154,18 @@ export interface FileRouteTypes {
     | '/tipos-de-carta'
     | '/videogames'
     | '/admin/accessories'
+    | '/admin/acompanhar-leilao'
     | '/admin/banners'
+    | '/admin/comandos'
+    | '/admin/conectar-bot'
     | '/admin/coupons'
+    | '/admin/criar-leilao'
     | '/admin/dashboard'
     | '/admin/emails'
     | '/admin/evento'
     | '/admin/integrations'
     | '/admin/leiloes'
+    | '/admin/leiloes-whatsapp'
     | '/admin/loyalty'
     | '/admin/manage-cards'
     | '/admin/ofertas-relampago'
@@ -965,6 +1198,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$orderId'
     | '/api/public/sitemap.xml'
     | '/lovable/email/events'
+    | '/api/public/bot/status'
     | '/api/public/hooks/auto-cancel-unpaid'
     | '/api/public/hooks/expire-loyalty-points'
     | '/api/public/hooks/price-drop-check'
@@ -978,6 +1212,20 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/api/public/bot/auctions/$id'
+    | '/api/public/bot/bids/approved'
+    | '/api/public/bot/bids/create'
+    | '/api/public/bot/bids/mark'
+    | '/api/public/bot/commands/pending'
+    | '/api/public/bot/groups/activate'
+    | '/api/public/bot/groups/active'
+    | '/api/public/bot/groups/sync'
+    | '/api/public/bot/groups/upsert'
+    | '/api/public/bot/schedules/pending'
+    | '/api/public/bot/users/senha'
+    | '/api/public/bot/groups/'
+    | '/api/public/bot/commands/$id/mark'
+    | '/api/public/bot/schedules/$id/mark'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1018,6 +1266,7 @@ export interface RootRouteChildren {
   SorteiosIndexRoute: typeof SorteiosIndexRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
+  ApiPublicBotStatusRoute: typeof ApiPublicBotStatusRoute
   ApiPublicHooksAutoCancelUnpaidRoute: typeof ApiPublicHooksAutoCancelUnpaidRoute
   ApiPublicHooksExpireLoyaltyPointsRoute: typeof ApiPublicHooksExpireLoyaltyPointsRoute
   ApiPublicHooksPriceDropCheckRoute: typeof ApiPublicHooksPriceDropCheckRoute
@@ -1031,6 +1280,20 @@ export interface RootRouteChildren {
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  ApiPublicBotAuctionsIdRoute: typeof ApiPublicBotAuctionsIdRoute
+  ApiPublicBotBidsApprovedRoute: typeof ApiPublicBotBidsApprovedRoute
+  ApiPublicBotBidsCreateRoute: typeof ApiPublicBotBidsCreateRoute
+  ApiPublicBotBidsMarkRoute: typeof ApiPublicBotBidsMarkRoute
+  ApiPublicBotCommandsPendingRoute: typeof ApiPublicBotCommandsPendingRoute
+  ApiPublicBotGroupsActivateRoute: typeof ApiPublicBotGroupsActivateRoute
+  ApiPublicBotGroupsActiveRoute: typeof ApiPublicBotGroupsActiveRoute
+  ApiPublicBotGroupsSyncRoute: typeof ApiPublicBotGroupsSyncRoute
+  ApiPublicBotGroupsUpsertRoute: typeof ApiPublicBotGroupsUpsertRoute
+  ApiPublicBotSchedulesPendingRoute: typeof ApiPublicBotSchedulesPendingRoute
+  ApiPublicBotUsersSenhaRoute: typeof ApiPublicBotUsersSenhaRoute
+  ApiPublicBotGroupsIndexRoute: typeof ApiPublicBotGroupsIndexRoute
+  ApiPublicBotCommandsIdMarkRoute: typeof ApiPublicBotCommandsIdMarkRoute
+  ApiPublicBotSchedulesIdMarkRoute: typeof ApiPublicBotSchedulesIdMarkRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1224,6 +1487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAccessoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/acompanhar-leilao': {
+      id: '/admin/acompanhar-leilao'
+      path: '/acompanhar-leilao'
+      fullPath: '/admin/acompanhar-leilao'
+      preLoaderRoute: typeof AdminAcompanharLeilaoRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/banners': {
       id: '/admin/banners'
       path: '/banners'
@@ -1231,11 +1501,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBannersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/comandos': {
+      id: '/admin/comandos'
+      path: '/comandos'
+      fullPath: '/admin/comandos'
+      preLoaderRoute: typeof AdminComandosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/conectar-bot': {
+      id: '/admin/conectar-bot'
+      path: '/conectar-bot'
+      fullPath: '/admin/conectar-bot'
+      preLoaderRoute: typeof AdminConectarBotRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/coupons': {
       id: '/admin/coupons'
       path: '/coupons'
       fullPath: '/admin/coupons'
       preLoaderRoute: typeof AdminCouponsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/criar-leilao': {
+      id: '/admin/criar-leilao'
+      path: '/criar-leilao'
+      fullPath: '/admin/criar-leilao'
+      preLoaderRoute: typeof AdminCriarLeilaoRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/dashboard': {
@@ -1271,6 +1562,13 @@ declare module '@tanstack/react-router' {
       path: '/leiloes'
       fullPath: '/admin/leiloes'
       preLoaderRoute: typeof AdminLeiloesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/leiloes-whatsapp': {
+      id: '/admin/leiloes-whatsapp'
+      path: '/leiloes-whatsapp'
+      fullPath: '/admin/leiloes-whatsapp'
+      preLoaderRoute: typeof AdminLeiloesWhatsappRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/loyalty': {
@@ -1497,6 +1795,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bot/status': {
+      id: '/api/public/bot/status'
+      path: '/api/public/bot/status'
+      fullPath: '/api/public/bot/status'
+      preLoaderRoute: typeof ApiPublicBotStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/auto-cancel-unpaid': {
       id: '/api/public/hooks/auto-cancel-unpaid'
       path: '/api/public/hooks/auto-cancel-unpaid'
@@ -1588,18 +1893,121 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bot/auctions/$id': {
+      id: '/api/public/bot/auctions/$id'
+      path: '/api/public/bot/auctions/$id'
+      fullPath: '/api/public/bot/auctions/$id'
+      preLoaderRoute: typeof ApiPublicBotAuctionsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/bids/approved': {
+      id: '/api/public/bot/bids/approved'
+      path: '/api/public/bot/bids/approved'
+      fullPath: '/api/public/bot/bids/approved'
+      preLoaderRoute: typeof ApiPublicBotBidsApprovedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/bids/create': {
+      id: '/api/public/bot/bids/create'
+      path: '/api/public/bot/bids/create'
+      fullPath: '/api/public/bot/bids/create'
+      preLoaderRoute: typeof ApiPublicBotBidsCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/bids/mark': {
+      id: '/api/public/bot/bids/mark'
+      path: '/api/public/bot/bids/mark'
+      fullPath: '/api/public/bot/bids/mark'
+      preLoaderRoute: typeof ApiPublicBotBidsMarkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/commands/pending': {
+      id: '/api/public/bot/commands/pending'
+      path: '/api/public/bot/commands/pending'
+      fullPath: '/api/public/bot/commands/pending'
+      preLoaderRoute: typeof ApiPublicBotCommandsPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/groups/': {
+      id: '/api/public/bot/groups/'
+      path: '/api/public/bot/groups'
+      fullPath: '/api/public/bot/groups/'
+      preLoaderRoute: typeof ApiPublicBotGroupsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/groups/activate': {
+      id: '/api/public/bot/groups/activate'
+      path: '/api/public/bot/groups/activate'
+      fullPath: '/api/public/bot/groups/activate'
+      preLoaderRoute: typeof ApiPublicBotGroupsActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/groups/active': {
+      id: '/api/public/bot/groups/active'
+      path: '/api/public/bot/groups/active'
+      fullPath: '/api/public/bot/groups/active'
+      preLoaderRoute: typeof ApiPublicBotGroupsActiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/groups/sync': {
+      id: '/api/public/bot/groups/sync'
+      path: '/api/public/bot/groups/sync'
+      fullPath: '/api/public/bot/groups/sync'
+      preLoaderRoute: typeof ApiPublicBotGroupsSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/groups/upsert': {
+      id: '/api/public/bot/groups/upsert'
+      path: '/api/public/bot/groups/upsert'
+      fullPath: '/api/public/bot/groups/upsert'
+      preLoaderRoute: typeof ApiPublicBotGroupsUpsertRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/schedules/pending': {
+      id: '/api/public/bot/schedules/pending'
+      path: '/api/public/bot/schedules/pending'
+      fullPath: '/api/public/bot/schedules/pending'
+      preLoaderRoute: typeof ApiPublicBotSchedulesPendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/users/senha': {
+      id: '/api/public/bot/users/senha'
+      path: '/api/public/bot/users/senha'
+      fullPath: '/api/public/bot/users/senha'
+      preLoaderRoute: typeof ApiPublicBotUsersSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/commands/$id/mark': {
+      id: '/api/public/bot/commands/$id/mark'
+      path: '/api/public/bot/commands/$id/mark'
+      fullPath: '/api/public/bot/commands/$id/mark'
+      preLoaderRoute: typeof ApiPublicBotCommandsIdMarkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/schedules/$id/mark': {
+      id: '/api/public/bot/schedules/$id/mark'
+      path: '/api/public/bot/schedules/$id/mark'
+      fullPath: '/api/public/bot/schedules/$id/mark'
+      preLoaderRoute: typeof ApiPublicBotSchedulesIdMarkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminAccessoriesRoute: typeof AdminAccessoriesRoute
+  AdminAcompanharLeilaoRoute: typeof AdminAcompanharLeilaoRoute
   AdminBannersRoute: typeof AdminBannersRoute
+  AdminComandosRoute: typeof AdminComandosRoute
+  AdminConectarBotRoute: typeof AdminConectarBotRoute
   AdminCouponsRoute: typeof AdminCouponsRoute
+  AdminCriarLeilaoRoute: typeof AdminCriarLeilaoRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminEmailsRoute: typeof AdminEmailsRoute
   AdminEventoRoute: typeof AdminEventoRoute
   AdminIntegrationsRoute: typeof AdminIntegrationsRoute
   AdminLeiloesRoute: typeof AdminLeiloesRoute
+  AdminLeiloesWhatsappRoute: typeof AdminLeiloesWhatsappRoute
   AdminLoyaltyRoute: typeof AdminLoyaltyRoute
   AdminManageCardsRoute: typeof AdminManageCardsRoute
   AdminOfertasRelampagoRoute: typeof AdminOfertasRelampagoRoute
@@ -1617,13 +2025,18 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAccessoriesRoute: AdminAccessoriesRoute,
+  AdminAcompanharLeilaoRoute: AdminAcompanharLeilaoRoute,
   AdminBannersRoute: AdminBannersRoute,
+  AdminComandosRoute: AdminComandosRoute,
+  AdminConectarBotRoute: AdminConectarBotRoute,
   AdminCouponsRoute: AdminCouponsRoute,
+  AdminCriarLeilaoRoute: AdminCriarLeilaoRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminEmailsRoute: AdminEmailsRoute,
   AdminEventoRoute: AdminEventoRoute,
   AdminIntegrationsRoute: AdminIntegrationsRoute,
   AdminLeiloesRoute: AdminLeiloesRoute,
+  AdminLeiloesWhatsappRoute: AdminLeiloesWhatsappRoute,
   AdminLoyaltyRoute: AdminLoyaltyRoute,
   AdminManageCardsRoute: AdminManageCardsRoute,
   AdminOfertasRelampagoRoute: AdminOfertasRelampagoRoute,
@@ -1741,6 +2154,7 @@ const rootRouteChildren: RootRouteChildren = {
   SorteiosIndexRoute: SorteiosIndexRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
+  ApiPublicBotStatusRoute: ApiPublicBotStatusRoute,
   ApiPublicHooksAutoCancelUnpaidRoute: ApiPublicHooksAutoCancelUnpaidRoute,
   ApiPublicHooksExpireLoyaltyPointsRoute:
     ApiPublicHooksExpireLoyaltyPointsRoute,
@@ -1756,6 +2170,20 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  ApiPublicBotAuctionsIdRoute: ApiPublicBotAuctionsIdRoute,
+  ApiPublicBotBidsApprovedRoute: ApiPublicBotBidsApprovedRoute,
+  ApiPublicBotBidsCreateRoute: ApiPublicBotBidsCreateRoute,
+  ApiPublicBotBidsMarkRoute: ApiPublicBotBidsMarkRoute,
+  ApiPublicBotCommandsPendingRoute: ApiPublicBotCommandsPendingRoute,
+  ApiPublicBotGroupsActivateRoute: ApiPublicBotGroupsActivateRoute,
+  ApiPublicBotGroupsActiveRoute: ApiPublicBotGroupsActiveRoute,
+  ApiPublicBotGroupsSyncRoute: ApiPublicBotGroupsSyncRoute,
+  ApiPublicBotGroupsUpsertRoute: ApiPublicBotGroupsUpsertRoute,
+  ApiPublicBotSchedulesPendingRoute: ApiPublicBotSchedulesPendingRoute,
+  ApiPublicBotUsersSenhaRoute: ApiPublicBotUsersSenhaRoute,
+  ApiPublicBotGroupsIndexRoute: ApiPublicBotGroupsIndexRoute,
+  ApiPublicBotCommandsIdMarkRoute: ApiPublicBotCommandsIdMarkRoute,
+  ApiPublicBotSchedulesIdMarkRoute: ApiPublicBotSchedulesIdMarkRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

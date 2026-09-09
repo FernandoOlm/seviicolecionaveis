@@ -3,10 +3,13 @@ import { useState } from "react";
 import {
   BadgePercent,
   Bell,
+  Bot,
   Boxes,
+
   CalendarClock,
   CreditCard,
   Gamepad2,
+  Gavel,
   Gauge,
   Gift,
   Image as ImageIcon,
@@ -18,6 +21,7 @@ import {
   Plug,
   ShoppingBag,
   Sparkles,
+  Terminal,
   Ticket,
   Timer,
   Truck,
@@ -52,7 +56,8 @@ export const ADMIN_NAV: NavGroup[] = [
     links: [
       { to: "/admin/shipping", label: "Expedição", icon: Truck },
       { to: "/admin/pilha", label: "Pilha de Cartas", icon: Layers },
-      { to: "/admin/leiloes", label: "Leilões", icon: Gift },
+      { to: "/admin/leiloes", label: "Leilões (Pilha)", icon: Gift },
+      { to: "/admin/leiloes-whatsapp", label: "Leilões WhatsApp", icon: Gavel },
       { to: "/admin/evento", label: "Modo Evento", icon: CalendarClock },
       { to: "/admin/sorteios", label: "Sorteios", icon: Ticket },
     ],
@@ -72,11 +77,14 @@ export const ADMIN_NAV: NavGroup[] = [
   {
     label: "Sistema",
     links: [
+      { to: "/admin/conectar-bot", label: "Conectar Bot", icon: Bot },
+      { to: "/admin/comandos", label: "Comandos & Enquetes", icon: Terminal },
       { to: "/admin/integrations", label: "Integrações", icon: Plug },
       { to: "/admin/users", label: "Administradores", icon: Users },
     ],
   },
 ];
+
 
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
@@ -99,7 +107,10 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
                   onClick={onNavigate}
                   activeOptions={{ exact: l.exact }}
                   className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold text-foreground transition hover:bg-secondary"
-                  activeProps={{ className: "bg-foreground text-background hover:bg-foreground" }}
+                  activeProps={{
+                    className:
+                      "!bg-admin-active !text-admin-active-foreground hover:!bg-admin-active [&>svg]:!text-admin-active-foreground",
+                  }}
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
                   {l.label}

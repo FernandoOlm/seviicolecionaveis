@@ -1,0 +1,1 @@
+ALTER TABLE public.auction_items ADD COLUMN IF NOT EXISTS extra_prices jsonb NOT NULL DEFAULT '[]'::jsonb;
