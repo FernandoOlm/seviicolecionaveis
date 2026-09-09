@@ -1,6 +1,6 @@
 # 📋 [FEATURE] #005: Página de Envio de Comandos e Enquetes de Grupo
 
-> **Status:** 🟡 AGUARDANDO_RETORNO_LOVABLE
+> **Status:** 🟢 CONCLUIDO
 > **Data:** 2026-09-05T22:42:00.000Z
 > **Bot Alvo:** `bot_seviicolecionaveis` (Sevii Colecionáveis WhatsApp Bot)
 > **Painel Lovable:** `seviicolecionaveis` (`https://seviicolecionaveis.lovable.app` / `https://seviicolecionaveis.com.br`)
@@ -160,3 +160,38 @@ Para concluir esta demanda com sucesso, o Lovable deve:
 
 ---
 *Documento elaborado pelo Antigravity em conformidade com os padrões arquiteturais de Sevii Colecionáveis.*
+
+---
+
+## 6. Retorno do Lovable (Homologação)
+
+- **Data:** 2026-09-05T22:58:00.000Z
+- **Status Final:** 🟢 CONCLUIDO
+
+1. **Página criada:** `/admin/comandos` (arquivo `src/routes/admin.comandos.tsx`), restrita a administradores (`useAuth().isAdmin`).
+2. **Menu lateral:** item **"Comandos & Enquetes"** (ícone `Terminal`) adicionado na seção **Sistema** de `src/components/admin/AdminSidebar.tsx`.
+3. **Seletor de grupo:** lê `bot_groups` com `status = 'active'`, mostra `group_name` + `group_jid` e persiste a escolha em `localStorage` na chave `sevii.painel.grupo_selecionado`. Sem grupo selecionado, todos os botões ficam desabilitados com o aviso "Selecione um grupo primeiro".
+4. **Enquetes (Tabs):**
+   - Personalizada → `!enquete Pergunta | Opção 1 | Opção 2` (2 a 12 opções dinâmicas).
+   - Rápida → `!enquete-s Título`.
+   - Compra / preço fixo → `!enquete-c Item | R$ 180,00`.
+   - Quantidade múltipla → `!enquete-q Descrição | 3 | R$ 45 | R$ 50 | R$ 55`.
+5. **Comandos rápidos:** `!all` (modal de mensagem), `!ping`, `!abrir`, `!fechar`, `!sorteio-membros` (modal com nº de ganhadores), `!quiz`, `!ranking`, `!parar-jogo`, `!criar-bv` (modal de texto de boas-vindas).
+6. **Leilão (pregão):** `!iniciar-leilao`, `!status-leilao`, `!encerrar-leilao`, `!liberar-leilao`.
+7. **Comando livre:** textarea + botão para qualquer comando ou mensagem direta.
+8. **Monitor da fila:** tabela com os 10 últimos registros de `bot_command_queue` filtrados por `target_bot = 'bot_seviicolecionaveis'`, com badge de comando, destino, status (`pending`/`sending`/`done`/`error`) e hora `HH:mm:ss`, com polling de 5 segundos.
+9. **Inserção na fila** (exatamente como especificado):
+
+```ts
+await supabase.from("bot_command_queue").insert({
+  command: comandoFormatado,
+  target_group: selectedGroupJid,
+  target_bot: "bot_seviicolecionaveis",
+  args: { mensagem: mensagemOpcional || "", process_name: "bot_seviicolecionaveis" },
+  status: "pending",
+});
+```
+
+10. **Endpoints de polling do bot** continuam ativos e inalterados: `GET /api/public/bot/commands/pending?process_name=bot_seviicolecionaveis&limit=20` e `POST /api/public/bot/commands/:id/mark` (header `x-bot-secret`).
+
+> **Observação:** a página fica disponível no preview imediatamente; em `https://seviicolecionaveis.com.br` após a publicação do projeto.
