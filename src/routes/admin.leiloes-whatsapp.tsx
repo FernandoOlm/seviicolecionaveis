@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Radio, Clock, CheckCircle2, Trash2, Pencil, Eye } from "lucide-react";
+import { Plus, Radio, Clock, CheckCircle2, Trash2, Pencil, Eye, Copy } from "lucide-react";
 
 export const Route = createFileRoute("/admin/leiloes-whatsapp")({
   head: () => ({ meta: [{ title: "Leilões WhatsApp — Admin" }] }),
