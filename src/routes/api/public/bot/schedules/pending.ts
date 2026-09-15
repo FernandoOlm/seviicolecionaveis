@@ -13,8 +13,8 @@ export const Route = createFileRoute("/api/public/bot/schedules/pending")({
 
         const { data: schedules, error } = await (supabaseAdmin as any)
           .from("auction_schedules")
-          .select("id, auction_id, action, group_jid, scheduled_time")
-          .eq("status", "pending")
+          .select("id, auction_id, action, group_jid, scheduled_time, status")
+          .in("status", ["pending", "scheduled"])
           .lte("scheduled_time", nowIso)
           .order("scheduled_time", { ascending: true })
           .limit(20);
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/public/bot/schedules/pending")({
             .in("id", auctionIds),
           (supabaseAdmin as any)
             .from("auction_items")
-            .select("id, auction_id, sequence, name, description, image_url, starting_price, bid_increment, buyout_price, quantity")
+            .select("id, auction_id, sequence, name, description, image_url, starting_price, bid_increment, buyout_price, quantity, extra_prices")
             .in("auction_id", auctionIds)
             .order("sequence", { ascending: true }),
         ]);
@@ -51,6 +51,9 @@ export const Route = createFileRoute("/api/public/bot/schedules/pending")({
             action: s.action,
             group_jid: s.group_jid,
             scheduled_time: s.scheduled_time,
+            due_at: s.scheduled_time,
+            send_at: s.scheduled_time,
+            status: s.status || "pending",
             auction: byAuction.get(s.auction_id) ?? null,
           })),
         });

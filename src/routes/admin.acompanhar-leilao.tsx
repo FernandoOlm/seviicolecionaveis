@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Radio, CheckCircle2, Megaphone } from "lucide-react";
+import { ArrowLeft, Radio, CheckCircle2, Megaphone, Play } from "lucide-react";
 
 export const Route = createFileRoute("/admin/acompanhar-leilao")({
   head: () => ({ meta: [{ title: "Acompanhar Leilão — Admin" }] }),
@@ -98,6 +98,45 @@ function TrackAuctionPage() {
     );
   }
 
+  const startNow = async () => {
+    if (!auction.group_jid) {
+      return toast.error("Leilão sem grupo WhatsApp configurado.");
+    }
+    if (!confirm("Deseja disparar este leilão no WhatsApp agora? O bot enviará os lotes para o grupo.")) return;
+    setBusy(true);
+    try {
+      await (supabase as any)
+        .from("auction_schedules")
+        .delete()
+        .eq("auction_id", auction.id)
+        .eq("action", "START")
+        .eq("status", "pending");
+
+      const { error } = await (supabase as any).from("auction_schedules").insert({
+        auction_id: auction.id,
+        action: "START",
+        scheduled_time: new Date().toISOString(),
+        group_jid: auction.group_jid,
+        status: "pending",
+      });
+      if (error) throw error;
+
+      if (auction.status === "draft") {
+        await (supabase as any)
+          .from("auctions")
+          .update({ status: "scheduled", scheduled_start: new Date().toISOString() })
+          .eq("id", auction.id);
+      }
+
+      toast.success("Disparo de leilão solicitado com sucesso! O bot iniciará o envio.");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao iniciar leilão.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const closeNow = async () => {
     if (!confirm("Encerrar este leilão agora? O bot fechará as enquetes no grupo.")) return;
     setBusy(true);
@@ -151,6 +190,15 @@ function TrackAuctionPage() {
             <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-bold text-red-700">
               <Radio className="h-3 w-3" /> Ao Vivo
             </span>
+          )}
+          {auction.status !== "live" && auction.status !== "finished" && (
+            <button
+              onClick={startNow}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-50 shadow-sm"
+            >
+              <Play className="h-3.5 w-3.5" /> Iniciar Leilão Agora
+            </button>
           )}
           {auction.status !== "finished" && (
             <button

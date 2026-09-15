@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Radio, Clock, CheckCircle2, Trash2, Pencil, Eye, Copy } from "lucide-react";
+import { Plus, Radio, Clock, CheckCircle2, Trash2, Pencil, Eye, Copy, Play } from "lucide-react";
 
 export const Route = createFileRoute("/admin/leiloes-whatsapp")({
   head: () => ({ meta: [{ title: "Leilões WhatsApp — Admin" }] }),
@@ -142,6 +142,45 @@ function AuctionsListPage() {
     }
   };
 
+  const startNow = async (r: AuctionRow) => {
+    if (!r.group_jid) {
+      return toast.error("Leilão sem grupo WhatsApp configurado.");
+    }
+    if (!confirm(`Deseja disparar o leilão "${r.title}" no WhatsApp agora? O bot enviará os lotes para o grupo.`)) return;
+    setLoading(true);
+    try {
+      await (supabase as any)
+        .from("auction_schedules")
+        .delete()
+        .eq("auction_id", r.id)
+        .eq("action", "START")
+        .eq("status", "pending");
+
+      const { error } = await (supabase as any).from("auction_schedules").insert({
+        auction_id: r.id,
+        action: "START",
+        scheduled_time: new Date().toISOString(),
+        group_jid: r.group_jid,
+        status: "pending",
+      });
+      if (error) throw error;
+
+      if (r.status === "draft") {
+        await (supabase as any)
+          .from("auctions")
+          .update({ status: "scheduled", scheduled_start: new Date().toISOString() })
+          .eq("id", r.id);
+      }
+
+      toast.success("Disparo de leilão solicitado com sucesso! O bot iniciará o envio.");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao iniciar leilão.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -225,6 +264,14 @@ function AuctionsListPage() {
                   >
                     <Copy className="h-3.5 w-3.5" /> Copiar
                   </button>
+                  {(r.status === "draft" || r.status === "scheduled") && (
+                    <button
+                      onClick={() => startNow(r)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-emerald-600/40 bg-emerald-600/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-600/20"
+                    >
+                      <Play className="h-3.5 w-3.5" /> Iniciar Agora
+                    </button>
+                  )}
                   {(r.status === "draft" || r.status === "scheduled") && (
                     <Link
                       to="/admin/criar-leilao"

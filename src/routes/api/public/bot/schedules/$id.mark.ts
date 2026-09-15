@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyBotAuth } from "@/lib/bot-auth.server";
 
-const ACTIONS = ["pending", "sending", "done", "error"];
+const ACTIONS = ["pending", "sending", "done", "error", "closing"];
 
 export const Route = createFileRoute("/api/public/bot/schedules/$id/mark")({
   server: {
@@ -16,7 +16,12 @@ export const Route = createFileRoute("/api/public/bot/schedules/$id/mark")({
         } catch {
           /* body opcional */
         }
-        const action = String(body?.action ?? "done");
+        const rawAction = String(body?.action ?? "done").toLowerCase();
+        const actionMap: Record<string, string> = {
+          sent: "done",
+          closed: "done",
+        };
+        const action = actionMap[rawAction] || rawAction;
         if (!ACTIONS.includes(action)) {
           return Response.json({ error: "action inválida" }, { status: 400 });
         }
