@@ -135,7 +135,6 @@ if (typeof window !== "undefined") {
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isHome = pathname === "/";
   const [queryClient] = useState(() => new QueryClient());
   return (
     <QueryClientProvider client={queryClient}>
@@ -160,7 +159,7 @@ function RootComponent() {
             <WhatsAppButton />
             <CompareBar />
             <PwaInstallBanner />
-            {isHome && <SitePopups />}
+            <SitePopups />
         </CartProvider>
       </WishlistProvider>
     </AuthProvider>

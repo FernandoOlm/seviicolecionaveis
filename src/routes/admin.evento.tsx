@@ -109,7 +109,7 @@ function EventoPage() {
     const { data } = await supabase
       .from("site_popups")
       .select("id, title, body_html, active, button_enabled, ends_at")
-      .eq("title", EVENT_POPUP_TITLE)
+      .or(`popup_key.eq.event-mode,title.eq.${EVENT_POPUP_TITLE}`)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -135,7 +135,8 @@ function EventoPage() {
     if (!popupText.trim()) { setMsg({ type: "err", text: "Escreva a mensagem do pop-up." }); return; }
     setSavingPopup(true);
     setMsg(null);
-    const payload = {
+    const payload: Record<string, unknown> = {
+      popup_key: "event-mode",
       title: popupTitle.trim() || EVENT_POPUP_TITLE,
       body_html: popupBodyHtml,
       image_url: null,
@@ -149,9 +150,11 @@ function EventoPage() {
       button_target: null,
       ends_at: popupReturnDate ? new Date(`${popupReturnDate}T23:59:59`).toISOString() : null,
     };
-    const { data, error } = popupId
-      ? await supabase.from("site_popups").update(payload).eq("id", popupId).select("id").maybeSingle()
-      : await supabase.from("site_popups").insert(payload).select("id").maybeSingle();
+    const { data, error } = await supabase
+      .from("site_popups")
+      .upsert({ ...(popupId ? { id: popupId } : {}), ...payload } as any, { onConflict: "popup_key" })
+      .select("id")
+      .maybeSingle();
     setSavingPopup(false);
     if (error) { setMsg({ type: "err", text: error.message }); return; }
     if (data?.id) setPopupId(data.id as string);

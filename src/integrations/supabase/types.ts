@@ -2270,6 +2270,7 @@ export type Database = {
           image_url: string | null
           is_promo_code: boolean
           link_url: string | null
+          popup_key: string | null
           promo_bg_color: string | null
           promo_code: string | null
           promo_text_color: string | null
@@ -2297,6 +2298,7 @@ export type Database = {
           image_url?: string | null
           is_promo_code?: boolean
           link_url?: string | null
+          popup_key?: string | null
           promo_bg_color?: string | null
           promo_code?: string | null
           promo_text_color?: string | null
@@ -2324,6 +2326,7 @@ export type Database = {
           image_url?: string | null
           is_promo_code?: boolean
           link_url?: string | null
+          popup_key?: string | null
           promo_bg_color?: string | null
           promo_code?: string | null
           promo_text_color?: string | null

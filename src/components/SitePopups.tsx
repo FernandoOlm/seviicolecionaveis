@@ -22,7 +22,7 @@ export function SitePopups() {
       const { data } = await supabase
         .from("site_popups")
         .select(
-          "id, title, body_html, image_url, link_url, is_promo_code, promo_code, icon_key, button_enabled, button_label, button_action, button_target, button_bg_color, button_text_color, icon_bg_color, icon_color, promo_bg_color, promo_text_color, starts_at, ends_at",
+          "id, title, body_html, image_url, link_url, is_promo_code, promo_code, icon_key, button_enabled, button_label, button_action, button_target, button_bg_color, button_text_color, icon_bg_color, icon_color, promo_bg_color, promo_text_color, starts_at, ends_at, popup_key",
         )
         .eq("active", true)
         .order("sort_order", { ascending: true })
@@ -33,7 +33,7 @@ export function SitePopups() {
         (p) =>
           (!p.starts_at || p.starts_at <= nowIso) &&
           (!p.ends_at || p.ends_at >= nowIso) &&
-          !getPermanentlyDismissed(p.id) &&
+          (p.popup_key === "event-mode" || !getPermanentlyDismissed(p.id)) &&
           !sessionStorage.getItem(SESSION_PREFIX + p.id),
       ) as SitePopup[];
 
