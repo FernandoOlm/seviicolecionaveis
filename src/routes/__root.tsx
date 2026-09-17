@@ -160,7 +160,7 @@ function RootComponent() {
             <WhatsAppButton />
             <CompareBar />
             <PwaInstallBanner />
-            {isHome && <SitePopups />}
+            <SitePopups />
         </CartProvider>
       </WishlistProvider>
     </AuthProvider>

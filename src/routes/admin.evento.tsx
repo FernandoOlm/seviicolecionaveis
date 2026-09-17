@@ -109,7 +109,7 @@ function EventoPage() {
     const { data } = await supabase
       .from("site_popups")
       .select("id, title, body_html, active, button_enabled, ends_at")
-      .eq("title", EVENT_POPUP_TITLE)
+      .or(`popup_key.eq.event-mode,title.eq.${EVENT_POPUP_TITLE}`)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
