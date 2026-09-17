@@ -5,8 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { invalidateCardsCache } from "@/hooks/useCardsCatalog";
 import { CONDITION_LABEL } from "@/data/cards";
 import type { Condition } from "@/data/cards";
-import { Minus, Plus, Search, Trash2, PackageCheck, Undo2, Power, Home, PackagePlus, ClipboardList } from "lucide-react";
+import { Minus, Plus, Search, Trash2, PackageCheck, Undo2, Power, Home, PackagePlus, ClipboardList, MessageSquare } from "lucide-react";
 import { EVENT_MODE_KEY, useEventMode } from "@/lib/event-mode";
+import { PopupPreview } from "@/components/admin/PopupPreview";
+
+const EVENT_POPUP_TITLE = "Estamos em evento";
+
+function formatReturnDate(value: string) {
+  if (!value) return "";
+  const [y, m, d] = value.split("-");
+  if (!y || !m || !d) return "";
+  return `${d}/${m}/${y}`;
+}
 
 export const Route = createFileRoute("/admin/evento")({
   head: () => ({
