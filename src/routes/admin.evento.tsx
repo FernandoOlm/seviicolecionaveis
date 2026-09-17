@@ -71,6 +71,98 @@ function EventoPage() {
   const [eventMessage, setEventMessage] = useState("");
   const [savingMode, setSavingMode] = useState(false);
 
+  // Pop-up de aviso do evento
+  const [popupId, setPopupId] = useState<string | null>(null);
+  const [popupTitle, setPopupTitle] = useState(EVENT_POPUP_TITLE);
+  const [popupText, setPopupText] = useState(
+    "Estamos participando de um evento presencial e as vendas online estão pausadas.",
+  );
+  const [popupReturnDate, setPopupReturnDate] = useState("");
+  const [popupActive, setPopupActive] = useState(false);
+  const [popupWhats, setPopupWhats] = useState(true);
+  const [savingPopup, setSavingPopup] = useState(false);
+
+  const popupBodyHtml = useMemo(() => {
+    const text = popupText.trim().replace(/\n/g, "<br />");
+    const back = popupReturnDate
+      ? `<p style="text-align:center"><strong>Voltamos a vender no site em ${formatReturnDate(popupReturnDate)}.</strong></p>`
+      : "";
+    return `<p style="text-align:center">${text}</p>${back}`;
+  }, [popupText, popupReturnDate]);
+
+  const popupPreviewData = useMemo(
+    () => ({
+      title: popupTitle,
+      body_html: popupBodyHtml,
+      image_url: null,
+      link_url: null,
+      icon_key: "warning",
+      button_enabled: popupWhats,
+      button_label: "Falar no WhatsApp",
+      button_action: "whatsapp",
+      button_target: null,
+    }),
+    [popupTitle, popupBodyHtml, popupWhats],
+  );
+
+  const loadEventPopup = async () => {
+    const { data } = await supabase
+      .from("site_popups")
+      .select("id, title, body_html, active, button_enabled, ends_at")
+      .eq("title", EVENT_POPUP_TITLE)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return;
+    const p = data as any;
+    setPopupId(p.id);
+    setPopupTitle(p.title);
+    setPopupActive(!!p.active);
+    setPopupWhats(!!p.button_enabled);
+    const plain = String(p.body_html ?? "")
+      .replace(/<p[^>]*><strong>Voltamos[\s\S]*?<\/strong><\/p>/i, "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .trim();
+    if (plain) setPopupText(plain);
+    const m = /Voltamos a vender no site em (\d{2})\/(\d{2})\/(\d{4})/.exec(String(p.body_html ?? ""));
+    if (m) setPopupReturnDate(`${m[3]}-${m[2]}-${m[1]}`);
+  };
+
+  useEffect(() => { if (isAdmin) loadEventPopup(); }, [isAdmin]);
+
+  const saveEventPopup = async (active: boolean) => {
+    if (!popupText.trim()) { setMsg({ type: "err", text: "Escreva a mensagem do pop-up." }); return; }
+    setSavingPopup(true);
+    setMsg(null);
+    const payload = {
+      title: popupTitle.trim() || EVENT_POPUP_TITLE,
+      body_html: popupBodyHtml,
+      image_url: null,
+      link_url: null,
+      active,
+      show_on_notices: true,
+      icon_key: "warning",
+      button_enabled: popupWhats,
+      button_label: "Falar no WhatsApp",
+      button_action: popupWhats ? "whatsapp" : "close",
+      button_target: null,
+      ends_at: popupReturnDate ? new Date(`${popupReturnDate}T23:59:59`).toISOString() : null,
+    };
+    const { data, error } = popupId
+      ? await supabase.from("site_popups").update(payload).eq("id", popupId).select("id").maybeSingle()
+      : await supabase.from("site_popups").insert(payload).select("id").maybeSingle();
+    setSavingPopup(false);
+    if (error) { setMsg({ type: "err", text: error.message }); return; }
+    if (data?.id) setPopupId(data.id as string);
+    setPopupActive(active);
+    setMsg({
+      type: "ok",
+      text: active ? "Pop-up publicado — os clientes verão o aviso ao entrar no site." : "Pop-up desativado.",
+    });
+  };
+
+
   useEffect(() => { setEventMessage(eventMode.message); }, [eventMode.message]);
 
   const toggleEventMode = async (enabled: boolean) => {
