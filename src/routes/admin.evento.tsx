@@ -5,8 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { invalidateCardsCache } from "@/hooks/useCardsCatalog";
 import { CONDITION_LABEL } from "@/data/cards";
 import type { Condition } from "@/data/cards";
-import { Minus, Plus, Search, Trash2, PackageCheck, Undo2, Power, Home, PackagePlus, ClipboardList } from "lucide-react";
+import { Minus, Plus, Search, Trash2, PackageCheck, Undo2, Power, Home, PackagePlus, ClipboardList, MessageSquare } from "lucide-react";
 import { EVENT_MODE_KEY, useEventMode } from "@/lib/event-mode";
+import { PopupPreview } from "@/components/admin/PopupPreview";
+
+const EVENT_POPUP_TITLE = "Estamos em evento";
+
+function formatReturnDate(value: string) {
+  if (!value) return "";
+  const [y, m, d] = value.split("-");
+  if (!y || !m || !d) return "";
+  return `${d}/${m}/${y}`;
+}
 
 export const Route = createFileRoute("/admin/evento")({
   head: () => ({
@@ -60,6 +70,98 @@ function EventoPage() {
   const { eventMode, reload: reloadEventMode } = useEventMode();
   const [eventMessage, setEventMessage] = useState("");
   const [savingMode, setSavingMode] = useState(false);
+
+  // Pop-up de aviso do evento
+  const [popupId, setPopupId] = useState<string | null>(null);
+  const [popupTitle, setPopupTitle] = useState(EVENT_POPUP_TITLE);
+  const [popupText, setPopupText] = useState(
+    "Estamos participando de um evento presencial e as vendas online estão pausadas.",
+  );
+  const [popupReturnDate, setPopupReturnDate] = useState("");
+  const [popupActive, setPopupActive] = useState(false);
+  const [popupWhats, setPopupWhats] = useState(true);
+  const [savingPopup, setSavingPopup] = useState(false);
+
+  const popupBodyHtml = useMemo(() => {
+    const text = popupText.trim().replace(/\n/g, "<br />");
+    const back = popupReturnDate
+      ? `<p style="text-align:center"><strong>Voltamos a vender no site em ${formatReturnDate(popupReturnDate)}.</strong></p>`
+      : "";
+    return `<p style="text-align:center">${text}</p>${back}`;
+  }, [popupText, popupReturnDate]);
+
+  const popupPreviewData = useMemo(
+    () => ({
+      title: popupTitle,
+      body_html: popupBodyHtml,
+      image_url: null,
+      link_url: null,
+      icon_key: "warning",
+      button_enabled: popupWhats,
+      button_label: "Falar no WhatsApp",
+      button_action: "whatsapp",
+      button_target: null,
+    }),
+    [popupTitle, popupBodyHtml, popupWhats],
+  );
+
+  const loadEventPopup = async () => {
+    const { data } = await supabase
+      .from("site_popups")
+      .select("id, title, body_html, active, button_enabled, ends_at")
+      .eq("title", EVENT_POPUP_TITLE)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return;
+    const p = data as any;
+    setPopupId(p.id);
+    setPopupTitle(p.title);
+    setPopupActive(!!p.active);
+    setPopupWhats(!!p.button_enabled);
+    const plain = String(p.body_html ?? "")
+      .replace(/<p[^>]*><strong>Voltamos[\s\S]*?<\/strong><\/p>/i, "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .trim();
+    if (plain) setPopupText(plain);
+    const m = /Voltamos a vender no site em (\d{2})\/(\d{2})\/(\d{4})/.exec(String(p.body_html ?? ""));
+    if (m) setPopupReturnDate(`${m[3]}-${m[2]}-${m[1]}`);
+  };
+
+  useEffect(() => { if (isAdmin) loadEventPopup(); }, [isAdmin]);
+
+  const saveEventPopup = async (active: boolean) => {
+    if (!popupText.trim()) { setMsg({ type: "err", text: "Escreva a mensagem do pop-up." }); return; }
+    setSavingPopup(true);
+    setMsg(null);
+    const payload = {
+      title: popupTitle.trim() || EVENT_POPUP_TITLE,
+      body_html: popupBodyHtml,
+      image_url: null,
+      link_url: null,
+      active,
+      show_on_notices: true,
+      icon_key: "warning",
+      button_enabled: popupWhats,
+      button_label: "Falar no WhatsApp",
+      button_action: popupWhats ? "whatsapp" : "close",
+      button_target: null,
+      ends_at: popupReturnDate ? new Date(`${popupReturnDate}T23:59:59`).toISOString() : null,
+    };
+    const { data, error } = popupId
+      ? await supabase.from("site_popups").update(payload).eq("id", popupId).select("id").maybeSingle()
+      : await supabase.from("site_popups").insert(payload).select("id").maybeSingle();
+    setSavingPopup(false);
+    if (error) { setMsg({ type: "err", text: error.message }); return; }
+    if (data?.id) setPopupId(data.id as string);
+    setPopupActive(active);
+    setMsg({
+      type: "ok",
+      text: active ? "Pop-up publicado — os clientes verão o aviso ao entrar no site." : "Pop-up desativado.",
+    });
+  };
+
 
   useEffect(() => { setEventMessage(eventMode.message); }, [eventMode.message]);
 
@@ -256,6 +358,88 @@ function EventoPage() {
           </button>
         </div>
       </section>
+
+      <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" /> Pop-up de aviso no site
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {popupActive
+                ? "Pop-up ativo: aparece para quem entra no site e na página de avisos."
+                : "Crie o aviso, escolha a data de volta e publique quando quiser."}
+            </p>
+          </div>
+          <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${popupActive ? "bg-emerald-500/15 text-emerald-700" : "bg-secondary text-muted-foreground"}`}>
+            {popupActive ? "Publicado" : "Não publicado"}
+          </span>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[1fr_320px]">
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Título</label>
+              <input
+                value={popupTitle}
+                onChange={(e) => setPopupTitle(e.target.value)}
+                className="w-full rounded-md border border-border bg-background p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-foreground">Mensagem do pop-up</label>
+              <textarea
+                value={popupText}
+                onChange={(e) => setPopupText(e.target.value)}
+                rows={4}
+                className="w-full rounded-md border border-border bg-background p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-foreground">Data em que o site volta</label>
+                <input
+                  type="date"
+                  value={popupReturnDate}
+                  onChange={(e) => setPopupReturnDate(e.target.value)}
+                  className="rounded-md border border-border bg-background p-2 text-xs text-foreground outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <label className="flex items-center gap-2 pb-2 text-xs text-foreground">
+                <input type="checkbox" checked={popupWhats} onChange={(e) => setPopupWhats(e.target.checked)} />
+                Mostrar botão do WhatsApp
+              </label>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              A data também é usada para esconder o pop-up automaticamente depois que ela passar.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={savingPopup}
+                onClick={() => saveEventPopup(true)}
+                className="rounded-md bg-foreground px-3 py-2 text-xs font-bold text-background disabled:opacity-50"
+              >
+                {savingPopup ? "Salvando…" : popupActive ? "Salvar e manter publicado" : "Publicar pop-up"}
+              </button>
+              <button
+                type="button"
+                disabled={savingPopup || !popupId || !popupActive}
+                onClick={() => saveEventPopup(false)}
+                className="rounded-md border border-border px-3 py-2 text-xs font-semibold text-foreground disabled:opacity-50"
+              >
+                Desativar pop-up
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-foreground">Prévia</p>
+            <PopupPreview popup={popupPreviewData} />
+          </div>
+        </div>
+      </section>
+
 
       <div className="flex flex-wrap gap-2">
 
