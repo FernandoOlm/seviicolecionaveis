@@ -135,7 +135,8 @@ function EventoPage() {
     if (!popupText.trim()) { setMsg({ type: "err", text: "Escreva a mensagem do pop-up." }); return; }
     setSavingPopup(true);
     setMsg(null);
-    const payload = {
+    const payload: Record<string, unknown> = {
+      popup_key: "event-mode",
       title: popupTitle.trim() || EVENT_POPUP_TITLE,
       body_html: popupBodyHtml,
       image_url: null,
