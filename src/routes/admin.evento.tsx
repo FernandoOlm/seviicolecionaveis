@@ -150,11 +150,27 @@ function EventoPage() {
       button_target: null,
       ends_at: popupReturnDate ? new Date(`${popupReturnDate}T23:59:59`).toISOString() : null,
     };
-    const { data, error } = await supabase
-      .from("site_popups")
-      .upsert({ ...(popupId ? { id: popupId } : {}), ...payload } as any, { onConflict: "popup_key" })
-      .select("id")
-      .maybeSingle();
+    let existingId = popupId;
+    if (!existingId) {
+      const { data: found } = await supabase
+        .from("site_popups")
+        .select("id")
+        .eq("popup_key" as any, "event-mode")
+        .maybeSingle();
+      existingId = (found as { id?: string } | null)?.id ?? null;
+    }
+    const { data, error } = existingId
+      ? await supabase
+          .from("site_popups")
+          .update(payload as any)
+          .eq("id", existingId)
+          .select("id")
+          .maybeSingle()
+      : await supabase
+          .from("site_popups")
+          .insert(payload as any)
+          .select("id")
+          .maybeSingle();
     setSavingPopup(false);
     if (error) { setMsg({ type: "err", text: error.message }); return; }
     if (data?.id) setPopupId(data.id as string);

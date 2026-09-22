@@ -129,7 +129,9 @@ function TrackAuctionPage() {
     load();
   };
 
-  const totalApproved = bids.filter((b) => b.status === "approved").reduce((s, b) => s + Number(b.amount), 0);
+  const totalApproved = bids
+    .filter((b) => b.status === "approved" || b.status === "order_created")
+    .reduce((s, b) => s + Number(b.amount), 0);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">

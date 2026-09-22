@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/public/bot/bids/approved")({
         let query = (supabaseAdmin as any)
           .from("auction_bids")
           .select("id, auction_id, item_name, phone, bidder_name, amount, order_id")
-          .eq("status", "approved")
+          .in("status", ["approved", "order_created"])
           .eq("announced", false)
           .order("created_at", { ascending: true })
           .limit(500);
