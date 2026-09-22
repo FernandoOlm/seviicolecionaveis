@@ -944,6 +944,7 @@ export type Database = {
           id: string
           max_discount_cents: number | null
           max_uses: number
+          max_uses_per_user: number | null
           notes: string | null
           percent: number | null
           updated_at: string
@@ -960,6 +961,7 @@ export type Database = {
           id?: string
           max_discount_cents?: number | null
           max_uses?: number
+          max_uses_per_user?: number | null
           notes?: string | null
           percent?: number | null
           updated_at?: string
@@ -976,6 +978,7 @@ export type Database = {
           id?: string
           max_discount_cents?: number | null
           max_uses?: number
+          max_uses_per_user?: number | null
           notes?: string | null
           percent?: number | null
           updated_at?: string
