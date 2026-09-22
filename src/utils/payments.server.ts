@@ -117,6 +117,23 @@ async function resolvePointsRedemption(
   return { points, discountCents: pointsToDiscountCents(points) };
 }
 
+/** Verifica se o cliente já atingiu o limite de usos por conta do cupom (pedidos não cancelados). */
+async function userReachedCouponLimit(
+  userId: string,
+  coupon: { code: string; max_uses_per_user?: number | null },
+): Promise<boolean> {
+  const limit = coupon.max_uses_per_user;
+  if (!limit || limit < 1) return false;
+  const { count, error } = await supabaseAdmin
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("coupon_code", coupon.code)
+    .neq("status", "cancelled");
+  if (error) throw new Error(error.message);
+  return (count ?? 0) >= limit;
+}
+
 async function validateCoupon(
   userId: string,
   rawCode: string | null | undefined,
@@ -167,7 +184,7 @@ async function validateCoupon(
   // Fallback: cupons gerenciáveis na tabela public.coupons
   const { data: coupon, error: couponErr } = await supabaseAdmin
     .from("coupons")
-    .select("id, code, user_id, percent, amount_cents, balance_cents, max_discount_cents, max_uses, used_count, expires_at, active")
+    .select("id, code, user_id, percent, amount_cents, balance_cents, max_discount_cents, max_uses, max_uses_per_user, used_count, expires_at, active")
     .eq("code", code)
     .maybeSingle();
   if (couponErr) throw new Error(couponErr.message);
@@ -203,6 +220,9 @@ async function validateCoupon(
 
   if (coupon.used_count >= coupon.max_uses) {
     throw new Error("Cupom já foi utilizado");
+  }
+  if (await userReachedCouponLimit(userId, coupon)) {
+    throw new Error("Você já utilizou este cupom");
   }
 
   // Reserva o uso de forma atômica (evita corrida de uso duplicado)
@@ -283,7 +303,7 @@ export async function previewCouponServer(
 
     const { data: coupon } = await supabaseAdmin
       .from("coupons")
-      .select("id, code, user_id, percent, amount_cents, balance_cents, max_discount_cents, max_uses, used_count, expires_at, active")
+      .select("id, code, user_id, percent, amount_cents, balance_cents, max_discount_cents, max_uses, max_uses_per_user, used_count, expires_at, active")
       .eq("code", code)
       .maybeSingle();
     if (!coupon || !coupon.active) return { valid: false, error: "Cupom inválido" };
@@ -315,6 +335,8 @@ export async function previewCouponServer(
 
     if (coupon.used_count >= coupon.max_uses)
       return { valid: false, error: "Cupom já foi utilizado" };
+    if (await userReachedCouponLimit(userId, coupon))
+      return { valid: false, error: "Você já utilizou este cupom" };
 
     if (coupon.amount_cents && coupon.amount_cents > 0) {
       const discountCents = Math.min(coupon.amount_cents, subtotalCents);
