@@ -999,10 +999,11 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
   const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(await withLigaSubcategory(orderItems));
   if (itemsErr) throw new Error(itemsErr.message);
   await reserveStockForOrder(order.id, userId, items, new Date(Date.now() + 60 * 60 * 1000));
-  await sendOrderReceivedEmail(order.id);
+
 
   // Vale-presente cobre o pedido inteiro: marca pago direto, sem Pix.
   if (totalCents === 0) {
+    await sendOrderReceivedEmail(order.id);
     await markOrderPaid(order.id);
     return {
       orderId: order.id,
@@ -1041,6 +1042,10 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
       pix_expires_at: pix.date_of_expiration,
     })
     .eq("id", order.id);
+
+  // E-mail só depois do Pix pronto: falha/lentidão no e-mail nunca bloqueia o pagamento.
+  await sendOrderReceivedEmail(order.id);
+
 
   return {
     orderId: order.id,
