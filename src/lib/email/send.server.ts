@@ -86,9 +86,11 @@ export async function sendTransactionalEmailServer(
         idempotencyKey,
       })
     } catch (e: any) {
-      if (e?.status === 429) {
-        const waitSeconds =
-          typeof e.retryAfterSeconds === 'number' ? e.retryAfterSeconds : 60
+      // Limite de envio: só tenta de novo se a espera for curta. Nunca segurar
+      // o checkout/pagamento esperando minutos pelo serviço de e-mail.
+      const waitSeconds =
+        typeof e?.retryAfterSeconds === 'number' ? e.retryAfterSeconds : 60
+      if (e?.status === 429 && waitSeconds <= 3) {
         await new Promise((r) => setTimeout(r, waitSeconds * 1000))
         result = await sendTemplateEmail(templateName, effectiveRecipient, {
           templateData,
