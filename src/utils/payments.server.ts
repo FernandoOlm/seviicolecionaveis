@@ -1003,6 +1003,7 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
 
   // Vale-presente cobre o pedido inteiro: marca pago direto, sem Pix.
   if (totalCents === 0) {
+    await sendOrderReceivedEmail(order.id);
     await markOrderPaid(order.id);
     return {
       orderId: order.id,
@@ -1041,6 +1042,10 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
       pix_expires_at: pix.date_of_expiration,
     })
     .eq("id", order.id);
+
+  // E-mail só depois do Pix pronto: falha/lentidão no e-mail nunca bloqueia o pagamento.
+  await sendOrderReceivedEmail(order.id);
+
 
   return {
     orderId: order.id,
