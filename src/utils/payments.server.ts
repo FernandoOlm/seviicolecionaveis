@@ -204,6 +204,9 @@ async function validateCoupon(
   if (coupon.used_count >= coupon.max_uses) {
     throw new Error("Cupom já foi utilizado");
   }
+  if (await userReachedCouponLimit(userId, coupon)) {
+    throw new Error("Você já utilizou este cupom");
+  }
 
   // Reserva o uso de forma atômica (evita corrida de uso duplicado)
   const { data: claimed, error: claimErr } = await supabaseAdmin
@@ -315,6 +318,8 @@ export async function previewCouponServer(
 
     if (coupon.used_count >= coupon.max_uses)
       return { valid: false, error: "Cupom já foi utilizado" };
+    if (await userReachedCouponLimit(userId, coupon))
+      return { valid: false, error: "Você já utilizou este cupom" };
 
     if (coupon.amount_cents && coupon.amount_cents > 0) {
       const discountCents = Math.min(coupon.amount_cents, subtotalCents);
