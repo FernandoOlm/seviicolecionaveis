@@ -46,6 +46,7 @@ function RecognizePage() {
   const { customCollections } = useCustomCollections();
 
   const [previews, setPreviews] = useState<string[]>([]);
+  const uploadedRef = useRef<Map<number, string>>(new Map());
   const [analyzing, setAnalyzing] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
@@ -66,6 +67,24 @@ function RecognizePage() {
   const update = (key: string, patch: Partial<Item>) =>
     setItems((prev) => prev.map((it) => (it.key === key ? { ...it, ...patch } : it)));
 
+  // Converte a coleção lida pela foto para uma coleção existente (ex.: "SVI" → "SVI - Escarlate e Violeta").
+  const matchCollection = (raw: string): string => {
+    const value = raw.trim();
+    if (!value) return "";
+    if (collections.includes(value)) return value;
+    const lower = value.toLowerCase();
+    const exactCi = collections.find((c) => c.toLowerCase() === lower);
+    if (exactCi) return exactCi;
+    const byCode = collections.filter((c) => c.split(" - ")[0].trim().toLowerCase() === lower);
+    if (byCode.length === 1) return byCode[0];
+    const byName = collections.filter((c) => {
+      const parts = c.toLowerCase().split(" - ");
+      return parts.slice(1).join(" - ").trim() === lower || c.toLowerCase().includes(lower);
+    });
+    if (byName.length === 1) return byName[0];
+    return "";
+  };
+
   const handleFiles = async (files: FileList | null) => {
     if (!files?.length) return;
     setMsg(null);
@@ -74,18 +93,27 @@ function RecognizePage() {
       const list = Array.from(files).slice(0, 6);
       const dataUrls = await Promise.all(list.map(fileToDataUrl));
       setPreviews(dataUrls);
+      uploadedRef.current = new Map();
       const res = await recognize({ data: { images: dataUrls } });
-      const mapped: Item[] = res.detections.map((d) => ({
-        ...d,
-        include: true,
-        selectedId: d.candidates[0]?.id ?? null,
-        applied: false,
-        searching: false,
-        creating: false,
-        newCondition: "",
-        newPrice: "",
-        newCategory: "Pokémon",
-      }));
+      const mapped: Item[] = res.detections.map((d) => {
+        const collection = matchCollection(d.collection ?? "");
+        const rawCollection = (d.collection ?? "").trim();
+        const unmatchedNote =
+          rawCollection && !collection ? `Coleção lida na foto: "${rawCollection}" (não cadastrada).` : "";
+        return {
+          ...d,
+          collection,
+          notes: [d.notes, unmatchedNote].filter(Boolean).join(" "),
+          include: true,
+          selectedId: d.candidates[0]?.id ?? null,
+          applied: false,
+          searching: false,
+          creating: false,
+          newCondition: "",
+          newPrice: "",
+          newCategory: "Pokémon",
+        };
+      });
       setItems(mapped);
       if (!mapped.length) setMsg({ type: "err", text: "Nenhuma carta foi identificada nas fotos." });
     } catch (e: any) {
@@ -116,12 +144,40 @@ function RecognizePage() {
     if (error) setMsg({ type: "err", text: error.message });
   };
 
+  const uploadPreview = async (index: number): Promise<string> => {
+    const cached = uploadedRef.current.get(index);
+    if (cached) return cached;
+    const dataUrl = previews[index];
+    if (!dataUrl) return "";
+    const blob = await (await fetch(dataUrl)).blob();
+    const path = `cards/reconhecimento/${crypto.randomUUID()}.jpg`;
+    const { error } = await supabase.storage
+      .from("card-images")
+      .upload(path, blob, { contentType: "image/jpeg", cacheControl: "31536000", upsert: false });
+    if (error) throw new Error(`Falha ao enviar a foto: ${error.message}`);
+    const url = supabase.storage.from("card-images").getPublicUrl(path).data.publicUrl;
+    uploadedRef.current.set(index, url);
+    return url;
+  };
+
   const createCard = async (it: Item) => {
+    if (!it.collection.trim() || !collections.includes(it.collection)) {
+      setMsg({ type: "err", text: "Selecione a coleção da carta antes de continuar." });
+      return;
+    }
     if (!it.newCondition) {
       setMsg({ type: "err", text: "Selecione a condição da carta antes de continuar." });
       return;
     }
     update(it.key, { creating: true });
+    let image = "";
+    try {
+      image = await uploadPreview(it.imageIndex);
+    } catch (e: any) {
+      update(it.key, { creating: false });
+      setMsg({ type: "err", text: e?.message || "Falha ao enviar a foto." });
+      return;
+    }
     const payload = {
       name: it.name.trim(),
       card_number: it.number.trim(),
@@ -132,7 +188,7 @@ function RecognizePage() {
       category: it.newCategory,
       stock: 0,
       base_price_cents: it.newPrice ? Math.round(parseFloat(it.newPrice.replace(",", ".")) * 100) : null,
-      image: previews[it.imageIndex] && previews[it.imageIndex].length < 200 ? previews[it.imageIndex] : "",
+      image,
       created_by: user?.id ?? null,
     };
     const { data, error } = await supabase.from("cards").insert(payload as any).select("id, name, card_number, collection, language, finish, condition, stock, image").single();

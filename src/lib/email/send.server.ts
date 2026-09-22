@@ -47,6 +47,10 @@ export async function sendTransactionalEmailServer(
   if (!effectiveRecipient) {
     return { success: false, error: 'missing_recipient' }
   }
+  // Contas criadas pelo bot do WhatsApp usam um login interno que não é uma caixa de e-mail real.
+  if (effectiveRecipient.toLowerCase().endsWith('@whatsapp.seviicolecionaveis.com.br')) {
+    return { success: false, reason: 'placeholder_recipient' }
+  }
 
   // Render once for the app's own log row (subject/body preview in admin).
   const element = React.createElement(template.component, templateData)

@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/public/bot/bids/approved")({
         let query = (supabaseAdmin as any)
           .from("auction_bids")
           .select("id, auction_id, item_name, phone, bidder_name, amount, order_id")
-          .eq("status", "approved")
+          .in("status", ["approved", "order_created"])
           .eq("announced", false)
           .order("created_at", { ascending: true })
           .limit(500);
@@ -64,7 +64,11 @@ export const Route = createFileRoute("/api/public/bot/bids/approved")({
           const buyer = buyers.get(key);
           buyer.items.push({ bid_id: b.id, item_name: b.item_name, amount: Number(b.amount) });
           buyer.total += Number(b.amount);
-          if (b.order_id) buyer.order_number = String(b.order_id).slice(0, 8).toUpperCase();
+          if (b.order_id) {
+            buyer.order_number = String(b.order_id).slice(0, 8).toUpperCase();
+            buyer.order_id = b.order_id;
+            buyer.payment_link = `https://seviicolecionaveis.com.br/pay/${b.order_id}`;
+          }
         }
 
         return Response.json({ buyers: [...buyers.values()] });

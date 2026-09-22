@@ -2584,6 +2584,7 @@ export type Database = {
       }
       clear_event_reserved: { Args: never; Returns: number }
       expire_old_loyalty_points: { Args: never; Returns: number }
+      find_user_by_phone: { Args: { _digits: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
