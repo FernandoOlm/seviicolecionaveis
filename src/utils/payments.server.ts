@@ -121,6 +121,7 @@ async function resolvePointsRedemption(
 async function userReachedCouponLimit(
   userId: string,
   coupon: { code: string; max_uses_per_user?: number | null },
+  ignorePending = false,
 ): Promise<boolean> {
   const limit = coupon.max_uses_per_user;
   if (!limit || limit < 1) return false;
@@ -129,7 +130,7 @@ async function userReachedCouponLimit(
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("coupon_code", coupon.code)
-    .neq("status", "cancelled");
+    .not("status", "in", ignorePending ? "(cancelled,pending)" : "(cancelled)");
   if (error) throw new Error(error.message);
   return (count ?? 0) >= limit;
 }
@@ -335,7 +336,9 @@ export async function previewCouponServer(
 
     if (coupon.used_count >= coupon.max_uses)
       return { valid: false, error: "Cupom já foi utilizado" };
-    if (await userReachedCouponLimit(userId, coupon))
+    // Pedidos pendentes (não pagos) são cancelados ao finalizar de novo,
+    // então não contam na pré-visualização.
+    if (await userReachedCouponLimit(userId, coupon, true))
       return { valid: false, error: "Você já utilizou este cupom" };
 
     if (coupon.amount_cents && coupon.amount_cents > 0) {
