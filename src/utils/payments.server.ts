@@ -117,6 +117,24 @@ async function resolvePointsRedemption(
   return { points, discountCents: pointsToDiscountCents(points) };
 }
 
+/** Verifica se o cliente já atingiu o limite de usos por conta do cupom (pedidos não cancelados). */
+async function userReachedCouponLimit(
+  userId: string,
+  coupon: { code: string; max_uses_per_user?: number | null },
+  ignorePending = false,
+): Promise<boolean> {
+  const limit = coupon.max_uses_per_user;
+  if (!limit || limit < 1) return false;
+  const { count, error } = await supabaseAdmin
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("coupon_code", coupon.code)
+    .not("status", "in", ignorePending ? "(cancelled,pending)" : "(cancelled)");
+  if (error) throw new Error(error.message);
+  return (count ?? 0) >= limit;
+}
+
 async function validateCoupon(
   userId: string,
   rawCode: string | null | undefined,
@@ -167,7 +185,7 @@ async function validateCoupon(
   // Fallback: cupons gerenciáveis na tabela public.coupons
   const { data: coupon, error: couponErr } = await supabaseAdmin
     .from("coupons")
-    .select("id, code, user_id, percent, amount_cents, balance_cents, max_discount_cents, max_uses, used_count, expires_at, active")
+    .select("id, code, user_id, percent, amount_cents, balance_cents, max_discount_cents, max_uses, max_uses_per_user, used_count, expires_at, active")
     .eq("code", code)
     .maybeSingle();
   if (couponErr) throw new Error(couponErr.message);
@@ -203,6 +221,9 @@ async function validateCoupon(
 
   if (coupon.used_count >= coupon.max_uses) {
     throw new Error("Cupom já foi utilizado");
+  }
+  if (await userReachedCouponLimit(userId, coupon)) {
+    throw new Error("Você já utilizou este cupom");
   }
 
   // Reserva o uso de forma atômica (evita corrida de uso duplicado)
@@ -283,7 +304,7 @@ export async function previewCouponServer(
 
     const { data: coupon } = await supabaseAdmin
       .from("coupons")
-      .select("id, code, user_id, percent, amount_cents, balance_cents, max_discount_cents, max_uses, used_count, expires_at, active")
+      .select("id, code, user_id, percent, amount_cents, balance_cents, max_discount_cents, max_uses, max_uses_per_user, used_count, expires_at, active")
       .eq("code", code)
       .maybeSingle();
     if (!coupon || !coupon.active) return { valid: false, error: "Cupom inválido" };
@@ -315,6 +336,10 @@ export async function previewCouponServer(
 
     if (coupon.used_count >= coupon.max_uses)
       return { valid: false, error: "Cupom já foi utilizado" };
+    // Pedidos pendentes (não pagos) são cancelados ao finalizar de novo,
+    // então não contam na pré-visualização.
+    if (await userReachedCouponLimit(userId, coupon, true))
+      return { valid: false, error: "Você já utilizou este cupom" };
 
     if (coupon.amount_cents && coupon.amount_cents > 0) {
       const discountCents = Math.min(coupon.amount_cents, subtotalCents);
@@ -977,10 +1002,11 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
   const { error: itemsErr } = await supabaseAdmin.from("order_items").insert(await withLigaSubcategory(orderItems));
   if (itemsErr) throw new Error(itemsErr.message);
   await reserveStockForOrder(order.id, userId, items, new Date(Date.now() + 60 * 60 * 1000));
-  await sendOrderReceivedEmail(order.id);
+
 
   // Vale-presente cobre o pedido inteiro: marca pago direto, sem Pix.
   if (totalCents === 0) {
+    await sendOrderReceivedEmail(order.id);
     await markOrderPaid(order.id);
     return {
       orderId: order.id,
@@ -1019,6 +1045,10 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
       pix_expires_at: pix.date_of_expiration,
     })
     .eq("id", order.id);
+
+  // E-mail só depois do Pix pronto: falha/lentidão no e-mail nunca bloqueia o pagamento.
+  await sendOrderReceivedEmail(order.id);
+
 
   return {
     orderId: order.id,

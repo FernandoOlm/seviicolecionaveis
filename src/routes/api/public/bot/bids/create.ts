@@ -1,15 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyBotAuth } from "@/lib/bot-auth.server";
+import { ensureWhatsAppUser } from "@/lib/bot-users.server";
 
-const EMAIL_DOMAIN = "whatsapp.seviicolecionaveis.com.br";
-
-function randomPassword() {
-  const chars = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const bytes = crypto.getRandomValues(new Uint8Array(12));
-  let out = "";
-  for (const b of bytes) out += chars[b % chars.length];
-  return `${out}@1`;
-}
+const SITE_URL = "https://seviicolecionaveis.com.br";
 
 type IncomingBid = {
   phone?: string;
@@ -18,7 +11,7 @@ type IncomingBid = {
   item_id?: string;
   amount?: number | string;
   sequence?: number | string;
-  quantity?: number;
+  quantity?: number | string;
 };
 
 export const Route = createFileRoute("/api/public/bot/bids/create")({
@@ -36,16 +29,15 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
         }
 
         const auctionId = String(body?.auctionId ?? body?.auction_id ?? "");
-        const auctionNumber = body?.auctionNumber ?? body?.auction_number ?? null;
         const bidsRaw: IncomingBid[] = Array.isArray(body?.bids) ? body.bids : [];
+        // Por padrão gera os pedidos; envie create_orders: false para apenas registrar lances.
         const createOrders = body?.create_orders !== false;
-
         if (!auctionId) return Response.json({ error: "auctionId obrigatório" }, { status: 400 });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: auction } = await (supabaseAdmin as any)
           .from("auctions")
-          .select("id, auction_number, title")
+          .select("id, auction_number")
           .eq("id", auctionId)
           .maybeSingle();
         if (!auction) return Response.json({ error: "Leilão não encontrado" }, { status: 404 });
@@ -61,7 +53,6 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
             const amount = Number(b.amount);
             const sequence = Number(b.sequence ?? 1) || 1;
             const itemName = String(b.item_name ?? "").trim();
-            const quantity = Number(b.quantity ?? 1) || 1;
             if (!phone || !Number.isFinite(amount) || amount <= 0) return null;
             const match =
               (items ?? []).find((i: any) => (b.item_id ? i.id === b.item_id : false)) ??
@@ -72,31 +63,36 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
               item_id: match?.id ?? null,
               sequence: match?.sequence ?? sequence,
               item_name: itemName || match?.name || `Lote ${sequence}`,
-              card_image: match?.image_url ?? null,
               phone,
-              bidder_name: b.bidder_name ? String(b.bidder_name) : null,
+              bidder_name: b.bidder_name ? String(b.bidder_name).slice(0, 120) : null,
               amount,
-              quantity,
               status: "approved",
+              image_url: match?.image_url ?? null,
+              quantity: Math.max(1, Number(b.quantity ?? 1) || 1),
             };
           })
           .filter(Boolean) as any[];
 
+        const insertedIds = new Map<string, string>(); // chave lote+telefone -> bid id
         if (rows.length > 0) {
-          // Insere lances aprovados
-          const insertPayload = rows.map((r) => ({
-            auction_id: r.auction_id,
-            item_id: r.item_id,
-            sequence: r.sequence,
-            item_name: r.item_name,
-            phone: r.phone,
-            bidder_name: r.bidder_name,
-            amount: r.amount,
-            status: "approved",
-          }));
-          const { error } = await (supabaseAdmin as any).from("auction_bids").insert(insertPayload);
-          if (error) {
-            console.error("[bids/create] Erro ao inserir auction_bids:", error.message);
+          const { data: inserted, error } = await (supabaseAdmin as any)
+            .from("auction_bids")
+            .insert(
+              rows.map((r) => ({
+                auction_id: r.auction_id,
+                item_id: r.item_id,
+                sequence: r.sequence,
+                item_name: r.item_name,
+                phone: r.phone,
+                bidder_name: r.bidder_name,
+                amount: r.amount,
+                status: r.status,
+              })),
+            )
+            .select("id, phone, sequence, item_name");
+          if (error) return Response.json({ error: error.message }, { status: 500 });
+          for (const b of inserted ?? []) {
+            insertedIds.set(`${b.phone}:${b.sequence}:${b.item_name}`, b.id);
           }
 
           // Marca vencedores nos lotes (maior lance por lote)
@@ -125,205 +121,126 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
           .update({ status: "finished", closed_at: new Date().toISOString() })
           .eq("id", auctionId);
 
-        // Se createOrders = false ou sem lances, retorna resultado simples
         if (!createOrders || rows.length === 0) {
           return Response.json({
             success: true,
-            message: "Lances processados com sucesso",
-            auctionId,
+            message: "Lances registrados",
             inserted: rows.length,
             orders: [],
           });
         }
 
-        // Agrupar vencedores por telefone para gerar 1 pedido por arrematante
-        const bidsByPhone = new Map<string, any[]>();
+        // Agrupa por telefone e cria um pedido por arrematante
+        const byPhone = new Map<string, any[]>();
         for (const r of rows) {
-          const list = bidsByPhone.get(r.phone) ?? [];
+          const list = byPhone.get(r.phone) ?? [];
           list.push(r);
-          bidsByPhone.set(r.phone, list);
+          byPhone.set(r.phone, list);
         }
 
-        const ordersResult: any[] = [];
+        const orders: any[] = [];
         const errors: any[] = [];
 
-        for (const [phone, buyerBids] of bidsByPhone.entries()) {
-          try {
-            const bidderName = buyerBids.find((b) => b.bidder_name)?.bidder_name || phone;
+        for (const [phone, bids] of byPhone) {
+          const bidderName = bids.find((b) => b.bidder_name)?.bidder_name ?? phone;
+          const user = await ensureWhatsAppUser(phone, bidderName);
+          if ("error" in user) {
+            errors.push({ phone, error: user.error });
+            continue;
+          }
 
-            // 1. Localiza ou cria o usuário
-            const { data: prof } = await (supabaseAdmin as any)
-              .from("profiles")
-              .select("user_id")
-              .or(`phone.eq.${phone},whatsapp.eq.${phone}`)
-              .maybeSingle();
+          const subtotalCents = bids.reduce(
+            (sum, b) => sum + Math.round(Number(b.amount) * 100) * b.quantity,
+            0,
+          );
 
-            let userId: string | null = prof?.user_id ?? null;
-            let userCreated = false;
-            let tempPassword = "";
+          const { data: order, error: orderErr } = await (supabaseAdmin as any)
+            .from("orders")
+            .insert({
+              user_id: user.userId,
+              status: "pending",
+              origin: "auction",
+              auction_id: auctionId,
+              payment_method: "pix",
+              shipping_method: "arrange",
+              shipping_cost_cents: 0,
+              subtotal_cents: subtotalCents,
+              total_cents: subtotalCents,
+              recipient_name: bidderName,
+              phone,
+              email: user.email,
+              cep: "00000000",
+              street: "A combinar",
+              number: "S/N",
+              neighborhood: "A combinar",
+              city: "A combinar",
+              state: "SP",
+              notes: `Pedido gerado pelo leilão #${auction.auction_number ?? ""} (WhatsApp).`,
+            })
+            .select("id, total_cents, created_at")
+            .single();
 
-            const email = `${phone}@${EMAIL_DOMAIN}`;
+          if (orderErr || !order) {
+            errors.push({ phone, error: orderErr?.message ?? "Falha ao criar pedido" });
+            continue;
+          }
 
-            if (!userId) {
-              tempPassword = randomPassword();
-              const { data: createdUser, error: createErr } =
-                await supabaseAdmin.auth.admin.createUser({
-                  email,
-                  password: tempPassword,
-                  email_confirm: true,
-                  user_metadata: {
-                    full_name: bidderName,
-                    phone,
-                    source: "auction",
-                  },
-                });
+          const itemRows = bids.map((b) => ({
+            order_id: order.id,
+            card_id: b.item_id ? `auction:${b.item_id}` : `auction:${auctionId}:${b.sequence}`,
+            card_name: b.item_name,
+            card_image: b.image_url,
+            collection: `Leilão #${auction.auction_number ?? ""}`.trim(),
+            card_number: String(b.sequence),
+            quantity: b.quantity,
+            unit_price_cents: Math.round(Number(b.amount) * 100),
+          }));
+          const { error: itemsErr } = await (supabaseAdmin as any)
+            .from("order_items")
+            .insert(itemRows);
+          if (itemsErr) errors.push({ phone, error: itemsErr.message });
 
-              if (createErr) {
-                // Tenta localizar se usuário já existia com esse e-mail no auth
-                const { data: list } = await supabaseAdmin.auth.admin.listUsers({
-                  page: 1,
-                  perPage: 200,
-                });
-                const found = list?.users?.find((u) => u.email === email);
-                if (found) {
-                  userId = found.id;
-                } else {
-                  console.error(
-                    `[bids/create] Falha ao criar auth user para ${phone}:`,
-                    createErr.message,
-                  );
-                }
-              } else {
-                userId = createdUser.user?.id ?? null;
-                userCreated = true;
-              }
-            }
-
-            if (userId) {
-              await (supabaseAdmin as any).from("profiles").upsert(
-                {
-                  user_id: userId,
-                  full_name: bidderName,
-                  phone,
-                  whatsapp: phone,
-                  updated_at: new Date().toISOString(),
-                },
-                { onConflict: "user_id" },
-              );
-            }
-
-            if (!userId) {
-              errors.push({ phone, error: "Não foi possível vincular/criar usuário" });
-              continue;
-            }
-
-            // 2. Calcula valores do pedido
-            const subtotalCents = Math.round(
-              buyerBids.reduce(
-                (sum, b) => sum + Number(b.amount) * (Number(b.quantity) || 1) * 100,
-                0,
-              ),
-            );
-            const totalCents = subtotalCents;
-            const leilaoNum = auctionNumber || auction.auction_number || auctionId.slice(0, 8);
-            const notes = `Arremate Leilão #${leilaoNum}`;
-
-            // 3. Cria o pedido em public.orders
-            const { data: order, error: orderErr } = await (supabaseAdmin as any)
-              .from("orders")
-              .insert({
-                user_id: userId,
-                status: "pending",
-                payment_method: "pix",
-                shipping_method: "arrange",
-                shipping_cost_cents: 0,
-                subtotal_cents: subtotalCents,
-                total_cents: totalCents,
-                discount_cents: 0,
-                bundle_discount_cents: 0,
-                coupon_discount_cents: 0,
-                pix_discount_cents: 0,
-                recipient_name: bidderName,
-                phone,
-                email,
-                cep: "00000-000",
-                street: "A combinar",
-                number: "S/N",
-                neighborhood: "A combinar",
-                city: "A combinar",
-                state: "SP",
-                notes,
-              })
-              .select("id")
-              .single();
-
-            if (orderErr || !order) {
-              console.error(`[bids/create] Erro ao criar pedido para ${phone}:`, orderErr?.message);
-              errors.push({ phone, error: orderErr?.message ?? "Falha ao criar pedido" });
-              continue;
-            }
-
-            const orderId = order.id;
-            const orderNumber = orderId.slice(0, 8).toUpperCase();
-
-            // 4. Cria os itens do pedido em public.order_items
-            const orderItems = buyerBids.map((b) => ({
-              order_id: orderId,
-              card_id: `auction:${b.item_id || b.sequence}`,
-              card_name: b.item_name || `Lote ${b.sequence}`,
-              card_image: b.card_image ?? null,
-              quantity: b.quantity || 1,
-              unit_price_cents: Math.round(Number(b.amount) * 100),
-            }));
-
-            const { error: itemsErr } = await (supabaseAdmin as any)
-              .from("order_items")
-              .insert(orderItems);
-            if (itemsErr) {
-              console.error(
-                `[bids/create] Erro ao inserir order_items para ${orderId}:`,
-                itemsErr.message,
-              );
-            }
-
-            // 5. Atualiza os lances para status = 'order_created' com order_id
+          // Vincula os lances ao pedido criado
+          const bidIds = bids
+            .map((b) => insertedIds.get(`${b.phone}:${b.sequence}:${b.item_name}`))
+            .filter(Boolean) as string[];
+          if (bidIds.length > 0) {
             await (supabaseAdmin as any)
               .from("auction_bids")
-              .update({ status: "order_created", order_id: orderId })
-              .eq("auction_id", auctionId)
-              .eq("phone", phone);
-
-            ordersResult.push({
-              orderId,
-              orderNumber,
-              phone,
-              total: subtotalCents / 100,
-              payment_link: `https://seviicolecionaveis.com.br/pay/${orderId}`,
-              order_link: `https://seviicolecionaveis.com.br/orders/${orderId}`,
-              user: {
-                login: email,
-                password: userCreated ? tempPassword : null,
-                created: userCreated,
-              },
-              items: buyerBids.map((b) => ({
-                product_name: b.item_name || `Lote ${b.sequence}`,
-                unit_price: Number(b.amount),
-                quantity: b.quantity || 1,
-              })),
-            });
-          } catch (buyerErr: any) {
-            console.error(`[bids/create] Erro ao processar arrematante ${phone}:`, buyerErr);
-            errors.push({ phone, error: buyerErr?.message ?? "Erro desconhecido" });
+              .update({ status: "order_created", order_id: order.id })
+              .in("id", bidIds);
           }
+
+          orders.push({
+            orderId: order.id,
+            orderNumber: String(order.id).slice(0, 8).toUpperCase(),
+            phone,
+            total: subtotalCents / 100,
+            payment_link: `${SITE_URL}/pay/${order.id}`,
+            order_link: `${SITE_URL}/orders/${order.id}`,
+            user: {
+              login: user.email,
+              ...(user.password ? { password: user.password } : {}),
+              created: user.created,
+            },
+            items: bids.map((b) => ({
+              product_name: b.item_name,
+              unit_price: Number(b.amount),
+              quantity: b.quantity,
+            })),
+          });
         }
 
         return Response.json({
           success: errors.length === 0,
-          message: "Pedidos gerados com sucesso",
+          message:
+            errors.length === 0
+              ? "Pedidos gerados com sucesso"
+              : "Pedidos gerados com falhas parciais",
           auctionId,
           inserted: rows.length,
-          orders: ordersResult,
-          errors: errors.length > 0 ? errors : undefined,
+          orders,
+          ...(errors.length > 0 ? { errors } : {}),
         });
       },
     },

@@ -21,6 +21,7 @@ export type PopupCardData = {
   icon_color?: string | null;
   promo_bg_color?: string | null;
   promo_text_color?: string | null;
+  popup_key?: string | null;
 };
 
 type Props = {
@@ -131,7 +132,7 @@ export function PopupCard({
         </div>
       )}
 
-      {!popup.is_promo_code && (
+      {!popup.is_promo_code && popup.popup_key !== "event-mode" && (
         <div className="bg-background px-4 py-3">
           <DontShowAgainCheckbox
             checked={dontShowAgain}

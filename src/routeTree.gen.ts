@@ -55,6 +55,7 @@ import { Route as AdminPanelsRouteImport } from './routes/admin.panels'
 import { Route as AdminPilhaRouteImport } from './routes/admin.pilha'
 import { Route as AdminPopupsRouteImport } from './routes/admin.popups'
 import { Route as AdminPreVendaRouteImport } from './routes/admin.pre-venda'
+import { Route as AdminReconhecerCartasRouteImport } from './routes/admin.reconhecer-cartas'
 import { Route as AdminSealedRouteImport } from './routes/admin.sealed'
 import { Route as AdminShippingRouteImport } from './routes/admin.shipping'
 import { Route as AdminSorteiosRouteImport } from './routes/admin.sorteios'
@@ -339,6 +340,11 @@ const AdminPopupsRoute = AdminPopupsRouteImport.update({
 const AdminPreVendaRoute = AdminPreVendaRouteImport.update({
   id: '/pre-venda',
   path: '/pre-venda',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReconhecerCartasRoute = AdminReconhecerCartasRouteImport.update({
+  id: '/reconhecer-cartas',
+  path: '/reconhecer-cartas',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSealedRoute = AdminSealedRouteImport.update({
@@ -684,6 +690,7 @@ export interface FileRoutesByFullPath {
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
   '/admin/pre-venda': typeof AdminPreVendaRoute
+  '/admin/reconhecer-cartas': typeof AdminReconhecerCartasRoute
   '/admin/sealed': typeof AdminSealedRoute
   '/admin/shipping': typeof AdminShippingRoute
   '/admin/sorteios': typeof AdminSorteiosRoute
@@ -784,6 +791,7 @@ export interface FileRoutesByTo {
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
   '/admin/pre-venda': typeof AdminPreVendaRoute
+  '/admin/reconhecer-cartas': typeof AdminReconhecerCartasRoute
   '/admin/sealed': typeof AdminSealedRoute
   '/admin/shipping': typeof AdminShippingRoute
   '/admin/sorteios': typeof AdminSorteiosRoute
@@ -888,6 +896,7 @@ export interface FileRoutesById {
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
   '/admin/pre-venda': typeof AdminPreVendaRoute
+  '/admin/reconhecer-cartas': typeof AdminReconhecerCartasRoute
   '/admin/sealed': typeof AdminSealedRoute
   '/admin/shipping': typeof AdminShippingRoute
   '/admin/sorteios': typeof AdminSorteiosRoute
@@ -993,6 +1002,7 @@ export interface FileRouteTypes {
     | '/admin/pilha'
     | '/admin/popups'
     | '/admin/pre-venda'
+    | '/admin/reconhecer-cartas'
     | '/admin/sealed'
     | '/admin/shipping'
     | '/admin/sorteios'
@@ -1093,6 +1103,7 @@ export interface FileRouteTypes {
     | '/admin/pilha'
     | '/admin/popups'
     | '/admin/pre-venda'
+    | '/admin/reconhecer-cartas'
     | '/admin/sealed'
     | '/admin/shipping'
     | '/admin/sorteios'
@@ -1196,6 +1207,7 @@ export interface FileRouteTypes {
     | '/admin/pilha'
     | '/admin/popups'
     | '/admin/pre-venda'
+    | '/admin/reconhecer-cartas'
     | '/admin/sealed'
     | '/admin/shipping'
     | '/admin/sorteios'
@@ -1647,6 +1659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPreVendaRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/reconhecer-cartas': {
+      id: '/admin/reconhecer-cartas'
+      path: '/reconhecer-cartas'
+      fullPath: '/admin/reconhecer-cartas'
+      preLoaderRoute: typeof AdminReconhecerCartasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/sealed': {
       id: '/admin/sealed'
       path: '/sealed'
@@ -2056,6 +2075,7 @@ interface AdminRouteChildren {
   AdminPilhaRoute: typeof AdminPilhaRoute
   AdminPopupsRoute: typeof AdminPopupsRoute
   AdminPreVendaRoute: typeof AdminPreVendaRoute
+  AdminReconhecerCartasRoute: typeof AdminReconhecerCartasRoute
   AdminSealedRoute: typeof AdminSealedRoute
   AdminShippingRoute: typeof AdminShippingRoute
   AdminSorteiosRoute: typeof AdminSorteiosRoute
@@ -2085,6 +2105,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPilhaRoute: AdminPilhaRoute,
   AdminPopupsRoute: AdminPopupsRoute,
   AdminPreVendaRoute: AdminPreVendaRoute,
+  AdminReconhecerCartasRoute: AdminReconhecerCartasRoute,
   AdminSealedRoute: AdminSealedRoute,
   AdminShippingRoute: AdminShippingRoute,
   AdminSorteiosRoute: AdminSorteiosRoute,

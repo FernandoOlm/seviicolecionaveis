@@ -944,6 +944,7 @@ export type Database = {
           id: string
           max_discount_cents: number | null
           max_uses: number
+          max_uses_per_user: number | null
           notes: string | null
           percent: number | null
           updated_at: string
@@ -960,6 +961,7 @@ export type Database = {
           id?: string
           max_discount_cents?: number | null
           max_uses?: number
+          max_uses_per_user?: number | null
           notes?: string | null
           percent?: number | null
           updated_at?: string
@@ -976,6 +978,7 @@ export type Database = {
           id?: string
           max_discount_cents?: number | null
           max_uses?: number
+          max_uses_per_user?: number | null
           notes?: string | null
           percent?: number | null
           updated_at?: string
@@ -1395,6 +1398,7 @@ export type Database = {
       orders: {
         Row: {
           arte_em_cards_code: string | null
+          auction_id: string | null
           bundle_discount_cents: number
           carrier: string | null
           cep: string
@@ -1411,6 +1415,7 @@ export type Database = {
           neighborhood: string
           notes: string | null
           number: string
+          origin: string
           payment_method: string
           phone: string | null
           pix_discount_cents: number
@@ -1448,6 +1453,7 @@ export type Database = {
         }
         Insert: {
           arte_em_cards_code?: string | null
+          auction_id?: string | null
           bundle_discount_cents?: number
           carrier?: string | null
           cep: string
@@ -1464,6 +1470,7 @@ export type Database = {
           neighborhood: string
           notes?: string | null
           number: string
+          origin?: string
           payment_method?: string
           phone?: string | null
           pix_discount_cents?: number
@@ -1501,6 +1508,7 @@ export type Database = {
         }
         Update: {
           arte_em_cards_code?: string | null
+          auction_id?: string | null
           bundle_discount_cents?: number
           carrier?: string | null
           cep?: string
@@ -1517,6 +1525,7 @@ export type Database = {
           neighborhood?: string
           notes?: string | null
           number?: string
+          origin?: string
           payment_method?: string
           phone?: string | null
           pix_discount_cents?: number
@@ -1552,7 +1561,15 @@ export type Database = {
           user_id?: string
           wallet_deduction_cents?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_auction_id_fkey"
+            columns: ["auction_id"]
+            isOneToOne: false
+            referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       panels: {
         Row: {
@@ -2256,6 +2273,7 @@ export type Database = {
           image_url: string | null
           is_promo_code: boolean
           link_url: string | null
+          popup_key: string | null
           promo_bg_color: string | null
           promo_code: string | null
           promo_text_color: string | null
@@ -2283,6 +2301,7 @@ export type Database = {
           image_url?: string | null
           is_promo_code?: boolean
           link_url?: string | null
+          popup_key?: string | null
           promo_bg_color?: string | null
           promo_code?: string | null
           promo_text_color?: string | null
@@ -2310,6 +2329,7 @@ export type Database = {
           image_url?: string | null
           is_promo_code?: boolean
           link_url?: string | null
+          popup_key?: string | null
           promo_bg_color?: string | null
           promo_code?: string | null
           promo_text_color?: string | null
@@ -2552,6 +2572,10 @@ export type Database = {
         Args: { _items: Json; _reason?: string }
         Returns: number
       }
+      apply_recognized_stock: {
+        Args: { _items: Json; _reason?: string }
+        Returns: number
+      }
       available_stock: { Args: { _card_id: string }; Returns: number }
       award_birthday_points_today: { Args: never; Returns: number }
       backfill_loyalty_points_for_orders: {
@@ -2563,6 +2587,7 @@ export type Database = {
       }
       clear_event_reserved: { Args: never; Returns: number }
       expire_old_loyalty_points: { Args: never; Returns: number }
+      find_user_by_phone: { Args: { _digits: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

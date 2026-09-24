@@ -47,6 +47,10 @@ export async function sendTransactionalEmailServer(
   if (!effectiveRecipient) {
     return { success: false, error: 'missing_recipient' }
   }
+  // Contas criadas pelo bot do WhatsApp usam um login interno que não é uma caixa de e-mail real.
+  if (effectiveRecipient.toLowerCase().endsWith('@whatsapp.seviicolecionaveis.com.br')) {
+    return { success: false, reason: 'placeholder_recipient' }
+  }
 
   // Render once for the app's own log row (subject/body preview in admin).
   const element = React.createElement(template.component, templateData)
@@ -82,9 +86,11 @@ export async function sendTransactionalEmailServer(
         idempotencyKey,
       })
     } catch (e: any) {
-      if (e?.status === 429) {
-        const waitSeconds =
-          typeof e.retryAfterSeconds === 'number' ? e.retryAfterSeconds : 60
+      // Limite de envio: só tenta de novo se a espera for curta. Nunca segurar
+      // o checkout/pagamento esperando minutos pelo serviço de e-mail.
+      const waitSeconds =
+        typeof e?.retryAfterSeconds === 'number' ? e.retryAfterSeconds : 60
+      if (e?.status === 429 && waitSeconds <= 3) {
         await new Promise((r) => setTimeout(r, waitSeconds * 1000))
         result = await sendTemplateEmail(templateName, effectiveRecipient, {
           templateData,
