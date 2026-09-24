@@ -52,6 +52,7 @@ import { Route as AdminLoyaltyRouteImport } from './routes/admin.loyalty'
 import { Route as AdminManageCardsRouteImport } from './routes/admin.manage-cards'
 import { Route as AdminOfertasRelampagoRouteImport } from './routes/admin.ofertas-relampago'
 import { Route as AdminPanelsRouteImport } from './routes/admin.panels'
+import { Route as AdminPedidosLeilaoRouteImport } from './routes/admin.pedidos-leilao'
 import { Route as AdminPilhaRouteImport } from './routes/admin.pilha'
 import { Route as AdminPopupsRouteImport } from './routes/admin.popups'
 import { Route as AdminPreVendaRouteImport } from './routes/admin.pre-venda'
@@ -106,6 +107,7 @@ import { Route as ApiPublicBotGroupsActivateRouteImport } from './routes/api/pub
 import { Route as ApiPublicBotGroupsActiveRouteImport } from './routes/api/public/bot/groups/active'
 import { Route as ApiPublicBotGroupsSyncRouteImport } from './routes/api/public/bot/groups/sync'
 import { Route as ApiPublicBotGroupsUpsertRouteImport } from './routes/api/public/bot/groups/upsert'
+import { Route as ApiPublicBotOrdersCreateRouteImport } from './routes/api/public/bot/orders/create'
 import { Route as ApiPublicBotSchedulesPendingRouteImport } from './routes/api/public/bot/schedules/pending'
 import { Route as ApiPublicBotUsersSenhaRouteImport } from './routes/api/public/bot/users/senha'
 import { Route as ApiPublicBotAuctionsBidsLiveRouteImport } from './routes/api/public/bot/auctions/bids.live'
@@ -325,6 +327,11 @@ const AdminOfertasRelampagoRoute = AdminOfertasRelampagoRouteImport.update({
 const AdminPanelsRoute = AdminPanelsRouteImport.update({
   id: '/panels',
   path: '/panels',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPedidosLeilaoRoute = AdminPedidosLeilaoRouteImport.update({
+  id: '/pedidos-leilao',
+  path: '/pedidos-leilao',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPilhaRoute = AdminPilhaRouteImport.update({
@@ -613,6 +620,12 @@ const ApiPublicBotGroupsUpsertRoute =
     path: '/api/public/bot/groups/upsert',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBotOrdersCreateRoute =
+  ApiPublicBotOrdersCreateRouteImport.update({
+    id: '/api/public/bot/orders/create',
+    path: '/api/public/bot/orders/create',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBotSchedulesPendingRoute =
   ApiPublicBotSchedulesPendingRouteImport.update({
     id: '/api/public/bot/schedules/pending',
@@ -687,6 +700,7 @@ export interface FileRoutesByFullPath {
   '/admin/manage-cards': typeof AdminManageCardsRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
+  '/admin/pedidos-leilao': typeof AdminPedidosLeilaoRoute
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
   '/admin/pre-venda': typeof AdminPreVendaRoute
@@ -740,6 +754,7 @@ export interface FileRoutesByFullPath {
   '/api/public/bot/groups/active': typeof ApiPublicBotGroupsActiveRoute
   '/api/public/bot/groups/sync': typeof ApiPublicBotGroupsSyncRoute
   '/api/public/bot/groups/upsert': typeof ApiPublicBotGroupsUpsertRoute
+  '/api/public/bot/orders/create': typeof ApiPublicBotOrdersCreateRoute
   '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
   '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
   '/api/public/bot/groups/': typeof ApiPublicBotGroupsIndexRoute
@@ -788,6 +803,7 @@ export interface FileRoutesByTo {
   '/admin/manage-cards': typeof AdminManageCardsRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
+  '/admin/pedidos-leilao': typeof AdminPedidosLeilaoRoute
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
   '/admin/pre-venda': typeof AdminPreVendaRoute
@@ -841,6 +857,7 @@ export interface FileRoutesByTo {
   '/api/public/bot/groups/active': typeof ApiPublicBotGroupsActiveRoute
   '/api/public/bot/groups/sync': typeof ApiPublicBotGroupsSyncRoute
   '/api/public/bot/groups/upsert': typeof ApiPublicBotGroupsUpsertRoute
+  '/api/public/bot/orders/create': typeof ApiPublicBotOrdersCreateRoute
   '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
   '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
   '/api/public/bot/groups': typeof ApiPublicBotGroupsIndexRoute
@@ -893,6 +910,7 @@ export interface FileRoutesById {
   '/admin/manage-cards': typeof AdminManageCardsRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
+  '/admin/pedidos-leilao': typeof AdminPedidosLeilaoRoute
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
   '/admin/pre-venda': typeof AdminPreVendaRoute
@@ -946,6 +964,7 @@ export interface FileRoutesById {
   '/api/public/bot/groups/active': typeof ApiPublicBotGroupsActiveRoute
   '/api/public/bot/groups/sync': typeof ApiPublicBotGroupsSyncRoute
   '/api/public/bot/groups/upsert': typeof ApiPublicBotGroupsUpsertRoute
+  '/api/public/bot/orders/create': typeof ApiPublicBotOrdersCreateRoute
   '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
   '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
   '/api/public/bot/groups/': typeof ApiPublicBotGroupsIndexRoute
@@ -999,6 +1018,7 @@ export interface FileRouteTypes {
     | '/admin/manage-cards'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
+    | '/admin/pedidos-leilao'
     | '/admin/pilha'
     | '/admin/popups'
     | '/admin/pre-venda'
@@ -1052,6 +1072,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/groups/active'
     | '/api/public/bot/groups/sync'
     | '/api/public/bot/groups/upsert'
+    | '/api/public/bot/orders/create'
     | '/api/public/bot/schedules/pending'
     | '/api/public/bot/users/senha'
     | '/api/public/bot/groups/'
@@ -1100,6 +1121,7 @@ export interface FileRouteTypes {
     | '/admin/manage-cards'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
+    | '/admin/pedidos-leilao'
     | '/admin/pilha'
     | '/admin/popups'
     | '/admin/pre-venda'
@@ -1153,6 +1175,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/groups/active'
     | '/api/public/bot/groups/sync'
     | '/api/public/bot/groups/upsert'
+    | '/api/public/bot/orders/create'
     | '/api/public/bot/schedules/pending'
     | '/api/public/bot/users/senha'
     | '/api/public/bot/groups'
@@ -1204,6 +1227,7 @@ export interface FileRouteTypes {
     | '/admin/manage-cards'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
+    | '/admin/pedidos-leilao'
     | '/admin/pilha'
     | '/admin/popups'
     | '/admin/pre-venda'
@@ -1257,6 +1281,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/groups/active'
     | '/api/public/bot/groups/sync'
     | '/api/public/bot/groups/upsert'
+    | '/api/public/bot/orders/create'
     | '/api/public/bot/schedules/pending'
     | '/api/public/bot/users/senha'
     | '/api/public/bot/groups/'
@@ -1327,6 +1352,7 @@ export interface RootRouteChildren {
   ApiPublicBotGroupsActiveRoute: typeof ApiPublicBotGroupsActiveRoute
   ApiPublicBotGroupsSyncRoute: typeof ApiPublicBotGroupsSyncRoute
   ApiPublicBotGroupsUpsertRoute: typeof ApiPublicBotGroupsUpsertRoute
+  ApiPublicBotOrdersCreateRoute: typeof ApiPublicBotOrdersCreateRoute
   ApiPublicBotSchedulesPendingRoute: typeof ApiPublicBotSchedulesPendingRoute
   ApiPublicBotUsersSenhaRoute: typeof ApiPublicBotUsersSenhaRoute
   ApiPublicBotGroupsIndexRoute: typeof ApiPublicBotGroupsIndexRoute
@@ -1636,6 +1662,13 @@ declare module '@tanstack/react-router' {
       path: '/panels'
       fullPath: '/admin/panels'
       preLoaderRoute: typeof AdminPanelsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pedidos-leilao': {
+      id: '/admin/pedidos-leilao'
+      path: '/pedidos-leilao'
+      fullPath: '/admin/pedidos-leilao'
+      preLoaderRoute: typeof AdminPedidosLeilaoRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/pilha': {
@@ -2016,6 +2049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBotGroupsUpsertRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bot/orders/create': {
+      id: '/api/public/bot/orders/create'
+      path: '/api/public/bot/orders/create'
+      fullPath: '/api/public/bot/orders/create'
+      preLoaderRoute: typeof ApiPublicBotOrdersCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bot/schedules/pending': {
       id: '/api/public/bot/schedules/pending'
       path: '/api/public/bot/schedules/pending'
@@ -2072,6 +2112,7 @@ interface AdminRouteChildren {
   AdminManageCardsRoute: typeof AdminManageCardsRoute
   AdminOfertasRelampagoRoute: typeof AdminOfertasRelampagoRoute
   AdminPanelsRoute: typeof AdminPanelsRoute
+  AdminPedidosLeilaoRoute: typeof AdminPedidosLeilaoRoute
   AdminPilhaRoute: typeof AdminPilhaRoute
   AdminPopupsRoute: typeof AdminPopupsRoute
   AdminPreVendaRoute: typeof AdminPreVendaRoute
@@ -2102,6 +2143,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminManageCardsRoute: AdminManageCardsRoute,
   AdminOfertasRelampagoRoute: AdminOfertasRelampagoRoute,
   AdminPanelsRoute: AdminPanelsRoute,
+  AdminPedidosLeilaoRoute: AdminPedidosLeilaoRoute,
   AdminPilhaRoute: AdminPilhaRoute,
   AdminPopupsRoute: AdminPopupsRoute,
   AdminPreVendaRoute: AdminPreVendaRoute,
@@ -2242,6 +2284,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBotGroupsActiveRoute: ApiPublicBotGroupsActiveRoute,
   ApiPublicBotGroupsSyncRoute: ApiPublicBotGroupsSyncRoute,
   ApiPublicBotGroupsUpsertRoute: ApiPublicBotGroupsUpsertRoute,
+  ApiPublicBotOrdersCreateRoute: ApiPublicBotOrdersCreateRoute,
   ApiPublicBotSchedulesPendingRoute: ApiPublicBotSchedulesPendingRoute,
   ApiPublicBotUsersSenhaRoute: ApiPublicBotUsersSenhaRoute,
   ApiPublicBotGroupsIndexRoute: ApiPublicBotGroupsIndexRoute,

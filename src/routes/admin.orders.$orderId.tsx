@@ -13,7 +13,7 @@ import { adminAddOrderItemsToStack } from "@/lib/admin-pilha.functions";
 import { ItemFacetFilter } from "@/components/admin/ItemFacetFilter";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, ImageOff, Layers, X } from "lucide-react";
+import { ArrowLeft, Gavel, ImageOff, Layers, MessageCircle, X } from "lucide-react";
 import { AdminTrackingEditor, type TrackingInfo } from "@/components/admin/AdminTrackingEditor";
 import { useCardMetaMap } from "@/hooks/useCardMetaMap";
 import { sortByCardGroup } from "@/lib/sortCards";
@@ -289,8 +289,12 @@ function AdminOrderDetailPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border px-4 py-4">
         <div className="mx-auto max-w-5xl flex items-center justify-between gap-4">
-          <Link to="/admin" className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-            <ArrowLeft className="h-3.5 w-3.5" /> Voltar para pedidos
+          <Link
+            to={order?.origin === "auction" ? "/admin/pedidos-leilao" : "/admin"}
+            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {order?.origin === "auction" ? "Voltar para pedidos de leilão" : "Voltar para pedidos"}
           </Link>
           <Link to="/" className="text-sm font-bold uppercase tracking-widest">Sevii · Admin</Link>
         </div>
@@ -301,11 +305,29 @@ function AdminOrderDetailPage() {
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-xs font-mono text-muted-foreground">#{order.id.slice(0, 8).toUpperCase()}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-mono text-muted-foreground">#{order.id.slice(0, 8).toUpperCase()}</p>
+                {order.origin === "auction" && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary">
+                    <Gavel className="h-3 w-3" /> Pedido de Leilão
+                  </span>
+                )}
+              </div>
               <h1 className="text-2xl font-bold">{order.recipient_name}</h1>
-              <p className="text-xs text-muted-foreground mt-1">
-                {new Date(order.created_at).toLocaleString("pt-BR")}
-              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
+                <span>{new Date(order.created_at).toLocaleString("pt-BR")}</span>
+                {order.phone && (
+                  <a
+                    href={`https://wa.me/55${order.phone.replace(/\D/g, "").replace(/^55/, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-semibold text-emerald-600 hover:text-emerald-700 hover:underline"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    WhatsApp ({order.phone})
+                  </a>
+                )}
+              </div>
             </div>
             <div className="flex flex-col items-end gap-1">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</label>

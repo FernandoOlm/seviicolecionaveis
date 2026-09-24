@@ -39,6 +39,7 @@ export const ADMIN_NAV: NavGroup[] = [
     label: "Visão geral",
     links: [
       { to: "/admin", label: "Pedidos", icon: ShoppingBag, exact: true },
+      { to: "/admin/pedidos-leilao", label: "Pedidos Leilão", icon: Gavel },
       { to: "/admin/dashboard", label: "Dashboard", icon: Gauge },
     ],
   },

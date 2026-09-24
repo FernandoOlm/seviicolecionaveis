@@ -180,6 +180,8 @@ function AdminPage() {
   const query = searchQuery.trim().toLowerCase();
 
   const filtered = orders.filter((o) => {
+    // Pedidos de leilão são geridos exclusivamente em /admin/pedidos-leilao
+    if (o.origin === "auction") return false;
     if (!selectedStatuses.includes(o.status)) return false;
     if (!selectedShippingMethods.includes(o.shipping_method ?? "")) return false;
     const items: any[] = o.order_items ?? [];

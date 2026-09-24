@@ -75,24 +75,43 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
 
         const insertedIds = new Map<string, string>(); // chave lote+telefone -> bid id
         if (rows.length > 0) {
-          const { data: inserted, error } = await (supabaseAdmin as any)
+          // Idempotência de lances: verifica lances já gravados para este leilão
+          const { data: existingBids } = await (supabaseAdmin as any)
             .from("auction_bids")
-            .insert(
-              rows.map((r) => ({
-                auction_id: r.auction_id,
-                item_id: r.item_id,
-                sequence: r.sequence,
-                item_name: r.item_name,
-                phone: r.phone,
-                bidder_name: r.bidder_name,
-                amount: r.amount,
-                status: r.status,
-              })),
-            )
-            .select("id, phone, sequence, item_name");
-          if (error) return Response.json({ error: error.message }, { status: 500 });
-          for (const b of inserted ?? []) {
+            .select("id, phone, sequence, item_name")
+            .eq("auction_id", auctionId);
+
+          const existingBidKeys = new Set(
+            (existingBids ?? []).map((b: any) => `${b.phone}:${b.sequence}:${b.item_name}`)
+          );
+          for (const b of existingBids ?? []) {
             insertedIds.set(`${b.phone}:${b.sequence}:${b.item_name}`, b.id);
+          }
+
+          const rowsToInsert = rows.filter(
+            (r) => !existingBidKeys.has(`${r.phone}:${r.sequence}:${r.item_name}`)
+          );
+
+          if (rowsToInsert.length > 0) {
+            const { data: inserted, error } = await (supabaseAdmin as any)
+              .from("auction_bids")
+              .insert(
+                rowsToInsert.map((r) => ({
+                  auction_id: r.auction_id,
+                  item_id: r.item_id,
+                  sequence: r.sequence,
+                  item_name: r.item_name,
+                  phone: r.phone,
+                  bidder_name: r.bidder_name,
+                  amount: r.amount,
+                  status: r.status,
+                })),
+              )
+              .select("id, phone, sequence, item_name");
+            if (error) return Response.json({ error: error.message }, { status: 500 });
+            for (const b of inserted ?? []) {
+              insertedIds.set(`${b.phone}:${b.sequence}:${b.item_name}`, b.id);
+            }
           }
 
           // Marca vencedores nos lotes (maior lance por lote)
@@ -130,7 +149,7 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
           });
         }
 
-        // Agrupa por telefone e cria um pedido por arrematante
+        // Agrupa por telefone e cria um pedido por arrematante (com idempotência)
         const byPhone = new Map<string, any[]>();
         for (const r of rows) {
           const list = byPhone.get(r.phone) ?? [];
@@ -154,51 +173,70 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
             0,
           );
 
-          const { data: order, error: orderErr } = await (supabaseAdmin as any)
+          // IDEMPOTÊNCIA: Verifica se já existe pedido ativo para este leilão e telefone
+          const { data: existingOrder } = await (supabaseAdmin as any)
             .from("orders")
-            .insert({
-              user_id: user.userId,
-              status: "pending",
-              origin: "auction",
-              auction_id: auctionId,
-              payment_method: "pix",
-              shipping_method: "arrange",
-              shipping_cost_cents: 0,
-              subtotal_cents: subtotalCents,
-              total_cents: subtotalCents,
-              recipient_name: bidderName,
-              phone,
-              email: user.email,
-              cep: "00000000",
-              street: "A combinar",
-              number: "S/N",
-              neighborhood: "A combinar",
-              city: "A combinar",
-              state: "SP",
-              notes: `Pedido gerado pelo leilão #${auction.auction_number ?? ""} (WhatsApp).`,
-            })
             .select("id, total_cents, created_at")
-            .single();
+            .eq("auction_id", auctionId)
+            .eq("phone", phone)
+            .neq("status", "cancelled")
+            .maybeSingle();
 
-          if (orderErr || !order) {
-            errors.push({ phone, error: orderErr?.message ?? "Falha ao criar pedido" });
-            continue;
+          let order = existingOrder;
+          if (!order) {
+            const groupInfo = body?.group_name
+              ? ` - Grupo: ${body.group_name}`
+              : body?.group_jid
+                ? ` - Grupo: ${body.group_jid}`
+                : "";
+
+            const { data: newOrder, error: orderErr } = await (supabaseAdmin as any)
+              .from("orders")
+              .insert({
+                user_id: user.userId,
+                status: "pending",
+                origin: "auction",
+                auction_id: auctionId,
+                payment_method: "pix",
+                shipping_method: "arrange",
+                shipping_cost_cents: 0,
+                subtotal_cents: subtotalCents,
+                total_cents: subtotalCents,
+                recipient_name: bidderName,
+                phone,
+                email: user.email,
+                cep: "00000000",
+                street: "A combinar",
+                number: "S/N",
+                neighborhood: "A combinar",
+                city: "A combinar",
+                state: "SP",
+                notes: `Pedido gerado pelo leilão #${auction.auction_number ?? ""}${groupInfo} (WhatsApp).`,
+              })
+              .select("id, total_cents, created_at")
+              .single();
+
+            if (orderErr || !newOrder) {
+              errors.push({ phone, error: orderErr?.message ?? "Falha ao criar pedido" });
+              continue;
+            }
+            order = newOrder;
+
+            const itemRows = bids.map((b) => ({
+              order_id: order.id,
+              card_id: b.item_id ? `auction:${b.item_id}` : `auction:${auctionId}:${b.sequence}`,
+              card_name: b.item_name,
+              card_image: b.image_url,
+              collection: `Leilão #${auction.auction_number ?? ""}`.trim(),
+              card_number: String(b.sequence),
+              quantity: b.quantity,
+              unit_price_cents: Math.round(Number(b.amount) * 100),
+            }));
+            const { error: itemsErr } = await (supabaseAdmin as any)
+              .from("order_items")
+              .insert(itemRows);
+            if (itemsErr) errors.push({ phone, error: itemsErr.message });
           }
-
-          const itemRows = bids.map((b) => ({
-            order_id: order.id,
-            card_id: b.item_id ? `auction:${b.item_id}` : `auction:${auctionId}:${b.sequence}`,
-            card_name: b.item_name,
-            card_image: b.image_url,
-            collection: `Leilão #${auction.auction_number ?? ""}`.trim(),
-            card_number: String(b.sequence),
-            quantity: b.quantity,
-            unit_price_cents: Math.round(Number(b.amount) * 100),
-          }));
-          const { error: itemsErr } = await (supabaseAdmin as any)
-            .from("order_items")
-            .insert(itemRows);
-          if (itemsErr) errors.push({ phone, error: itemsErr.message });
 
           // Vincula os lances ao pedido criado
           const bidIds = bids
@@ -210,6 +248,7 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
               .update({ status: "order_created", order_id: order.id })
               .in("id", bidIds);
           }
+
 
           orders.push({
             orderId: order.id,
