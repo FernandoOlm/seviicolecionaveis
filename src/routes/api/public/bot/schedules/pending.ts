@@ -9,13 +9,17 @@ export const Route = createFileRoute("/api/public/bot/schedules/pending")({
         if (denied) return denied;
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const nowIso = new Date().toISOString();
+        const url = new URL(request.url);
+        const windowParam = Number(url.searchParams.get("windowMinutes"));
+        const windowMinutes =
+          Number.isFinite(windowParam) && windowParam > 0 ? Math.min(60, windowParam) : 0;
+        const cutoffIso = new Date(Date.now() + windowMinutes * 60 * 1000).toISOString();
 
         const { data: schedules, error } = await (supabaseAdmin as any)
           .from("auction_schedules")
           .select("id, auction_id, action, group_jid, scheduled_time, status")
           .in("status", ["pending", "scheduled"])
-          .lte("scheduled_time", nowIso)
+          .lte("scheduled_time", cutoffIso)
           .order("scheduled_time", { ascending: true })
           .limit(20);
         if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -27,11 +31,15 @@ export const Route = createFileRoute("/api/public/bot/schedules/pending")({
         const [{ data: auctions }, { data: items }] = await Promise.all([
           (supabaseAdmin as any)
             .from("auctions")
-            .select("id, auction_number, title, description, closing_message, group_jid, status, scheduled_start, scheduled_end")
+            .select(
+              "id, auction_number, title, description, closing_message, group_jid, status, scheduled_start, scheduled_end",
+            )
             .in("id", auctionIds),
           (supabaseAdmin as any)
             .from("auction_items")
-            .select("id, auction_id, sequence, name, description, image_url, starting_price, bid_increment, buyout_price, quantity, extra_prices")
+            .select(
+              "id, auction_id, sequence, name, description, image_url, starting_price, bid_increment, buyout_price, quantity, extra_prices",
+            )
             .in("auction_id", auctionIds)
             .order("sequence", { ascending: true }),
         ]);

@@ -97,6 +97,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as ApiPublicBotAuctionsIdRouteImport } from './routes/api/public/bot/auctions/$id'
 import { Route as ApiPublicBotBidsApprovedRouteImport } from './routes/api/public/bot/bids/approved'
 import { Route as ApiPublicBotBidsCreateRouteImport } from './routes/api/public/bot/bids/create'
+import { Route as ApiPublicBotBidsLiveRouteImport } from './routes/api/public/bot/bids/live'
 import { Route as ApiPublicBotBidsMarkRouteImport } from './routes/api/public/bot/bids/mark'
 import { Route as ApiPublicBotCommandsPendingRouteImport } from './routes/api/public/bot/commands/pending'
 import { Route as ApiPublicBotGroupsIndexRouteImport } from './routes/api/public/bot/groups/index'
@@ -106,6 +107,7 @@ import { Route as ApiPublicBotGroupsSyncRouteImport } from './routes/api/public/
 import { Route as ApiPublicBotGroupsUpsertRouteImport } from './routes/api/public/bot/groups/upsert'
 import { Route as ApiPublicBotSchedulesPendingRouteImport } from './routes/api/public/bot/schedules/pending'
 import { Route as ApiPublicBotUsersSenhaRouteImport } from './routes/api/public/bot/users/senha'
+import { Route as ApiPublicBotAuctionsBidsLiveRouteImport } from './routes/api/public/bot/auctions/bids.live'
 import { Route as ApiPublicBotCommandsIdMarkRouteImport } from './routes/api/public/bot/commands/$id.mark'
 import { Route as ApiPublicBotSchedulesIdMarkRouteImport } from './routes/api/public/bot/schedules/$id.mark'
 
@@ -561,6 +563,11 @@ const ApiPublicBotBidsCreateRoute = ApiPublicBotBidsCreateRouteImport.update({
   path: '/api/public/bot/bids/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBotBidsLiveRoute = ApiPublicBotBidsLiveRouteImport.update({
+  id: '/api/public/bot/bids/live',
+  path: '/api/public/bot/bids/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBotBidsMarkRoute = ApiPublicBotBidsMarkRouteImport.update({
   id: '/api/public/bot/bids/mark',
   path: '/api/public/bot/bids/mark',
@@ -611,6 +618,12 @@ const ApiPublicBotUsersSenhaRoute = ApiPublicBotUsersSenhaRouteImport.update({
   path: '/api/public/bot/users/senha',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBotAuctionsBidsLiveRoute =
+  ApiPublicBotAuctionsBidsLiveRouteImport.update({
+    id: '/api/public/bot/auctions/bids/live',
+    path: '/api/public/bot/auctions/bids/live',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBotCommandsIdMarkRoute =
   ApiPublicBotCommandsIdMarkRouteImport.update({
     id: '/api/public/bot/commands/$id/mark',
@@ -713,6 +726,7 @@ export interface FileRoutesByFullPath {
   '/api/public/bot/auctions/$id': typeof ApiPublicBotAuctionsIdRoute
   '/api/public/bot/bids/approved': typeof ApiPublicBotBidsApprovedRoute
   '/api/public/bot/bids/create': typeof ApiPublicBotBidsCreateRoute
+  '/api/public/bot/bids/live': typeof ApiPublicBotBidsLiveRoute
   '/api/public/bot/bids/mark': typeof ApiPublicBotBidsMarkRoute
   '/api/public/bot/commands/pending': typeof ApiPublicBotCommandsPendingRoute
   '/api/public/bot/groups/activate': typeof ApiPublicBotGroupsActivateRoute
@@ -722,6 +736,7 @@ export interface FileRoutesByFullPath {
   '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
   '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
   '/api/public/bot/groups/': typeof ApiPublicBotGroupsIndexRoute
+  '/api/public/bot/auctions/bids/live': typeof ApiPublicBotAuctionsBidsLiveRoute
   '/api/public/bot/commands/$id/mark': typeof ApiPublicBotCommandsIdMarkRoute
   '/api/public/bot/schedules/$id/mark': typeof ApiPublicBotSchedulesIdMarkRoute
 }
@@ -811,6 +826,7 @@ export interface FileRoutesByTo {
   '/api/public/bot/auctions/$id': typeof ApiPublicBotAuctionsIdRoute
   '/api/public/bot/bids/approved': typeof ApiPublicBotBidsApprovedRoute
   '/api/public/bot/bids/create': typeof ApiPublicBotBidsCreateRoute
+  '/api/public/bot/bids/live': typeof ApiPublicBotBidsLiveRoute
   '/api/public/bot/bids/mark': typeof ApiPublicBotBidsMarkRoute
   '/api/public/bot/commands/pending': typeof ApiPublicBotCommandsPendingRoute
   '/api/public/bot/groups/activate': typeof ApiPublicBotGroupsActivateRoute
@@ -820,6 +836,7 @@ export interface FileRoutesByTo {
   '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
   '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
   '/api/public/bot/groups': typeof ApiPublicBotGroupsIndexRoute
+  '/api/public/bot/auctions/bids/live': typeof ApiPublicBotAuctionsBidsLiveRoute
   '/api/public/bot/commands/$id/mark': typeof ApiPublicBotCommandsIdMarkRoute
   '/api/public/bot/schedules/$id/mark': typeof ApiPublicBotSchedulesIdMarkRoute
 }
@@ -913,6 +930,7 @@ export interface FileRoutesById {
   '/api/public/bot/auctions/$id': typeof ApiPublicBotAuctionsIdRoute
   '/api/public/bot/bids/approved': typeof ApiPublicBotBidsApprovedRoute
   '/api/public/bot/bids/create': typeof ApiPublicBotBidsCreateRoute
+  '/api/public/bot/bids/live': typeof ApiPublicBotBidsLiveRoute
   '/api/public/bot/bids/mark': typeof ApiPublicBotBidsMarkRoute
   '/api/public/bot/commands/pending': typeof ApiPublicBotCommandsPendingRoute
   '/api/public/bot/groups/activate': typeof ApiPublicBotGroupsActivateRoute
@@ -922,6 +940,7 @@ export interface FileRoutesById {
   '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
   '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
   '/api/public/bot/groups/': typeof ApiPublicBotGroupsIndexRoute
+  '/api/public/bot/auctions/bids/live': typeof ApiPublicBotAuctionsBidsLiveRoute
   '/api/public/bot/commands/$id/mark': typeof ApiPublicBotCommandsIdMarkRoute
   '/api/public/bot/schedules/$id/mark': typeof ApiPublicBotSchedulesIdMarkRoute
 }
@@ -1016,6 +1035,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/auctions/$id'
     | '/api/public/bot/bids/approved'
     | '/api/public/bot/bids/create'
+    | '/api/public/bot/bids/live'
     | '/api/public/bot/bids/mark'
     | '/api/public/bot/commands/pending'
     | '/api/public/bot/groups/activate'
@@ -1025,6 +1045,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/schedules/pending'
     | '/api/public/bot/users/senha'
     | '/api/public/bot/groups/'
+    | '/api/public/bot/auctions/bids/live'
     | '/api/public/bot/commands/$id/mark'
     | '/api/public/bot/schedules/$id/mark'
   fileRoutesByTo: FileRoutesByTo
@@ -1114,6 +1135,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/auctions/$id'
     | '/api/public/bot/bids/approved'
     | '/api/public/bot/bids/create'
+    | '/api/public/bot/bids/live'
     | '/api/public/bot/bids/mark'
     | '/api/public/bot/commands/pending'
     | '/api/public/bot/groups/activate'
@@ -1123,6 +1145,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/schedules/pending'
     | '/api/public/bot/users/senha'
     | '/api/public/bot/groups'
+    | '/api/public/bot/auctions/bids/live'
     | '/api/public/bot/commands/$id/mark'
     | '/api/public/bot/schedules/$id/mark'
   id:
@@ -1215,6 +1238,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/auctions/$id'
     | '/api/public/bot/bids/approved'
     | '/api/public/bot/bids/create'
+    | '/api/public/bot/bids/live'
     | '/api/public/bot/bids/mark'
     | '/api/public/bot/commands/pending'
     | '/api/public/bot/groups/activate'
@@ -1224,6 +1248,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/schedules/pending'
     | '/api/public/bot/users/senha'
     | '/api/public/bot/groups/'
+    | '/api/public/bot/auctions/bids/live'
     | '/api/public/bot/commands/$id/mark'
     | '/api/public/bot/schedules/$id/mark'
   fileRoutesById: FileRoutesById
@@ -1283,6 +1308,7 @@ export interface RootRouteChildren {
   ApiPublicBotAuctionsIdRoute: typeof ApiPublicBotAuctionsIdRoute
   ApiPublicBotBidsApprovedRoute: typeof ApiPublicBotBidsApprovedRoute
   ApiPublicBotBidsCreateRoute: typeof ApiPublicBotBidsCreateRoute
+  ApiPublicBotBidsLiveRoute: typeof ApiPublicBotBidsLiveRoute
   ApiPublicBotBidsMarkRoute: typeof ApiPublicBotBidsMarkRoute
   ApiPublicBotCommandsPendingRoute: typeof ApiPublicBotCommandsPendingRoute
   ApiPublicBotGroupsActivateRoute: typeof ApiPublicBotGroupsActivateRoute
@@ -1292,6 +1318,7 @@ export interface RootRouteChildren {
   ApiPublicBotSchedulesPendingRoute: typeof ApiPublicBotSchedulesPendingRoute
   ApiPublicBotUsersSenhaRoute: typeof ApiPublicBotUsersSenhaRoute
   ApiPublicBotGroupsIndexRoute: typeof ApiPublicBotGroupsIndexRoute
+  ApiPublicBotAuctionsBidsLiveRoute: typeof ApiPublicBotAuctionsBidsLiveRoute
   ApiPublicBotCommandsIdMarkRoute: typeof ApiPublicBotCommandsIdMarkRoute
   ApiPublicBotSchedulesIdMarkRoute: typeof ApiPublicBotSchedulesIdMarkRoute
 }
@@ -1914,6 +1941,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBotBidsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bot/bids/live': {
+      id: '/api/public/bot/bids/live'
+      path: '/api/public/bot/bids/live'
+      fullPath: '/api/public/bot/bids/live'
+      preLoaderRoute: typeof ApiPublicBotBidsLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bot/bids/mark': {
       id: '/api/public/bot/bids/mark'
       path: '/api/public/bot/bids/mark'
@@ -1975,6 +2009,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/bot/users/senha'
       fullPath: '/api/public/bot/users/senha'
       preLoaderRoute: typeof ApiPublicBotUsersSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bot/auctions/bids/live': {
+      id: '/api/public/bot/auctions/bids/live'
+      path: '/api/public/bot/auctions/bids/live'
+      fullPath: '/api/public/bot/auctions/bids/live'
+      preLoaderRoute: typeof ApiPublicBotAuctionsBidsLiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/bot/commands/$id/mark': {
@@ -2173,6 +2214,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBotAuctionsIdRoute: ApiPublicBotAuctionsIdRoute,
   ApiPublicBotBidsApprovedRoute: ApiPublicBotBidsApprovedRoute,
   ApiPublicBotBidsCreateRoute: ApiPublicBotBidsCreateRoute,
+  ApiPublicBotBidsLiveRoute: ApiPublicBotBidsLiveRoute,
   ApiPublicBotBidsMarkRoute: ApiPublicBotBidsMarkRoute,
   ApiPublicBotCommandsPendingRoute: ApiPublicBotCommandsPendingRoute,
   ApiPublicBotGroupsActivateRoute: ApiPublicBotGroupsActivateRoute,
@@ -2182,6 +2224,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBotSchedulesPendingRoute: ApiPublicBotSchedulesPendingRoute,
   ApiPublicBotUsersSenhaRoute: ApiPublicBotUsersSenhaRoute,
   ApiPublicBotGroupsIndexRoute: ApiPublicBotGroupsIndexRoute,
+  ApiPublicBotAuctionsBidsLiveRoute: ApiPublicBotAuctionsBidsLiveRoute,
   ApiPublicBotCommandsIdMarkRoute: ApiPublicBotCommandsIdMarkRoute,
   ApiPublicBotSchedulesIdMarkRoute: ApiPublicBotSchedulesIdMarkRoute,
 }
