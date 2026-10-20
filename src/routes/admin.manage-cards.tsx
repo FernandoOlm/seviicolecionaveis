@@ -8,6 +8,9 @@ import type { Condition, Finish, Language, LigaSubcategory, PokemonType, Trainer
 import { CONDITIONS, CONDITION_LABEL, EXTRA_COLLECTIONS, LIGA_SUBCATEGORIES, POKEMON_TYPES, TRAINER_SUBCATEGORIES } from "@/data/cards";
 import { notifyStockBack } from "@/lib/stock-alerts.functions";
 import { cardSlug } from "@/lib/slug";
+import { toast } from "sonner";
+import { Check, Copy } from "lucide-react";
+import { copyToClipboard } from "@/lib/clipboard";
 import { IllustratorCombobox } from "@/components/admin/IllustratorCombobox";
 import { useCustomCollections } from "@/lib/custom-collections";
 import { Button } from "@/components/ui/button";
@@ -1131,8 +1134,16 @@ function AdminCardsManagePage() {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{r.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {r.collection} · #{r.card_number} · {r.finish} · {r.language} · <span className="font-bold">{r.condition ?? "NM"}</span>
+                      <p className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs text-muted-foreground">
+                        <span className="min-w-0 truncate">{r.collection}</span>
+                        <span aria-hidden>·</span>
+                        <CopyNumberButton value={r.card_number} />
+                        <span aria-hidden>·</span>
+                        <span className="shrink-0">{r.finish}</span>
+                        <span aria-hidden>·</span>
+                        <span className="shrink-0">{r.language}</span>
+                        <span aria-hidden>·</span>
+                        <span className="shrink-0 font-bold">{r.condition ?? "NM"}</span>
                       </p>
                     </div>
                     <div className={`text-xs shrink-0 ${(viewMode === "grid" || quickEditId === r.id) ? "flex justify-between" : "text-right"}`}>
@@ -1398,6 +1409,41 @@ function AdminCardsManagePage() {
         </section>
       </main>
     </div>
+  );
+}
+
+// Copia a numeração da carta (ex.: 094) para colar na busca da Liga Pokémon.
+function CopyNumberButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const ok = await copyToClipboard(value);
+    if (!ok) {
+      toast.error("Não foi possível copiar a numeração");
+      return;
+    }
+    setCopied(true);
+    toast.success(`Numeração ${value} copiada`);
+    window.setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title="Copiar numeração (Liga Pokémon)"
+      aria-label={`Copiar numeração ${value}`}
+      className="inline-flex shrink-0 items-center gap-1 rounded border border-border bg-secondary/70 px-1.5 py-0.5 font-semibold text-foreground transition hover:bg-secondary hover:border-primary"
+    >
+      <span>#{value}</span>
+      {copied ? (
+        <Check className="h-3 w-3 text-condition-mint" />
+      ) : (
+        <Copy className="h-3 w-3 opacity-60" />
+      )}
+    </button>
   );
 }
 
