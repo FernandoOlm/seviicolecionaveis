@@ -133,6 +133,40 @@ function AdminCardsManagePage() {
   const [quickMsg, setQuickMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [uploadingMain, setUploadingMain] = useState(false);
   const [uploadingQuick, setUploadingQuick] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkRemoving, setBulkRemoving] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  useEffect(() => {
+    const v = localStorage.getItem("admin-cards-view");
+    if (v === "grid" || v === "list") setViewMode(v);
+  }, []);
+  const changeViewMode = (m: "list" | "grid") => {
+    setViewMode(m);
+    localStorage.setItem("admin-cards-view", m);
+  };
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+
+  const handleBulkRemoveStock = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!confirm(`Zerar o estoque de ${ids.length} carta(s) selecionada(s)? O cadastro será mantido.`)) return;
+    setBulkRemoving(true);
+    setBulkMsg(null);
+    const { error } = await supabase.from("cards").update({ stock: 0 }).in("id", ids);
+    setBulkRemoving(false);
+    if (error) { setBulkMsg({ type: "err", text: `Erro: ${error.message}` }); return; }
+    invalidateCardsCache();
+    setRows((prev) => prev.map((r) => (selectedIds.has(r.id) ? { ...r, stock: 0 } : r)));
+    setSelectedIds(new Set());
+    setBulkMsg({ type: "ok", text: `${ids.length} carta(s) removida(s) do estoque.` });
+  };
 
   const uploadImage = async (file: File): Promise<string | null> => {
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
@@ -957,13 +991,72 @@ function AdminCardsManagePage() {
             <p className="text-sm text-muted-foreground">Carregando...</p>
           ) : (
             <div className="space-y-2">
+              <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded border border-border bg-background/95 px-3 py-2 backdrop-blur">
+                <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id))}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      setSelectedIds((prev) => {
+                        const n = new Set(prev);
+                        filtered.forEach((r) => (on ? n.add(r.id) : n.delete(r.id)));
+                        return n;
+                      });
+                    }}
+                  />
+                  Selecionar página
+                </label>
+                <span className="text-xs text-muted-foreground">{selectedIds.size} selecionada(s)</span>
+                {selectedIds.size > 0 && (
+                  <>
+                    <button
+                      onClick={handleBulkRemoveStock}
+                      disabled={bulkRemoving}
+                      className="rounded border border-destructive px-3 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                    >
+                      {bulkRemoving ? "Removendo..." : `Remover selecionadas do estoque (${selectedIds.size})`}
+                    </button>
+                    <button onClick={() => setSelectedIds(new Set())} className="text-xs underline text-muted-foreground">
+                      Limpar seleção
+                    </button>
+                  </>
+                )}
+                {bulkMsg && (
+                  <span className={`text-xs ${bulkMsg.type === "ok" ? "text-condition-mint" : "text-destructive"}`}>{bulkMsg.text}</span>
+                )}
+                <div className="ml-auto flex overflow-hidden rounded border border-border text-xs">
+                  {(["list", "grid"] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => changeViewMode(m)}
+                      className={`px-3 py-1.5 font-semibold ${viewMode === m ? "bg-primary text-primary-foreground" : "bg-background hover:bg-secondary"}`}
+                    >
+                      {m === "list" ? "☰ Lista" : "▦ Grade"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" : "space-y-2"}>
               {filtered.map((r) => (
-                <div key={r.id} className="relative">
-                  <div className="flex items-center gap-3 rounded border border-border bg-card px-3 py-2">
+                <div key={r.id} className={`relative ${viewMode === "grid" && quickEditId === r.id ? "col-span-full" : ""}`}>
+                  <div className={viewMode === "grid"
+                    ? `flex h-full flex-col gap-2 rounded border bg-card p-2 ${selectedIds.has(r.id) ? "border-destructive" : "border-border"}`
+                    : `flex items-center gap-3 rounded border bg-card px-3 py-2 ${selectedIds.has(r.id) ? "border-destructive" : "border-border"}`}>
+                    <label className={`flex shrink-0 cursor-pointer items-center justify-center ${viewMode === "grid" ? "self-start gap-2 text-[10px]" : "h-8 w-8"}`} title="Selecionar para remover do estoque">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={selectedIds.has(r.id)}
+                        onChange={() => toggleSelected(r.id)}
+                      />
+                      {viewMode === "grid" && <span>Selecionar</span>}
+                    </label>
                     {r.image ? (
-                      <img src={r.image} alt={r.name} className="w-10 h-14 object-contain rounded shrink-0 bg-secondary" loading="lazy" />
+                      <img src={r.image} alt={r.name} className={viewMode === "grid" ? "w-full aspect-[5/7] object-contain rounded bg-secondary" : "w-10 h-14 object-contain rounded shrink-0 bg-secondary"} loading="lazy" />
                     ) : (
-                      <div className="w-10 h-14 rounded bg-secondary shrink-0" />
+                      <div className={viewMode === "grid" ? "w-full aspect-[5/7] rounded bg-secondary" : "w-10 h-14 rounded bg-secondary shrink-0"} />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{r.name}</p>
@@ -971,17 +1064,18 @@ function AdminCardsManagePage() {
                         {r.collection} · #{r.card_number} · {r.finish} · {r.language} · <span className="font-bold">{r.condition ?? "NM"}</span>
                       </p>
                     </div>
-                    <div className="text-xs text-right shrink-0">
+                    <div className={`text-xs shrink-0 ${viewMode === "grid" ? "flex justify-between" : "text-right"}`}>
                       <p>Estoque: <strong>{r.stock}</strong></p>
                       <p className="text-muted-foreground">
                         {r.base_price_cents != null ? `R$ ${(r.base_price_cents / 100).toFixed(2)}` : "—"}
                       </p>
                     </div>
+                    <div className={`flex gap-1 ${viewMode === "grid" ? "flex-wrap" : "shrink-0"}`}>
                     <button
                       onClick={() => openQuickEdit(r)}
-                      className={`rounded border px-2 py-1 text-[10px] font-bold hover:bg-secondary ${quickEditId === r.id ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
+                      className={`rounded border px-2 py-1.5 text-[10px] font-bold hover:bg-secondary ${quickEditId === r.id ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
                     >
-                      {quickEditId === r.id ? "Fechar" : "Editar"}
+                      {quickEditId === r.id ? "▲ Recolher" : "▼ Expandir"}
                     </button>
                     <button
                       onClick={() => handleEdit(r)}
@@ -993,9 +1087,11 @@ function AdminCardsManagePage() {
                     <button
                       onClick={() => handleDelete(r)}
                       className="rounded border border-destructive px-2 py-1 text-[10px] font-bold text-destructive hover:bg-destructive/10"
+                      title="Exclui o cadastro da carta"
                     >
-                      Remover
+                      Excluir
                     </button>
+                    </div>
                   </div>
                   {quickEditId === r.id && (
                     <div className="mt-2 rounded-lg border border-primary/40 bg-card p-4 shadow-lg">
@@ -1187,6 +1283,7 @@ function AdminCardsManagePage() {
                   )}
                 </div>
               ))}
+              </div>
               {filtered.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhuma carta encontrada.</p>
               )}
