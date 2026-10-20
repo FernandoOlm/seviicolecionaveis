@@ -133,6 +133,40 @@ function AdminCardsManagePage() {
   const [quickMsg, setQuickMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [uploadingMain, setUploadingMain] = useState(false);
   const [uploadingQuick, setUploadingQuick] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkRemoving, setBulkRemoving] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  useEffect(() => {
+    const v = localStorage.getItem("admin-cards-view");
+    if (v === "grid" || v === "list") setViewMode(v);
+  }, []);
+  const changeViewMode = (m: "list" | "grid") => {
+    setViewMode(m);
+    localStorage.setItem("admin-cards-view", m);
+  };
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+
+  const handleBulkRemoveStock = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!confirm(`Zerar o estoque de ${ids.length} carta(s) selecionada(s)? O cadastro será mantido.`)) return;
+    setBulkRemoving(true);
+    setBulkMsg(null);
+    const { error } = await supabase.from("cards").update({ stock: 0 }).in("id", ids);
+    setBulkRemoving(false);
+    if (error) { setBulkMsg({ type: "err", text: `Erro: ${error.message}` }); return; }
+    invalidateCardsCache();
+    setRows((prev) => prev.map((r) => (selectedIds.has(r.id) ? { ...r, stock: 0 } : r)));
+    setSelectedIds(new Set());
+    setBulkMsg({ type: "ok", text: `${ids.length} carta(s) removida(s) do estoque.` });
+  };
 
   const uploadImage = async (file: File): Promise<string | null> => {
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
@@ -1053,9 +1087,11 @@ function AdminCardsManagePage() {
                     <button
                       onClick={() => handleDelete(r)}
                       className="rounded border border-destructive px-2 py-1 text-[10px] font-bold text-destructive hover:bg-destructive/10"
+                      title="Exclui o cadastro da carta"
                     >
-                      Remover
+                      Excluir
                     </button>
+                    </div>
                   </div>
                   {quickEditId === r.id && (
                     <div className="mt-2 rounded-lg border border-primary/40 bg-card p-4 shadow-lg">
@@ -1247,6 +1283,7 @@ function AdminCardsManagePage() {
                   )}
                 </div>
               ))}
+              </div>
               {filtered.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhuma carta encontrada.</p>
               )}
