@@ -11,6 +11,7 @@ import { cardSlug } from "@/lib/slug";
 import { IllustratorCombobox } from "@/components/admin/IllustratorCombobox";
 import { useCustomCollections } from "@/lib/custom-collections";
 import { Button } from "@/components/ui/button";
+import { useIllustrators } from "@/lib/illustrators";
 
 export const Route = createFileRoute("/admin/manage-cards")({
   head: () => ({ meta: [{ title: "Gerenciar cartas — Admin" }] }),
@@ -114,6 +115,14 @@ function AdminCardsManagePage() {
   const [noPriceOnly, setNoPriceOnly] = useState(false);
   const [collectionFilter, setCollectionFilter] = useState<string>("");
   const [numberFilter, setNumberFilter] = useState("");
+  const [finishFilter, setFinishFilter] = useState<string[]>([]);
+  const [languageFilter, setLanguageFilter] = useState<string[]>([]);
+  const [conditionFilter, setConditionFilter] = useState<string[]>([]);
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [illustratorFilter, setIllustratorFilter] = useState("");
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const { illustrators } = useIllustrators();
   const [sortBy, setSortBy] = useState<"name-asc" | "name-desc" | "number-asc" | "number-desc">("name-asc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
@@ -229,6 +238,17 @@ function AdminCardsManagePage() {
       if (noPriceOnly && r.base_price_cents != null) return false;
       if (collectionFilter && r.collection !== collectionFilter) return false;
       if (nq && !r.card_number.toLowerCase().includes(nq)) return false;
+      if (finishFilter.length && !finishFilter.includes(r.finish)) return false;
+      if (languageFilter.length && !languageFilter.includes(r.language)) return false;
+      if (conditionFilter.length && !conditionFilter.includes(r.condition ?? "NM")) return false;
+      if (illustratorFilter && r.illustrator_id !== illustratorFilter) return false;
+      if (inStockOnly && r.stock <= 0) return false;
+      if (priceMin !== "" || priceMax !== "") {
+        if (r.base_price_cents == null) return false;
+        const v = r.base_price_cents / 100;
+        if (priceMin !== "" && v < Number(priceMin)) return false;
+        if (priceMax !== "" && v > Number(priceMax)) return false;
+      }
       if (!q) return true;
       return (
         r.name.toLowerCase().includes(q) ||
@@ -250,9 +270,9 @@ function AdminCardsManagePage() {
       }
       return a.name.localeCompare(b.name, "pt-BR") || a.collection.localeCompare(b.collection, "pt-BR");
     });
-  }, [rows, search, categoryFilter, pokemonTypeFilter, trainerSubFilter, noPriceOnly, collectionFilter, numberFilter, sortBy]);
+  }, [rows, search, categoryFilter, pokemonTypeFilter, trainerSubFilter, noPriceOnly, collectionFilter, numberFilter, sortBy, finishFilter, languageFilter, conditionFilter, illustratorFilter, inStockOnly, priceMin, priceMax]);
 
-  useEffect(() => { setPage(1); }, [search, pageSize, categoryFilter, pokemonTypeFilter, trainerSubFilter, noPriceOnly, collectionFilter, numberFilter, sortBy]);
+  useEffect(() => { setPage(1); }, [search, pageSize, categoryFilter, pokemonTypeFilter, trainerSubFilter, noPriceOnly, collectionFilter, numberFilter, sortBy, finishFilter, languageFilter, conditionFilter, illustratorFilter, inStockOnly, priceMin, priceMax]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAll.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -880,6 +900,57 @@ function AdminCardsManagePage() {
             )}
           </div>
 
+          <div className="mt-3 rounded border border-border bg-card p-3 space-y-3 text-xs">
+            {(() => {
+              const toggleIn = (arr: string[], v: string) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+              const groups: { label: string; opts: string[]; val: string[]; set: (v: string[]) => void; fmt?: (v: string) => string; key: (r: CardRow) => string }[] = [
+                { label: "Extras", opts: FINISHES as unknown as string[], val: finishFilter, set: setFinishFilter, key: (r) => r.finish },
+                { label: "Idioma", opts: LANGUAGES as unknown as string[], val: languageFilter, set: setLanguageFilter, key: (r) => r.language },
+                { label: "Condição", opts: CONDITIONS as unknown as string[], val: conditionFilter, set: setConditionFilter, fmt: (v) => CONDITION_LABEL[v as Condition] ?? v, key: (r) => r.condition ?? "NM" },
+              ];
+              return groups.map((g) => (
+                <div key={g.label} className="flex flex-wrap items-center gap-1.5">
+                  <span className="mr-1 font-bold uppercase tracking-wide">{g.label}:</span>
+                  {g.opts.map((o) => {
+                    const count = rows.filter((r) => g.key(r) === o).length;
+                    if (!count) return null;
+                    const on = g.val.includes(o);
+                    return (
+                      <button type="button" key={o} onClick={() => g.set(toggleIn(g.val, o))}
+                        className={`rounded-full border px-2.5 py-1 font-medium ${on ? "border-foreground bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-foreground/30"}`}>
+                        {g.fmt ? g.fmt(o) : o} <span className="opacity-60">({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ));
+            })()}
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-1.5">
+                <span className="font-bold uppercase tracking-wide">Preço (R$):</span>
+                <input type="number" inputMode="numeric" placeholder="Mín" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} className="w-20 rounded border border-border bg-background px-2 py-1" />
+                <span>—</span>
+                <input type="number" inputMode="numeric" placeholder="Máx" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} className="w-20 rounded border border-border bg-background px-2 py-1" />
+              </label>
+              <label className="flex items-center gap-1.5">
+                <span className="font-bold uppercase tracking-wide">Ilustrador:</span>
+                <select value={illustratorFilter} onChange={(e) => setIllustratorFilter(e.target.value)} className="max-w-[14rem] rounded border border-border bg-background px-2 py-1">
+                  <option value="">Todos</option>
+                  {illustrators
+                    .map((i) => ({ ...i, n: rows.filter((r) => r.illustrator_id === i.id).length }))
+                    .filter((i) => i.n > 0)
+                    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+                    .map((i) => <option key={i.id} value={i.id}>{i.name} ({i.n})</option>)}
+                </select>
+              </label>
+              <label className="flex cursor-pointer items-center gap-1.5">
+                <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} className="h-4 w-4" />
+                <span className="font-semibold">Apenas em estoque</span>
+                <span className="text-muted-foreground">({rows.filter((r) => r.stock > 0).length})</span>
+              </label>
+            </div>
+          </div>
+
           {(categoryFilter.length === 0 || categoryFilter.includes("Treinador")) && (
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded border border-border bg-card px-3 py-2">
               <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Subtipo Treinador:</span>
@@ -962,9 +1033,9 @@ function AdminCardsManagePage() {
                 <option value="number-desc">Numeração (decrescente)</option>
               </select>
             </label>
-            {(noPriceOnly || collectionFilter || numberFilter) && (
+            {(noPriceOnly || collectionFilter || numberFilter || finishFilter.length || languageFilter.length || conditionFilter.length || illustratorFilter || inStockOnly || priceMin || priceMax) && (
               <button
-                onClick={() => { setNoPriceOnly(false); setCollectionFilter(""); setNumberFilter(""); }}
+                onClick={() => { setNoPriceOnly(false); setCollectionFilter(""); setNumberFilter(""); setFinishFilter([]); setLanguageFilter([]); setConditionFilter([]); setIllustratorFilter(""); setInStockOnly(false); setPriceMin(""); setPriceMax(""); }}
                 className="ml-auto text-xs font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
               >
                 Limpar
