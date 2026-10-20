@@ -1133,19 +1133,19 @@ function AdminCardsManagePage() {
                       <div className={(viewMode === "grid" || quickEditId === r.id) ? `aspect-[5/7] rounded bg-secondary ${quickEditId === r.id ? "mx-auto w-40" : "w-full"}` : "w-10 h-14 rounded bg-secondary shrink-0"} />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{r.name}</p>
-                      <p className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs text-muted-foreground">
-                        <span className="min-w-0 truncate">{r.collection}</span>
-                        <span aria-hidden>·</span>
+                      <p className={`text-sm font-semibold ${viewMode === "grid" ? "line-clamp-2" : "truncate"}`}>{r.name}</p>
+                      <p className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-muted-foreground">
+                        <span className="min-w-0 break-words">{r.collection}</span>
                         <CopyNumberButton value={r.card_number} />
-                        <span aria-hidden>·</span>
-                        <span className="shrink-0">{r.finish}</span>
-                        <span aria-hidden>·</span>
-                        <span className="shrink-0">{r.language}</span>
-                        <span aria-hidden>·</span>
-                        <span className="shrink-0 font-bold">{r.condition ?? "NM"}</span>
+                      </p>
+                      <p className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
+                        <MetaBadge>{r.finish}</MetaBadge>
+                        <MetaBadge>{r.language}</MetaBadge>
+                        <MetaBadge strong>{r.condition ?? "NM"}</MetaBadge>
+                        {cardTypeLabel(r) && <MetaBadge>{cardTypeLabel(r)}</MetaBadge>}
                       </p>
                     </div>
+
                     <div className={`text-xs shrink-0 ${(viewMode === "grid" || quickEditId === r.id) ? "flex justify-between" : "text-right"}`}>
                       <p>Estoque: <strong>{r.stock}</strong></p>
                       <p className="text-muted-foreground">
@@ -1413,8 +1413,31 @@ function AdminCardsManagePage() {
 }
 
 // Copia a numeração da carta (ex.: 094) para colar na busca da Liga Pokémon.
+/** Pill discreta com um dado da carta (acabamento, idioma, condição, tipo). */
+function MetaBadge({ children, strong = false }: { children: React.ReactNode; strong?: boolean }) {
+  return (
+    <span
+      className={`inline-flex max-w-full items-center rounded-full border px-1.5 py-0.5 text-[10px] leading-none ${
+        strong
+          ? "border-primary/40 bg-primary/10 font-bold text-foreground"
+          : "border-border bg-secondary/60 font-medium text-muted-foreground"
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** Detalhe de tipo conforme a categoria: tipo de Pokémon, subtipo de Treinador ou Energia. */
+function cardTypeLabel(r: CardRow): string {
+  if (r.category === "Pokémon") return r.pokemon_type ?? "";
+  if (r.category === "Treinador") return [r.trainer_subcategory, r.liga_subcategory].filter(Boolean).join(" · ");
+  return r.category === "Energia" ? "Energia" : "";
+}
+
 function CopyNumberButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
+
 
   async function copy(e: React.MouseEvent) {
     e.preventDefault();
