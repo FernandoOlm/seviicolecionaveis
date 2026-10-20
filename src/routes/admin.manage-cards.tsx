@@ -1111,23 +1111,23 @@ function AdminCardsManagePage() {
               </div>
               <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" : "space-y-2"}>
               {filtered.map((r) => (
-                <div key={r.id} className={`relative ${viewMode === "grid" && quickEditId === r.id ? "col-span-full" : ""}`}>
-                  <div className={viewMode === "grid"
-                    ? `flex h-full flex-col gap-2 rounded border bg-card p-2 ${selectedIds.has(r.id) ? "border-destructive" : "border-border"}`
+                <div key={r.id} className={`relative ${quickEditId === r.id ? "col-span-full flex flex-col gap-3 md:flex-row md:items-start" : ""}`}>
+                  <div className={(viewMode === "grid" || quickEditId === r.id)
+                    ? `flex flex-col gap-2 rounded border bg-card p-2 ${quickEditId === r.id ? "w-full md:w-56 md:shrink-0" : "h-full"} ${selectedIds.has(r.id) ? "border-destructive" : "border-border"}`
                     : `flex items-center gap-3 rounded border bg-card px-3 py-2 ${selectedIds.has(r.id) ? "border-destructive" : "border-border"}`}>
-                    <label className={`flex shrink-0 cursor-pointer items-center justify-center ${viewMode === "grid" ? "self-start gap-2 text-[10px]" : "h-8 w-8"}`} title="Selecionar para remover do estoque">
+                    <label className={`flex shrink-0 cursor-pointer items-center justify-center ${(viewMode === "grid" || quickEditId === r.id) ? "self-start gap-2 text-[10px]" : "h-8 w-8"}`} title="Selecionar para remover do estoque">
                       <input
                         type="checkbox"
                         className="h-4 w-4"
                         checked={selectedIds.has(r.id)}
                         onChange={() => toggleSelected(r.id)}
                       />
-                      {viewMode === "grid" && <span>Selecionar</span>}
+                      {(viewMode === "grid" || quickEditId === r.id) && <span>Selecionar</span>}
                     </label>
                     {r.image ? (
-                      <img src={r.image} alt={r.name} className={viewMode === "grid" ? "w-full aspect-[5/7] object-contain rounded bg-secondary" : "w-10 h-14 object-contain rounded shrink-0 bg-secondary"} loading="lazy" />
+                      <img src={r.image} alt={r.name} className={(viewMode === "grid" || quickEditId === r.id) ? `aspect-[5/7] object-contain rounded bg-secondary ${quickEditId === r.id ? "mx-auto w-40" : "w-full"}` : "w-10 h-14 object-contain rounded shrink-0 bg-secondary"} loading="lazy" />
                     ) : (
-                      <div className={viewMode === "grid" ? "w-full aspect-[5/7] rounded bg-secondary" : "w-10 h-14 rounded bg-secondary shrink-0"} />
+                      <div className={(viewMode === "grid" || quickEditId === r.id) ? `aspect-[5/7] rounded bg-secondary ${quickEditId === r.id ? "mx-auto w-40" : "w-full"}` : "w-10 h-14 rounded bg-secondary shrink-0"} />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{r.name}</p>
@@ -1135,13 +1135,13 @@ function AdminCardsManagePage() {
                         {r.collection} · #{r.card_number} · {r.finish} · {r.language} · <span className="font-bold">{r.condition ?? "NM"}</span>
                       </p>
                     </div>
-                    <div className={`text-xs shrink-0 ${viewMode === "grid" ? "flex justify-between" : "text-right"}`}>
+                    <div className={`text-xs shrink-0 ${(viewMode === "grid" || quickEditId === r.id) ? "flex justify-between" : "text-right"}`}>
                       <p>Estoque: <strong>{r.stock}</strong></p>
                       <p className="text-muted-foreground">
                         {r.base_price_cents != null ? `R$ ${(r.base_price_cents / 100).toFixed(2)}` : "—"}
                       </p>
                     </div>
-                    <div className={`flex gap-1 ${viewMode === "grid" ? "flex-wrap" : "shrink-0"}`}>
+                    <div className={`flex gap-1 ${(viewMode === "grid" || quickEditId === r.id) ? "flex-wrap" : "shrink-0"}`}>
                     <button
                       onClick={() => openQuickEdit(r)}
                       className={`rounded border px-2 py-1.5 text-[10px] font-bold hover:bg-secondary ${quickEditId === r.id ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
@@ -1165,7 +1165,7 @@ function AdminCardsManagePage() {
                     </div>
                   </div>
                   {quickEditId === r.id && (
-                    <div className="mt-2 rounded-lg border border-primary/40 bg-card p-4 shadow-lg">
+                    <div className="min-w-0 flex-1 rounded-lg border border-primary/40 bg-card p-4 shadow-lg">
                       <p className="text-xs font-bold uppercase tracking-wide mb-3">Edição rápida</p>
                       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <label className="text-xs space-y-1">
