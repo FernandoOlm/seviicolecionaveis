@@ -36,8 +36,9 @@ const AddressSchema = z.object({
 export const ShippingMethodEnum = z.enum(["fixed", "arrange", "arte_em_cards", "card_stack"]);
 
 export const ScheduleSchema = z.object({
-  kind: z.enum(["delivery", "pickup"]),
+  kind: z.enum(["delivery", "pickup", "event"]),
   at: z.string().datetime(),
+  eventId: z.string().uuid().optional().nullable(),
 });
 
 export const StripeInputSchema = z.object({
