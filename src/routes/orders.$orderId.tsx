@@ -11,36 +11,80 @@ import { checkPixOrderStatus } from "@/utils/payments.functions";
 import { toast } from "sonner";
 import { PostPurchaseSurvey } from "@/components/PostPurchaseSurvey";
 import { ScheduleSlotPicker } from "@/components/ScheduleSlotPicker";
+import { EventSlotPicker, type EventSelection } from "@/components/EventSlotPicker";
+import { listActiveEvents } from "@/lib/events.functions";
+import { validateEventSchedule, type PickupEvent } from "@/lib/events";
 import { reschedulePickupFn } from "@/lib/pickup-reschedule.functions";
 import { isSlotBookable, SLOT_EXPIRED_MESSAGE } from "@/lib/scheduling";
 
 function RescheduleBox({ orderId, onDone }: { orderId: string; onDone: (at: string) => void }) {
   const [at, setAt] = useState<string | null>(null);
+  const [mode, setMode] = useState<"pickup" | "event">("pickup");
+  const [eventSel, setEventSel] = useState<EventSelection | null>(null);
+  const [events, setEvents] = useState<PickupEvent[]>([]);
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (mode === "event" && events.length === 0) listActiveEvents().then(setEvents).catch(() => {});
+  }, [mode, events.length]);
+  const waUrl = `https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(`Olá! Quero reagendar a retirada do pedido #${orderId.slice(0, 8).toUpperCase()}`)}`;
   return (
     <div className="rounded-md border border-amber-400/60 bg-amber-50 p-3 space-y-3 text-amber-950">
       <p className="font-semibold">Reagendamento necessário</p>
-      <p className="text-xs">Não conseguimos concluir sua retirada no horário agendado. Escolha um novo horário abaixo.</p>
-      <ScheduleSlotPicker kind="pickup" value={at} onChange={setAt} />
-      <button
-        type="button"
-        disabled={!at || busy}
-        className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold disabled:opacity-50"
-        onClick={async () => {
-          if (!at) return;
-          if (!isSlotBookable("pickup", at)) { setAt(null); toast.error(SLOT_EXPIRED_MESSAGE); return; }
-          setBusy(true);
-          try {
-            await reschedulePickupFn({ data: { orderId, at } });
-            toast.success("Novo horário confirmado!");
-            onDone(at);
-          } catch (e) {
-            toast.error(e instanceof Error ? e.message : "Não foi possível reagendar.");
-          } finally { setBusy(false); }
-        }}
-      >
-        {busy ? "Confirmando..." : "Confirmar novo horário"}
-      </button>
+      <p className="text-xs">Não conseguimos concluir sua retirada no horário agendado. Escolha uma nova forma de retirada abaixo.</p>
+      <div className="flex gap-2 text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setMode("pickup")}
+          className={mode === "pickup" ? "rounded-md bg-primary px-3 py-1.5 text-primary-foreground" : "rounded-md border border-amber-400/60 px-3 py-1.5"}
+        >
+          🏪 Retirada em mãos
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("event")}
+          className={mode === "event" ? "rounded-md bg-primary px-3 py-1.5 text-primary-foreground" : "rounded-md border border-amber-400/60 px-3 py-1.5"}
+        >
+          🎪 Retirada em eventos
+        </button>
+      </div>
+      {mode === "pickup" ? (
+        <ScheduleSlotPicker kind="pickup" value={at} onChange={setAt} />
+      ) : (
+        <EventSlotPicker events={events} value={eventSel} onChange={setEventSel} />
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={(mode === "pickup" ? !at : !eventSel) || busy}
+          className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold disabled:opacity-50"
+          onClick={async () => {
+            setBusy(true);
+            try {
+              if (mode === "pickup") {
+                if (!at) return;
+                if (!isSlotBookable("pickup", at)) { setAt(null); toast.error(SLOT_EXPIRED_MESSAGE); return; }
+                await reschedulePickupFn({ data: { orderId, at, kind: "pickup" } });
+                onDone(at);
+              } else {
+                if (!eventSel) return;
+                const ev = events.find((e) => e.id === eventSel.eventId);
+                const err = ev ? validateEventSchedule(ev, eventSel.ymd, eventSel.slot) : "Evento não encontrado.";
+                if (err) { if (ev) setEventSel(null); toast.error(err); return; }
+                await reschedulePickupFn({ data: { orderId, at: eventSel.iso, kind: "event", eventId: eventSel.eventId } });
+                onDone(eventSel.iso);
+              }
+              toast.success("Novo horário confirmado!");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Não foi possível reagendar.");
+            } finally { setBusy(false); }
+          }}
+        >
+          {busy ? "Confirmando..." : "Confirmar novo horário"}
+        </button>
+        <a href={waUrl} target="_blank" rel="noreferrer" className="rounded-full border border-emerald-600 px-4 py-2 text-xs font-semibold text-emerald-700">
+          Combinar outra forma pelo WhatsApp
+        </a>
+      </div>
     </div>
   );
 }
@@ -460,14 +504,14 @@ function OrderDetailPage() {
           <section className="rounded-xl border border-border bg-card p-5 text-sm space-y-3">
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {(order as any).schedule_kind === "delivery" ? "Entrega em mãos" : "Retirada em mãos"}
+                {(order as any).schedule_kind === "delivery" ? "Entrega em mãos" : (order as any).schedule_kind === "event" ? "Retirada em eventos" : "Retirada em mãos"}
               </h2>
               <p className="text-sm mt-1">
                 {(order as any).reschedule_required ? "Horário anterior (não concluído): " : "Agendado para "}
                 <strong>{formatSchedule((order as any).schedule_kind, (order as any).scheduled_at)}</strong>
               </p>
             </div>
-            {(order as any).reschedule_required && (order as any).schedule_kind === "pickup" && (
+            {(order as any).reschedule_required && ["pickup", "event"].includes((order as any).schedule_kind) && (
               <RescheduleBox orderId={order.id} onDone={(at) => setOrder({ ...order, scheduled_at: at, reschedule_required: false })} />
             )}
             {(order as any).schedule_kind === "delivery" && (
