@@ -1,5 +1,5 @@
 import { isPaidOrderStatus } from "@/lib/order-status";
-import { validateSchedule } from "@/lib/scheduling";
+import { localParts, validateSchedule } from "@/lib/scheduling";
 import { type StripeEnv, createStripeClient } from "@/lib/stripe.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createPixPayment, getPixPayment, createCardPaymentMP } from "@/lib/mercadopago.server";

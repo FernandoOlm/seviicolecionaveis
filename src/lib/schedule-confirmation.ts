@@ -19,17 +19,21 @@ export interface ScheduledOrder {
 }
 
 export function scheduleConfirmationData(order: ScheduledOrder) {
-  if (!order.scheduled_at || !["delivery", "pickup"].includes(order.schedule_kind ?? "")) return null;
-  const kind = order.schedule_kind as ScheduleKind;
+  if (!order.scheduled_at || !["delivery", "pickup", "event"].includes(order.schedule_kind ?? "")) return null;
+  const kind = order.schedule_kind as ScheduleKind | "event";
   const start = new Date(order.scheduled_at);
   if (Number.isNaN(start.getTime())) return null;
-  const service = kind === "delivery" ? "Entrega em mãos" : "Retirada em mãos";
+  const service = kind === "delivery" ? "Entrega em mãos" : kind === "event" ? "Retirada em eventos" : "Retirada em mãos";
   const shortId = `#${order.id.slice(0, 8).toUpperCase()}`;
   // O ponto de retirada foi persistido nas observações; não usar o endereço residencial.
   const pickupLine = order.notes?.split("\n").find((line) => line.startsWith("Retirada em mãos: ")) ?? "";
   const scheduleSeparator = pickupLine.lastIndexOf(" — ");
   const pickupAddress = scheduleSeparator >= 0 ? pickupLine.slice("Retirada em mãos: ".length, scheduleSeparator) : "";
-  const address = kind === "pickup" ? pickupAddress : [
+  // Evento: nome e descrição persistidos nas observações ("Retirada em eventos: Nome — data.").
+  const eventLine = order.notes?.split("\n").find((line) => line.startsWith("Retirada em eventos: ")) ?? "";
+  const eventSeparator = eventLine.lastIndexOf(" — ");
+  const eventAddress = eventSeparator >= 0 ? eventLine.slice("Retirada em eventos: ".length, eventSeparator) : "";
+  const address = kind === "pickup" ? pickupAddress : kind === "event" ? eventAddress : [
     [order.street, order.number].filter(Boolean).join(", "),
     order.complement, order.neighborhood,
     [order.city, order.state].filter(Boolean).join("/"),
