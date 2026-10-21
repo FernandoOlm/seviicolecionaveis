@@ -1,3 +1,4 @@
+import { PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,7 +11,14 @@ import { resendPendingOrderEmails } from "@/utils/payments.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Sevii Admin" }] }),
+  head: () => ({ meta: [
+    { title: "Dashboard — Sevii Admin" },
+    { name: "description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:title", content: "Dashboard — Sevii Admin" },
+    { property: "og:description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: DashboardPage,
 });
 
@@ -43,7 +51,7 @@ function DashboardPage() {
     const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
     const recent = orders.filter((o) => new Date(o.created_at).getTime() >= monthAgo);
     const revenueTotal = orders
-      .filter((o) => ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"].includes(o.status))
+      .filter((o) => PAID_ORDER_STATUSES.includes(o.status))
       .reduce((s, o) => s + (o.total_cents ?? 0), 0);
     const pending = orders.filter((o) => o.status === "pending").length;
     const totalViews = Array.from(stats.views.values()).reduce((a, b) => a + b, 0);

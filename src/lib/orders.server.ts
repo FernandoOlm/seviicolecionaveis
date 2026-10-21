@@ -1,3 +1,4 @@
+import { PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendTransactionalEmailSafe } from "@/lib/email/send.server";
 import { parseVariants, parseAccessoryCartId } from "@/lib/accessory-variants";
@@ -124,7 +125,7 @@ export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymen
   if (order.status === "paid") return;
   // Pedidos que já passaram do pagamento (em preparo, enviado, entregue…) já
   // tiveram o estoque baixado — nunca baixar de novo.
-  const POST_PAID = ["preparing", "shipped", "awaiting_pickup", "delivered"];
+  const POST_PAID = PAID_ORDER_STATUSES;
   if (POST_PAID.includes(order.status)) return;
 
   // Trava atômica: só um processamento consegue marcar stock_decremented de

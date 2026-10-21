@@ -1,3 +1,4 @@
+import { PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
@@ -18,7 +19,7 @@ export const getOwnedCardKeysInCollection = createServerFn({ method: 'POST' })
       .from('orders')
       .select('id')
       .eq('user_id', userId)
-      .in('status', ['paid', 'preparing', 'shipped', 'delivered'])
+      .in('status', PAID_ORDER_STATUSES)
     if (ordersErr) {
       console.error('[collection-progress] orders failed', ordersErr)
       return { ownedKeys: [] as string[] }

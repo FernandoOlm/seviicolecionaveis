@@ -1,3 +1,4 @@
+import { ORDER_STATUS_LABELS } from "@/lib/order-status";
 import * as React from 'react'
 import { Heading, Section, Text } from '@react-email/components'
 import type { TemplateEntry } from './registry'
@@ -11,12 +12,7 @@ interface AdminCancellationRequestedProps {
   preCancelStatus?: string
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Em preparação',
-  paid: 'Pago',
-  shipped: 'Enviado',
-  delivered: 'Entregue',
-}
+const STATUS_LABEL = ORDER_STATUS_LABELS;
 
 const AdminCancellationRequestedEmail: React.FC<AdminCancellationRequestedProps> = ({
   orderId,
