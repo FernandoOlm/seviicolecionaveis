@@ -15,6 +15,7 @@ import { template as arteEmCardsCodeTemplate } from './arte-em-cards-code'
 import { template as stackAuctionStoredTemplate } from './stack-auction-stored'
 import { template as stackOrderStoredTemplate } from './stack-order-stored'
 import { template as stackReminderTemplate } from './stack-reminder'
+import { template as stackExpiredTemplate } from './stack-expired'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -46,4 +47,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'stack-auction-stored': stackAuctionStoredTemplate,
   'stack-order-stored': stackOrderStoredTemplate,
   'stack-reminder': stackReminderTemplate,
+  'stack-expired': stackExpiredTemplate,
 }
