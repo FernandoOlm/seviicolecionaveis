@@ -20,8 +20,10 @@ import { TrustBadges } from "@/components/TrustBadges";
 import { computeBundleDiscount } from "@/lib/bundles";
 import { copyToClipboard } from "@/lib/clipboard";
 import { ScheduleSlotPicker } from "@/components/ScheduleSlotPicker";
+import { EventSlotPicker, type EventSelection } from "@/components/EventSlotPicker";
+import { listActiveEvents } from "@/lib/events.functions";
+import { validateEventSchedule, type PickupEvent } from "@/lib/events";
 import { isSlotBookable, SLOT_EXPIRED_MESSAGE } from "@/lib/scheduling";
-import { validatePickupEvent } from "@/lib/checkout-pickup";
 import { formatSchedule, HAND_DELIVERY_PIX_KEY } from "@/lib/scheduling";
 import { CardStackTermsDialog } from "@/components/CardStackTermsDialog";
 import {
@@ -151,7 +153,7 @@ interface CardState {
   couponCode: string | null;
   pointsToRedeem: number;
   arteEmCardsCode: string | null;
-  schedule: { kind: "delivery" | "pickup"; at: string } | null;
+  schedule: { kind: "delivery" | "pickup" | "event"; at: string; eventId?: string | null } | null;
 }
 
 function CheckoutPage() {
@@ -163,13 +165,23 @@ function CheckoutPage() {
   const [stackTermsAccepted, setStackTermsAccepted] = useState(false);
   const [stackTermsOpen, setStackTermsOpen] = useState(false);
   const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | "app" | "evento" | null>(null);
-  const [pickupEvent, setPickupEvent] = useState("");
+  const [eventSel, setEventSel] = useState<EventSelection | null>(null);
+  const [pickupEvents, setPickupEvents] = useState<PickupEvent[]>([]);
   const [scheduleAt, setScheduleAt] = useState<string | null>(null);
   const [deliveryInfo, setDeliveryInfo] = useState("");
-  const schedulePayload = () =>
-    shipping === "arrange" && pickupPoint !== "evento" && scheduleAt
+  useEffect(() => {
+    if (shipping === "arrange" && pickupPoint === "evento" && pickupEvents.length === 0) {
+      listActiveEvents().then(setPickupEvents).catch(() => {});
+    }
+  }, [shipping, pickupPoint, pickupEvents.length]);
+  const schedulePayload = () => {
+    if (shipping !== "arrange") return null;
+    if (pickupPoint === "evento")
+      return eventSel ? { kind: "event" as const, at: eventSel.iso, eventId: eventSel.eventId } : null;
+    return scheduleAt
       ? { kind: (pickupPoint === "app" ? "delivery" : "pickup") as "delivery" | "pickup", at: scheduleAt }
       : null;
+  };
   const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [quotesError, setQuotesError] = useState<string | null>(null);
@@ -462,7 +474,7 @@ function CheckoutPage() {
     const pickupLine =
       shipping === "arrange" && pickupPoint
         ? pickupPoint === "evento"
-          ? `Retirada em eventos: ${pickupEvent.trim()}.`
+          ? `Retirada em eventos: ${pickupEvents.find((e) => e.id === eventSel?.eventId)?.name ?? "Evento"} — ${eventSel ? formatSchedule("pickup", eventSel.iso) : "horário a definir"}.`
           : pickupPoint === "app"
           ? `Entrega em mãos (Aracaju) — ${scheduleAt ? formatSchedule("delivery", scheduleAt) : "data a definir"}. Taxa R$ 15,00 via Pix (${HAND_DELIVERY_PIX_KEY}) — aguardando comprovante.${deliveryInfo.trim() ? `\nInformações adicionais: ${deliveryInfo.trim()}` : ""}`
           : `Retirada em mãos: ${PICKUP_LABELS[pickupPoint]} — ${scheduleAt ? formatSchedule("pickup", scheduleAt) : "horário a definir"}.`
@@ -569,8 +581,13 @@ function CheckoutPage() {
       return "Selecione uma opção: Aruana, Aeroporto, Entrega em mãos ou Retirada em eventos.";
     }
     if (shipping === "arrange" && pickupPoint === "evento") {
-      const eventError = validatePickupEvent(pickupEvent);
-      if (eventError) return eventError;
+      if (!eventSel) return "Escolha o evento, o dia e o horário da retirada.";
+      const ev = pickupEvents.find((e) => e.id === eventSel.eventId);
+      const eventError = ev ? validateEventSchedule(ev, eventSel.ymd, eventSel.slot) : "Evento não encontrado.";
+      if (eventError) {
+        if (ev) setEventSel(null);
+        return eventError;
+      }
     }
     if (shipping === "arrange" && pickupPoint !== "evento" && !scheduleAt) {
       return pickupPoint === "app" ? "Escolha a quinta-feira da entrega." : "Escolha o dia e horário da retirada.";
@@ -921,13 +938,8 @@ function CheckoutPage() {
                 </label>
                 {shipping === "arrange" && pickupPoint === "evento" && (
                   <div className="px-4 pb-4">
-                    <Field
-                      label="Qual evento você vai comparecer?"
-                      required
-                      value={pickupEvent}
-                      onChange={(value) => setPickupEvent(value.slice(0, 200))}
-                      placeholder="Ex: Encontro Pokémon TCG - Praça X"
-                    />
+                    <p className="text-xs font-semibold mb-2">Escolha o evento, o dia e o horário da retirada</p>
+                    <EventSlotPicker events={pickupEvents} value={eventSel} onChange={setEventSel} />
                   </div>
                 )}
               </div>
