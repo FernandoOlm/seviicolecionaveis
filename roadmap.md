@@ -8,3 +8,11 @@
 - [x] Testes de envio/dados e leitura autenticada no painel.
 - [ ] Destinatário da loja: aguarda preenchimento em Admin → E-mails.
 - [ ] Confirmar recebimento real: aguarda pedido agendado pago; nenhum pedido desse tipo existe ainda.
+## Hub de Eventos (Retirada em eventos)
+- [x] Tabela de eventos + vínculo no pedido e na ordem de serviço (pilha).
+- [x] Admin /admin/eventos: criar/editar/desativar/excluir, lista + calendário, pedidos por evento com impressão, aviso com contagem de pedidos e e-mail aos clientes.
+- [x] Calendário de eventos no checkout e na Pilha (dias em azul, blocos de 1h, fecha 24h antes, validado no servidor).
+- [x] Confirmações por e-mail (cliente + loja com Google Calendar) para agendamentos de evento.
+- [x] Reabertura às 10h do dia seguinte ao fim do evento (cron diário 13h01 UTC), histórico "Não compareceu", e-mail com WhatsApp, reagendamento na página do pedido (retirada em mãos ou outro evento).
+- [x] Testado no navegador: evento criado no admin aparece no checkout com dia e horários.
+- [ ] Publicar o site para valer em produção.
