@@ -6,7 +6,11 @@ export const HAND_DELIVERY_FEE_CENTS = 1500;
 export const HAND_DELIVERY_PIX_KEY = "seviicolecionaveis@gmail.com";
 export const STORE_WHATSAPP = "5579981509552";
 
-const TZ_OFFSET_HOURS = -3; // America/Maceio (sem horário de verão)
+const TZ_OFFSET_HOURS = -3; // America/Fortaleza (sem horário de verão)
+
+/** Antecedência mínima para qualquer agendamento. */
+export const MIN_LEAD_MS = 24 * 3_600_000;
+export const SLOT_EXPIRED_MESSAGE = "Esse horário não está mais disponível. Escolha outra data.";
 
 /** Horários (HH:MM) de cada tipo. Entrega: a partir das 19h. Retirada: 14h–19h em blocos de 30 min. */
 export function slotsFor(kind: ScheduleKind): string[] {
@@ -45,7 +49,6 @@ export function localParts(iso: string) {
 export function validateSchedule(kind: ScheduleKind, iso: string, now: Date = new Date()): string | null {
   const ts = new Date(iso).getTime();
   if (Number.isNaN(ts)) return "Data de agendamento inválida.";
-  if (ts <= now.getTime()) return "Escolha uma data futura.";
   const p = localParts(iso);
   if (!isAllowedWeekday(kind, p.weekday)) {
     return kind === "delivery"
@@ -53,7 +56,50 @@ export function validateSchedule(kind: ScheduleKind, iso: string, now: Date = ne
       : "Retirada em mãos só de segunda a sexta.";
   }
   if (!slotsFor(kind).includes(p.time)) return "Horário indisponível.";
+  if (ts - now.getTime() < MIN_LEAD_MS) return SLOT_EXPIRED_MESSAGE;
   return null;
+}
+
+/** Horário ainda pode ser agendado (dia permitido e 24h+ de antecedência). */
+export function isSlotBookable(kind: ScheduleKind, iso: string, now: Date = new Date()): boolean {
+  return validateSchedule(kind, iso, now) === null;
+}
+
+/** Dia (YYYY-MM-DD, Fortaleza) tem pelo menos um horário agendável. */
+export function isDayBookable(kind: ScheduleKind, dateYmd: string, now: Date = new Date()): boolean {
+  return slotsFor(kind).some((s) => isSlotBookable(kind, toIso(dateYmd, s), now));
+}
+
+/** Data de hoje em Fortaleza (YYYY-MM-DD). */
+export function todayYmd(now: Date = new Date()): string {
+  return localParts(now.toISOString()).ymd;
+}
+
+export function addDaysYmd(dateYmd: string, days: number): string {
+  const [y, m, d] = dateYmd.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/** Próximo dia agendável a partir de hoje (Fortaleza). */
+export function nextBookableDay(kind: ScheduleKind, now: Date = new Date()): string | null {
+  let day = todayYmd(now);
+  for (let i = 0; i < 60; i++, day = addDaysYmd(day, 1)) if (isDayBookable(kind, day, now)) return day;
+  return null;
+}
+
+/** Retirada: limite para o admin marcar "Entregue" — 14h (Fortaleza) do dia seguinte ao agendado. */
+export function pickupReopenDeadline(scheduledIso: string): Date {
+  return new Date(toIso(addDaysYmd(localParts(scheduledIso).ymd, 1), "14:00"));
+}
+
+/** Retirada agendada não concluída a tempo deve reabrir. */
+export function shouldReopenPickup(
+  o: { schedule_kind: string | null; scheduled_at: string | null; status: string; reschedule_required?: boolean | null },
+  now: Date = new Date(),
+): boolean {
+  if (o.schedule_kind !== "pickup" || !o.scheduled_at || o.reschedule_required) return false;
+  if (["delivered", "cancelled", "pending", "cancellation_requested"].includes(o.status)) return false;
+  return now.getTime() >= pickupReopenDeadline(o.scheduled_at).getTime();
 }
 
 export function formatSchedule(kind: ScheduleKind | string | null, iso: string): string {
