@@ -66,7 +66,7 @@ async function loadStack(supabase: any, userId: string, stackId: string | null):
     if (itemsErr) throw new Error(itemsErr.message);
 
     const orderIds = Array.from(
-      new Set((items ?? []).map((i: any) => i.order_id).filter((v): v is string => !!v)),
+      new Set((items ?? []).map((i: any) => i.order_id).filter((v: any): v is string => !!v)),
     );
     let createdAtByOrder = new Map<string, string>();
     if (orderIds.length > 0) {
