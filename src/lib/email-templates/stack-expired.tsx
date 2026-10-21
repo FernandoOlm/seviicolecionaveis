@@ -28,7 +28,7 @@ const StackExpiredEmail: React.FC<StackExpiredProps> = ({ recipientName, stackId
           </Text>
         )}
         <Text style={{ ...styles.muted, margin: 0 }}>
-          Opções: Correios, Entrega por aplicativo, Retirada presencial (Aruana ou Aeroporto) ou Retirada em eventos.
+          Opções: Correios, Entrega em mãos, Retirada presencial (Aruana ou Aeroporto) ou Retirada em eventos.
         </Text>
       </Section>
 
