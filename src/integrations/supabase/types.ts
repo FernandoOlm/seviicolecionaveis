@@ -1432,7 +1432,10 @@ export type Database = {
           pre_cancel_status: string | null
           recipient_name: string
           refunded_cents: number
+          reschedule_required: boolean
+          schedule_history: Json
           schedule_kind: string | null
+          schedule_reopened_at: string | null
           scheduled_at: string | null
           shipping_cost_cents: number
           shipping_method: string
@@ -1490,7 +1493,10 @@ export type Database = {
           pre_cancel_status?: string | null
           recipient_name: string
           refunded_cents?: number
+          reschedule_required?: boolean
+          schedule_history?: Json
           schedule_kind?: string | null
+          schedule_reopened_at?: string | null
           scheduled_at?: string | null
           shipping_cost_cents?: number
           shipping_method: string
@@ -1548,7 +1554,10 @@ export type Database = {
           pre_cancel_status?: string | null
           recipient_name?: string
           refunded_cents?: number
+          reschedule_required?: boolean
+          schedule_history?: Json
           schedule_kind?: string | null
+          schedule_reopened_at?: string | null
           scheduled_at?: string | null
           shipping_cost_cents?: number
           shipping_method?: string

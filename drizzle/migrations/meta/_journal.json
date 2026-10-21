@@ -15,6 +15,13 @@
       "when": 1792611690579,
       "tag": "0001_order_scheduling",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792615954347,
+      "tag": "0002_pickup_reschedule",
+      "breakpoints": true
     }
   ]
 }
