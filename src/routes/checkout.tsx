@@ -19,6 +19,8 @@ import { trackEvent } from "@/lib/analytics";
 import { TrustBadges } from "@/components/TrustBadges";
 import { computeBundleDiscount } from "@/lib/bundles";
 import { copyToClipboard } from "@/lib/clipboard";
+import { ScheduleSlotPicker } from "@/components/ScheduleSlotPicker";
+import { formatSchedule, HAND_DELIVERY_PIX_KEY } from "@/lib/scheduling";
 import { CardStackTermsDialog } from "@/components/CardStackTermsDialog";
 import {
   Dialog,
@@ -145,6 +147,7 @@ interface CardState {
   couponCode: string | null;
   pointsToRedeem: number;
   arteEmCardsCode: string | null;
+  schedule: { kind: "delivery" | "pickup"; at: string } | null;
 }
 
 function CheckoutPage() {
@@ -156,6 +159,12 @@ function CheckoutPage() {
   const [stackTermsAccepted, setStackTermsAccepted] = useState(false);
   const [stackTermsOpen, setStackTermsOpen] = useState(false);
   const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | "app" | null>(null);
+  const [scheduleAt, setScheduleAt] = useState<string | null>(null);
+  const [deliveryInfo, setDeliveryInfo] = useState("");
+  const schedulePayload = () =>
+    shipping === "arrange" && scheduleAt
+      ? { kind: (pickupPoint === "app" ? "delivery" : "pickup") as "delivery" | "pickup", at: scheduleAt }
+      : null;
   const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [quotesError, setQuotesError] = useState<string | null>(null);
@@ -436,7 +445,7 @@ function CheckoutPage() {
   const PICKUP_LABELS: Record<"aruana" | "aeroporto" | "app", string> = {
     aruana: "Aruana — Rua Josepha Andrade Irmã Fontes, 600, Residencial Vista Aruana",
     aeroporto: "Aeroporto — Av. Silvério Leite Fontes, 1128, Palm Ville Residence",
-    app: "Entrega por aplicativo (somente Uber)",
+    app: "Entrega em mãos (somente em Aracaju)",
   };
 
   const buildNotes = () => {
@@ -447,8 +456,8 @@ function CheckoutPage() {
     const pickupLine =
       shipping === "arrange" && pickupPoint
         ? pickupPoint === "app"
-          ? `Entrega por aplicativo (somente Uber): cliente solicitará disponibilidade pelo WhatsApp. Envios realizados às terças e quintas, das 14h às 18h.`
-          : `Retirada em mãos: ${PICKUP_LABELS[pickupPoint]}. Horário: tarde das 14h às 18h em dias úteis, mediante contato com 24h de antecedência.`
+          ? `Entrega em mãos (Aracaju) — ${scheduleAt ? formatSchedule("delivery", scheduleAt) : "data a definir"}. Taxa R$ 15,00 via Pix (${HAND_DELIVERY_PIX_KEY}) — aguardando comprovante.${deliveryInfo.trim() ? `\nInformações adicionais: ${deliveryInfo.trim()}` : ""}`
+          : `Retirada em mãos: ${PICKUP_LABELS[pickupPoint]} — ${scheduleAt ? formatSchedule("pickup", scheduleAt) : "horário a definir"}.`
         : "";
     const combined = [pickupLine, favsLine, form.notes.trim()].filter(Boolean).join("\n\n");
     return combined ? combined.slice(0, 2000) : null;
@@ -501,6 +510,7 @@ function CheckoutPage() {
           address: buildAddressPayload(),
           notes: buildNotes(),
           arteEmCardsCode: null,
+          schedule: schedulePayload(),
         },
       });
       clear();
@@ -548,7 +558,13 @@ function CheckoutPage() {
       return "Selecione uma opção de frete (informe o CEP para carregar).";
     }
     if (shipping === "arrange" && !pickupPoint) {
-      return "Selecione uma opção: Aruana, Aeroporto ou Entrega por aplicativo.";
+      return "Selecione uma opção: Aruana, Aeroporto ou Entrega em mãos.";
+    }
+    if (shipping === "arrange" && !scheduleAt) {
+      return pickupPoint === "app" ? "Escolha a quinta-feira da entrega." : "Escolha o dia e horário da retirada.";
+    }
+    if (shipping === "arrange" && pickupPoint === "app" && (!form.street.trim() || !form.number.trim())) {
+      return "Informe o endereço completo de entrega.";
     }
     if (shipping === "card_stack" && !stackTermsAccepted) {
       return "Aceite os termos da Pilha de Cartas para continuar.";
@@ -582,6 +598,7 @@ function CheckoutPage() {
         couponCode: couponNormalized || null,
         pointsToRedeem: pointsRedeemed,
         arteEmCardsCode: null,
+        schedule: schedulePayload(),
       });
       setStep("card");
     } catch (e: any) {
@@ -617,6 +634,7 @@ function CheckoutPage() {
           couponCode: couponNormalized || null,
           pointsToRedeem: pointsRedeemed,
           arteEmCardsCode: null,
+          schedule: schedulePayload(),
         },
       });
       if ((result as any).status === "paid") {
@@ -758,32 +776,52 @@ function CheckoutPage() {
                 </div>
               </label>
 
-              <label className="flex items-start gap-3 rounded-lg border border-border p-4 cursor-pointer hover:bg-secondary/50">
-                <input
-                  type="radio"
-                  name="ship"
-                  checked={shipping === "arrange" && pickupPoint === "app"}
-                  onChange={() => {
-                    setShipping("arrange");
-                    setPickupPoint("app");
-                  }}
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">Entrega por aplicativo (somente Uber)</p>
-                  <p className="text-xs text-muted-foreground">
-                    Após a compra, solicite a disponibilidade pelo WhatsApp — o valor da corrida é por sua conta. Envios realizados às terças e quintas, das 14h às 18h.
-                  </p>
-                  {shipping === "arrange" && pickupPoint === "app" && (
-                    <div className="mt-2 rounded-md bg-secondary/60 border border-border p-3 text-xs text-muted-foreground">
-                      Assim que o pedido for confirmado, abra o pedido em <span className="font-semibold text-foreground">Meus pedidos</span> e
-                      clique no botão <span className="font-semibold text-foreground">"Solicitar entrega por aplicativo"</span> para falar com a loja no WhatsApp.
-                      <br /><br />
-                      Envios por aplicativo são feitos apenas às <span className="font-semibold text-foreground">terças e quintas</span>, no período das <span className="font-semibold text-foreground">14h às 18h</span>.
+              <div className="rounded-lg border border-border">
+                <label className="flex items-start gap-3 p-4 cursor-pointer hover:bg-secondary/50">
+                  <input
+                    type="radio"
+                    name="ship"
+                    checked={shipping === "arrange" && pickupPoint === "app"}
+                    onChange={() => {
+                      setShipping("arrange");
+                      setPickupPoint("app");
+                      setScheduleAt(null);
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">🛵 Entrega em mãos (somente em Aracaju)</p>
+                    <p className="text-xs text-muted-foreground">
+                      Entrega feita por entregador parceiro às quintas-feiras, a partir das 19h. Taxa fixa de R$15. A rota é montada de acordo com os endereços do dia, então o horário de chegada pode variar conforme a distância.
+                    </p>
+                  </div>
+                </label>
+                {shipping === "arrange" && pickupPoint === "app" && (
+                  <div className="px-4 pb-4 space-y-3">
+                    <ScheduleSlotPicker kind="delivery" value={scheduleAt} onChange={setScheduleAt} />
+                    <div className="rounded-md border border-border p-3 text-xs">
+                      <p className="font-semibold text-sm mb-1">Endereço de entrega</p>
+                      <p className="text-muted-foreground">
+                        {form.street ? `${form.street}, ${form.number || "s/n"}${form.complement ? ` — ${form.complement}` : ""} · ${form.neighborhood} · ${form.city}/${form.state}` : "Preencha o endereço completo acima."}
+                      </p>
                     </div>
-                  )}
-                </div>
-              </label>
+                    <textarea
+                      className="w-full border rounded-md px-3 py-2 text-sm min-h-[60px] bg-background"
+                      maxLength={300}
+                      placeholder='Informações adicionais (ex: "deixar na portaria", "caixa de correio", "só recebo em mãos")'
+                      value={deliveryInfo}
+                      onChange={(e) => setDeliveryInfo(e.target.value)}
+                    />
+                    <div className="rounded-md bg-secondary/60 border border-border p-3 text-xs text-muted-foreground space-y-1">
+                      <p>
+                        <span className="font-semibold text-foreground">Pagamento da entrega:</span> R$ 15,00 via Pix para a chave{" "}
+                        <span className="font-mono font-semibold text-foreground">{HAND_DELIVERY_PIX_KEY}</span>.
+                      </p>
+                      <p>Depois de finalizar o pedido, envie o comprovante pelo botão "Enviar comprovante no WhatsApp" na página do pedido. A entrega fica aguardando confirmação do pagamento pela loja.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="rounded-lg border border-border">
                 <label className="flex items-start gap-3 p-4 cursor-pointer hover:bg-secondary/50">
@@ -794,6 +832,7 @@ function CheckoutPage() {
                     onChange={() => {
                       setShipping("arrange");
                       if (pickupPoint === "app") setPickupPoint(null);
+                      setScheduleAt(null);
                     }}
                     className="mt-1"
                   />
@@ -835,10 +874,9 @@ function CheckoutPage() {
                       </div>
                     </label>
                     {pickupPoint && (
-                      <div className="rounded-md bg-secondary/60 border border-border p-3 text-xs text-muted-foreground">
-                        <span className="font-semibold text-foreground">Atenção:</span> retiradas são feitas no período da
-                        tarde, das <span className="font-semibold text-foreground">14h às 18h</span>, em qualquer dia útil
-                        da semana, desde que você entre em contato com a gente pela manhã do mesmo dia.
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold">Agende sua retirada (gratuita)</p>
+                        <ScheduleSlotPicker kind="pickup" value={scheduleAt} onChange={setScheduleAt} />
                       </div>
                     )}
                   </div>
