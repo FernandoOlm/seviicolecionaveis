@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { formatSchedule, HAND_DELIVERY_PIX_KEY, STORE_WHATSAPP } from "@/lib/scheduling";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -412,6 +413,41 @@ function OrderDetailPage() {
             <p className="text-xs text-amber-900">
               Retiradas: 14h às 18h em dias úteis, mediante contato com 24h de antecedência.
             </p>
+          </section>
+        )}
+
+        {(order as any).scheduled_at && (
+          <section className="rounded-xl border border-border bg-card p-5 text-sm space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                {(order as any).schedule_kind === "delivery" ? "Entrega em mãos" : "Retirada em mãos"}
+              </h2>
+              <p className="text-sm mt-1">
+                Agendado para <strong>{formatSchedule((order as any).schedule_kind, (order as any).scheduled_at)}</strong>
+              </p>
+            </div>
+            {(order as any).schedule_kind === "delivery" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Taxa de entrega: <strong>R$ 15,00</strong> via Pix para a chave{" "}
+                  <span className="font-mono font-semibold text-foreground">{HAND_DELIVERY_PIX_KEY}</span>.{" "}
+                  Status:{" "}
+                  <strong>{(order as any).hand_delivery_fee_status === "confirmed" ? "pagamento confirmado" : "aguardando confirmação de pagamento"}</strong>
+                </p>
+                {(order as any).hand_delivery_fee_status !== "confirmed" && (
+                  <a
+                    href={`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(
+                      `Olá! Envio o comprovante do Pix da Entrega em Mãos referente ao pedido #${order.id.slice(0, 8).toUpperCase()}`,
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold hover:opacity-90"
+                  >
+                    Enviar comprovante no WhatsApp
+                  </a>
+                )}
+              </>
+            )}
           </section>
         )}
 
