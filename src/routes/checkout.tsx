@@ -1526,6 +1526,7 @@ function CardScreen({
                     couponCode: card.couponCode,
                     pointsToRedeem: card.pointsToRedeem,
                     arteEmCardsCode: card.arteEmCardsCode,
+                    schedule: card.schedule,
                     card: {
                       token: cardFormData.token,
                       paymentMethodId: cardFormData.payment_method_id,
