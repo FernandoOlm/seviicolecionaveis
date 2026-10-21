@@ -586,6 +586,21 @@ function AdminOrderDetailPage() {
               {order.schedule_kind === "delivery" ? "Entrega em mãos" : "Retirada em mãos"} — agendamento
             </h2>
             <p className="text-sm">{formatSchedule(order.schedule_kind, order.scheduled_at)}</p>
+            {order.reschedule_required && (
+              <p className="text-xs font-semibold rounded-md bg-amber-100 text-amber-900 px-2 py-1 inline-block">
+                Retirada reaberta — reagendamento necessário (cliente ainda não escolheu novo horário)
+              </p>
+            )}
+            {Array.isArray(order.schedule_history) && order.schedule_history.length > 0 && (
+              <div className="text-xs text-muted-foreground">
+                <p className="font-semibold">Histórico de agendamentos</p>
+                <ul className="list-disc pl-4">
+                  {(order.schedule_history as any[]).map((h, i) => (
+                    <li key={i}>{formatSchedule(h.kind, h.scheduled_at)} — {h.outcome}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {order.schedule_kind === "delivery" && (
               <div className="flex flex-wrap items-center gap-3">
                 <span className="text-sm">

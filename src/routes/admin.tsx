@@ -347,6 +347,7 @@ function AdminPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xs font-mono text-muted-foreground">#{o.id.slice(0, 8)}</p>
+                      {o.reschedule_required && <span className="inline-block rounded bg-amber-100 text-amber-900 px-1.5 py-0.5 text-[10px] font-bold">Retirada reaberta</span>}
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${
                           isCancellation
