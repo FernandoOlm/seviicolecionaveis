@@ -28,6 +28,8 @@ export interface CreateServiceOrderInput {
   arteEmCardsCode?: string | null;
   pickupPoint?: "aruana" | "aeroporto" | null;
   eventName?: string | null;
+  eventId?: string | null;
+  eventAt?: string | null;
   notes?: string | null;
   cpf?: string | null;
 }
@@ -93,6 +95,7 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
   let amountCents = 0;
   let shippingCostCents = 0;
   let arteCodeUsed: string | null = null;
+  let eventName = input.eventName?.trim() ?? "";
 
   if (input.method === "correios") {
     if (!input.address) throw new Error("Endereço obrigatório para envio pelos Correios.");
@@ -106,7 +109,28 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
   } else if (input.method === "app") {
     amountCents = 0;
   } else if (input.method === "evento") {
-    if (!input.eventName?.trim()) throw new Error("Informe qual evento você vai comparecer.");
+    if (!input.eventId || !input.eventAt) throw new Error("Escolha o evento, o dia e o horário da retirada.");
+    const { data: ev } = await supabaseAdmin.from("events").select("*").eq("id", input.eventId).maybeSingle();
+    if (!ev) throw new Error("Evento não encontrado.");
+    const { validateEventSchedule, ymdOfIso } = await import("@/lib/events");
+    const { localParts } = await import("@/lib/scheduling");
+    const eventErr = validateEventSchedule(
+      {
+        id: ev.id,
+        name: ev.name,
+        description: ev.description ?? null,
+        start_date: ev.start_date,
+        end_date: ev.end_date,
+        start_time: String(ev.start_time).slice(0, 5),
+        end_time: String(ev.end_time).slice(0, 5),
+        per_day_times: (ev.per_day_times as any) ?? null,
+        active: ev.active,
+      },
+      ymdOfIso(input.eventAt),
+      localParts(input.eventAt).time,
+    );
+    if (eventErr) throw new Error(eventErr);
+    eventName = ev.name;
     amountCents = 0;
   } else if (input.method === "presencial") {
     if (!input.pickupPoint) throw new Error("Selecione o ponto de retirada (Aruana ou Aeroporto).");
@@ -134,9 +158,11 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
       city: input.address?.city ?? null,
       state: input.address?.state?.toUpperCase() ?? null,
       phone: input.address?.phone ?? null,
+      event_id: input.method === "evento" ? (input.eventId ?? null) : null,
+      scheduled_at: input.method === "evento" ? (input.eventAt ?? null) : null,
       notes:
         input.method === "evento"
-          ? `Retirada em evento: ${input.eventName?.trim()}.${input.notes ? `\n\n${input.notes}` : ""}`
+          ? `Retirada em eventos: ${eventName}.${input.notes ? `\n\n${input.notes}` : ""}`
           : input.method === "presencial" && input.pickupPoint
           ? `Retirada presencial: ${input.pickupPoint === "aruana" ? "Aruana" : "Aeroporto"}.${input.notes ? `\n\n${input.notes}` : ""}`
           : (input.notes ?? null),
