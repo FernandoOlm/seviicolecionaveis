@@ -25,7 +25,7 @@ export const Route = createFileRoute("/orders/$orderId")({
   component: OrderDetailPage,
 });
 
-const STATUS_LABEL = { ...ORDER_STATUS_LABELS, pending: "Pedido recebido — aguardando pagamento", cancellation_requested: "Cancelamento em análise" };
+const STATUS_LABEL: Record<string, string> = { ...ORDER_STATUS_LABELS, pending: "Pedido recebido — aguardando pagamento", cancellation_requested: "Cancelamento em análise" };
 
 const STATUS_ICON: Record<string, any> = {
   preparing: Package,

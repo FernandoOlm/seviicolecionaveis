@@ -21,7 +21,7 @@ export const Route = createFileRoute("/orders/")({
   component: OrdersPage,
 });
 
-const STATUS_LABEL = { ...ORDER_STATUS_LABELS, pending: "Aguardando pagamento", cancellation_requested: "Cancelamento em análise" };
+const STATUS_LABEL: Record<string, string> = { ...ORDER_STATUS_LABELS, pending: "Aguardando pagamento", cancellation_requested: "Cancelamento em análise" };
 const STATUS_COLOR: Record<string, string> = {
   preparing: "bg-muted text-muted-foreground",
   separated: "bg-secondary text-secondary-foreground",
