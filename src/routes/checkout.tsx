@@ -20,6 +20,7 @@ import { TrustBadges } from "@/components/TrustBadges";
 import { computeBundleDiscount } from "@/lib/bundles";
 import { copyToClipboard } from "@/lib/clipboard";
 import { ScheduleSlotPicker } from "@/components/ScheduleSlotPicker";
+import { validatePickupEvent } from "@/lib/checkout-pickup";
 import { formatSchedule, HAND_DELIVERY_PIX_KEY } from "@/lib/scheduling";
 import { CardStackTermsDialog } from "@/components/CardStackTermsDialog";
 import {
@@ -50,6 +51,8 @@ export const Route = createFileRoute("/checkout")({
       { name: "description", content: "Finalize seu pedido de cartas Pokémon na Sevii Colecionáveis. Pagamento seguro via Pix." },
       { property: "og:title", content: "Checkout — Sevii Colecionáveis" },
       { property: "og:description", content: "Finalize seu pedido com segurança." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:url", content: "https://seviicolecionaveis.lovable.app/checkout" },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -158,11 +161,12 @@ function CheckoutPage() {
   const [shipping, setShipping] = useState<"fixed" | "arrange" | "card_stack">("fixed");
   const [stackTermsAccepted, setStackTermsAccepted] = useState(false);
   const [stackTermsOpen, setStackTermsOpen] = useState(false);
-  const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | "app" | null>(null);
+  const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | "app" | "evento" | null>(null);
+  const [pickupEvent, setPickupEvent] = useState("");
   const [scheduleAt, setScheduleAt] = useState<string | null>(null);
   const [deliveryInfo, setDeliveryInfo] = useState("");
   const schedulePayload = () =>
-    shipping === "arrange" && scheduleAt
+    shipping === "arrange" && pickupPoint !== "evento" && scheduleAt
       ? { kind: (pickupPoint === "app" ? "delivery" : "pickup") as "delivery" | "pickup", at: scheduleAt }
       : null;
   const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
@@ -442,10 +446,11 @@ function CheckoutPage() {
       quantity: i.quantity,
     }));
 
-  const PICKUP_LABELS: Record<"aruana" | "aeroporto" | "app", string> = {
+  const PICKUP_LABELS: Record<"aruana" | "aeroporto" | "app" | "evento", string> = {
     aruana: "Aruana — Rua Josepha Andrade Irmã Fontes, 600, Residencial Vista Aruana",
     aeroporto: "Aeroporto — Av. Silvério Leite Fontes, 1128, Palm Ville Residence",
     app: "Entrega em mãos (somente em Aracaju)",
+    evento: "Retirada em eventos",
   };
 
   const buildNotes = () => {
@@ -455,7 +460,9 @@ function CheckoutPage() {
     const favsLine = favs.length ? `Pokémons favoritos: ${favs.join(", ")}` : "";
     const pickupLine =
       shipping === "arrange" && pickupPoint
-        ? pickupPoint === "app"
+        ? pickupPoint === "evento"
+          ? `Retirada em eventos: ${pickupEvent.trim()}.`
+          : pickupPoint === "app"
           ? `Entrega em mãos (Aracaju) — ${scheduleAt ? formatSchedule("delivery", scheduleAt) : "data a definir"}. Taxa R$ 15,00 via Pix (${HAND_DELIVERY_PIX_KEY}) — aguardando comprovante.${deliveryInfo.trim() ? `\nInformações adicionais: ${deliveryInfo.trim()}` : ""}`
           : `Retirada em mãos: ${PICKUP_LABELS[pickupPoint]} — ${scheduleAt ? formatSchedule("pickup", scheduleAt) : "horário a definir"}.`
         : "";
@@ -558,9 +565,13 @@ function CheckoutPage() {
       return "Selecione uma opção de frete (informe o CEP para carregar).";
     }
     if (shipping === "arrange" && !pickupPoint) {
-      return "Selecione uma opção: Aruana, Aeroporto ou Entrega em mãos.";
+      return "Selecione uma opção: Aruana, Aeroporto, Entrega em mãos ou Retirada em eventos.";
     }
-    if (shipping === "arrange" && !scheduleAt) {
+    if (shipping === "arrange" && pickupPoint === "evento") {
+      const eventError = validatePickupEvent(pickupEvent);
+      if (eventError) return eventError;
+    }
+    if (shipping === "arrange" && pickupPoint !== "evento" && !scheduleAt) {
       return pickupPoint === "app" ? "Escolha a quinta-feira da entrega." : "Escolha o dia e horário da retirada.";
     }
     if (shipping === "arrange" && pickupPoint === "app" && (!form.street.trim() || !form.number.trim())) {
@@ -828,10 +839,10 @@ function CheckoutPage() {
                   <input
                     type="radio"
                     name="ship"
-                    checked={shipping === "arrange" && pickupPoint !== "app"}
+                    checked={shipping === "arrange" && pickupPoint !== "app" && pickupPoint !== "evento"}
                     onChange={() => {
                       setShipping("arrange");
-                      if (pickupPoint === "app") setPickupPoint(null);
+                      if (pickupPoint === "app" || pickupPoint === "evento") setPickupPoint(null);
                       setScheduleAt(null);
                     }}
                     className="mt-1"
@@ -841,7 +852,7 @@ function CheckoutPage() {
                     <p className="text-xs text-muted-foreground">Escolha um dos pontos de retirada abaixo</p>
                   </div>
                 </label>
-                {shipping === "arrange" && pickupPoint !== "app" && (
+                {shipping === "arrange" && pickupPoint !== "app" && pickupPoint !== "evento" && (
                   <div className="px-4 pb-4 space-y-2">
                     <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer hover:bg-secondary/50">
                       <input
@@ -879,6 +890,39 @@ function CheckoutPage() {
                         <ScheduleSlotPicker kind="pickup" value={scheduleAt} onChange={setScheduleAt} />
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-border">
+                <label className="flex items-start gap-3 p-4 cursor-pointer hover:bg-secondary/50">
+                  <input
+                    type="radio"
+                    name="ship"
+                    checked={shipping === "arrange" && pickupPoint === "evento"}
+                    onChange={() => {
+                      setShipping("arrange");
+                      setPickupPoint("evento");
+                      setScheduleAt(null);
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">🎪 Retirada em eventos</p>
+                    <p className="text-xs text-muted-foreground">
+                      Gratuita. Retire seu pedido no evento em que você vai comparecer.
+                    </p>
+                  </div>
+                </label>
+                {shipping === "arrange" && pickupPoint === "evento" && (
+                  <div className="px-4 pb-4">
+                    <Field
+                      label="Qual evento você vai comparecer?"
+                      required
+                      value={pickupEvent}
+                      onChange={(value) => setPickupEvent(value.slice(0, 200))}
+                      placeholder="Ex: Encontro Pokémon TCG - Praça X"
+                    />
                   </div>
                 )}
               </div>

@@ -1,0 +1,1 @@
+Checkout pickup validation lives in browser-safe helpers under src/lib, with focused tests; event pickup uses shippingMethod arrange and persists the event in order notes without a schedule, keeping all payment paths compatible.
