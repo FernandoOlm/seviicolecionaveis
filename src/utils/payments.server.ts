@@ -87,9 +87,35 @@ async function resolveArteEmCardsFee(
   return { feeCents: ARTE_EM_CARDS_FEE_CENTS, codeUsed: null };
 }
 
-function assertSchedule(data: { shippingMethod: string; schedule?: { kind: "delivery" | "pickup"; at: string } | null }) {
+async function assertSchedule(data: {
+  shippingMethod: string;
+  schedule?: { kind: "delivery" | "pickup" | "event"; at: string; eventId?: string | null } | null;
+}) {
   if (data.shippingMethod !== "arrange") return;
   if (!data.schedule) throw new Error("Escolha o dia e horário da entrega ou retirada.");
+  if (data.schedule.kind === "event") {
+    if (!data.schedule.eventId) throw new Error("Escolha o evento em que você vai retirar o pedido.");
+    const { data: ev } = await supabaseAdmin.from("events").select("*").eq("id", data.schedule.eventId).maybeSingle();
+    if (!ev) throw new Error("Evento não encontrado.");
+    const { validateEventSchedule, ymdOfIso } = await import("@/lib/events");
+    const err = validateEventSchedule(
+      {
+        id: ev.id,
+        name: ev.name,
+        description: ev.description ?? null,
+        start_date: ev.start_date,
+        end_date: ev.end_date,
+        start_time: String(ev.start_time).slice(0, 5),
+        end_time: String(ev.end_time).slice(0, 5),
+        per_day_times: (ev.per_day_times as any) ?? null,
+        active: ev.active,
+      },
+      ymdOfIso(data.schedule.at),
+      localParts(data.schedule.at).time,
+    );
+    if (err) throw new Error(err);
+    return;
+  }
   const err = validateSchedule(data.schedule.kind, data.schedule.at);
   if (err) throw new Error(err);
 }
