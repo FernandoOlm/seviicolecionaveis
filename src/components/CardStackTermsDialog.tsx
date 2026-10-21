@@ -73,10 +73,9 @@ export function CardStackTermsDialog({ open, onAccept, onCancel }: Props) {
               </div>
 
               <div className="rounded-md border border-border p-3">
-                <p className="font-semibold">🛵 Aplicativo de Entrega</p>
+                <p className="font-semibold">🛵 Entrega em mãos (somente em Aracaju)</p>
                 <p className="text-muted-foreground text-xs mt-1">
-                  Será disponibilizado um botão para contato via WhatsApp. Nossa equipe realizará a
-                  cotação e combinará o envio com você.
+                  Entregador parceiro às quintas-feiras, a partir das 19h. Taxa fixa de R$ 15.
                 </p>
               </div>
 

@@ -1,3 +1,4 @@
+import { validateSchedule } from "@/lib/scheduling";
 import { type StripeEnv, createStripeClient } from "@/lib/stripe.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createPixPayment, getPixPayment, createCardPaymentMP } from "@/lib/mercadopago.server";
@@ -83,6 +84,13 @@ async function resolveArteEmCardsFee(
     if (v.valid) return { feeCents: 0, codeUsed: v.code };
   }
   return { feeCents: ARTE_EM_CARDS_FEE_CENTS, codeUsed: null };
+}
+
+function assertSchedule(data: { shippingMethod: string; schedule?: { kind: "delivery" | "pickup"; at: string } | null }) {
+  if (data.shippingMethod !== "arrange") return;
+  if (!data.schedule) throw new Error("Escolha o dia e horário da entrega ou retirada.");
+  const err = validateSchedule(data.schedule.kind, data.schedule.at);
+  if (err) throw new Error(err);
 }
 
 function computeShippingCents(input: {
@@ -751,6 +759,7 @@ export async function createOrderCheckoutServer(data: StripeInput, userId: strin
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
+  assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -787,6 +796,9 @@ export async function createOrderCheckoutServer(data: StripeInput, userId: strin
       status: "pending",
       payment_method: "stripe",
       shipping_method: data.shippingMethod,
+      scheduled_at: data.schedule?.at ?? null,
+      schedule_kind: data.schedule?.kind ?? null,
+      hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -909,6 +921,7 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
+  assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -952,6 +965,9 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
       status: "pending",
       payment_method: "pix",
       shipping_method: data.shippingMethod,
+      scheduled_at: data.schedule?.at ?? null,
+      schedule_kind: data.schedule?.kind ?? null,
+      hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -1113,6 +1129,7 @@ export async function createCardOrderServer(data: CardInput, userId: string) {
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
+  assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -1149,6 +1166,9 @@ export async function createCardOrderServer(data: CardInput, userId: string) {
       status: "pending",
       payment_method: "mercadopago_card",
       shipping_method: data.shippingMethod,
+      scheduled_at: data.schedule?.at ?? null,
+      schedule_kind: data.schedule?.kind ?? null,
+      hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -1487,6 +1507,7 @@ export async function createAdminTestOrderServer(data: AdminTestInput, userId: s
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
+  assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -1505,6 +1526,9 @@ export async function createAdminTestOrderServer(data: AdminTestInput, userId: s
       status: "pending",
       payment_method: "admin_test",
       shipping_method: data.shippingMethod,
+      scheduled_at: data.schedule?.at ?? null,
+      schedule_kind: data.schedule?.kind ?? null,
+      hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: 0,

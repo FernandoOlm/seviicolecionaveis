@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { formatSchedule } from "@/lib/scheduling";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -587,6 +588,35 @@ function AdminOrderDetailPage() {
           </dl>
         </div>
 
+
+        {order.scheduled_at && (
+          <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+            <h2 className="text-xs font-bold uppercase tracking-widest">
+              {order.schedule_kind === "delivery" ? "Entrega em mãos" : "Retirada em mãos"} — agendamento
+            </h2>
+            <p className="text-sm">{formatSchedule(order.schedule_kind, order.scheduled_at)}</p>
+            {order.schedule_kind === "delivery" && (
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm">
+                  Taxa R$ 15,00 (Pix manual):{" "}
+                  <strong>{order.hand_delivery_fee_status === "confirmed" ? "pagamento confirmado" : "aguardando confirmação de pagamento"}</strong>
+                </span>
+                <button
+                  type="button"
+                  className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
+                  onClick={async () => {
+                    const next = order.hand_delivery_fee_status === "confirmed" ? "pending" : "confirmed";
+                    const { error } = await supabase.from("orders").update({ hand_delivery_fee_status: next }).eq("id", order.id);
+                    if (error) toast.error(error.message);
+                    else { toast.success(next === "confirmed" ? "Pagamento da entrega confirmado" : "Confirmação desfeita"); await load(); }
+                  }}
+                >
+                  {order.hand_delivery_fee_status === "confirmed" ? "Desfazer confirmação" : "Confirmar pagamento da entrega"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Observações */}
         {order.notes && (

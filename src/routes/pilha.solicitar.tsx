@@ -394,7 +394,7 @@ function SolicitarPage() {
                 {(
                   [
                     { v: "correios", label: "📦 Correios (Mini Envios)", desc: "Cobrança do frete via Pix" },
-                    { v: "app", label: "🛵 Entrega por aplicativo (somente Uber)", desc: "Combinar via WhatsApp — terças e quintas, 14h às 18h" },
+                    { v: "app", label: "🛵 Entrega em mãos (somente em Aracaju)", desc: "Entregador parceiro às quintas, a partir das 19h — taxa R$ 15, combinar via WhatsApp" },
                     { v: "presencial", label: "🏪 Retirada Presencial", desc: "Aruana ou Aeroporto — gratuito" },
                     { v: "evento", label: "🎪 Retirada em Eventos", desc: "Retire no evento que você vai comparecer — gratuito" },
                     
