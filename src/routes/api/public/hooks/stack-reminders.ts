@@ -177,6 +177,7 @@ async function handler({ request }: { request: Request }) {
 
   return Response.json({
     ok: true,
+    expiryNotices,
     expired,
     checked: stacks?.length ?? 0,
     sent7,
