@@ -752,6 +752,7 @@ export type Database = {
         Row: {
           created_at: string
           expires_at: string
+          expiry_notice_sent_at: string | null
           id: string
           reminder_24h_sent_at: string | null
           reminder_48h_sent_at: string | null
@@ -764,6 +765,7 @@ export type Database = {
         Insert: {
           created_at?: string
           expires_at: string
+          expiry_notice_sent_at?: string | null
           id?: string
           reminder_24h_sent_at?: string | null
           reminder_48h_sent_at?: string | null
@@ -776,6 +778,7 @@ export type Database = {
         Update: {
           created_at?: string
           expires_at?: string
+          expiry_notice_sent_at?: string | null
           id?: string
           reminder_24h_sent_at?: string | null
           reminder_48h_sent_at?: string | null
