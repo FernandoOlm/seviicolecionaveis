@@ -35,6 +35,11 @@ const AddressSchema = z.object({
 
 export const ShippingMethodEnum = z.enum(["fixed", "arrange", "arte_em_cards", "card_stack"]);
 
+export const ScheduleSchema = z.object({
+  kind: z.enum(["delivery", "pickup"]),
+  at: z.string().datetime(),
+});
+
 export const StripeInputSchema = z.object({
   items: z.array(ItemSchema).min(1).max(500),
   shippingMethod: ShippingMethodEnum,
@@ -44,6 +49,7 @@ export const StripeInputSchema = z.object({
   couponCode: z.string().max(50).optional().nullable(),
   pointsToRedeem: z.number().int().min(0).max(10_000_000).optional().nullable(),
   arteEmCardsCode: z.string().trim().max(40).optional().nullable(),
+  schedule: ScheduleSchema.optional().nullable(),
   returnUrl: z.string().url(),
   environment: z.enum(["sandbox", "live"]),
 });
@@ -57,6 +63,7 @@ export const PixInputSchema = z.object({
   couponCode: z.string().max(50).optional().nullable(),
   pointsToRedeem: z.number().int().min(0).max(10_000_000).optional().nullable(),
   arteEmCardsCode: z.string().trim().max(40).optional().nullable(),
+  schedule: ScheduleSchema.optional().nullable(),
 });
 
 export const CardInputSchema = z.object({
@@ -68,6 +75,7 @@ export const CardInputSchema = z.object({
   couponCode: z.string().max(50).optional().nullable(),
   pointsToRedeem: z.number().int().min(0).max(10_000_000).optional().nullable(),
   arteEmCardsCode: z.string().trim().max(40).optional().nullable(),
+  schedule: ScheduleSchema.optional().nullable(),
   card: z.object({
     token: z.string().min(5).max(200),
     paymentMethodId: z.string().min(1).max(50),
@@ -86,6 +94,7 @@ export const AdminTestInputSchema = z.object({
   address: AddressSchema,
   notes: z.string().max(2000).optional().nullable(),
   arteEmCardsCode: z.string().trim().max(40).optional().nullable(),
+  schedule: ScheduleSchema.optional().nullable(),
 });
 
 export type ShippingMethod = z.infer<typeof ShippingMethodEnum>;
