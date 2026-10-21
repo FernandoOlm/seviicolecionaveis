@@ -84,6 +84,7 @@ import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/e
 import { Route as ApiPublicBotStatusRouteImport } from './routes/api/public/bot/status'
 import { Route as ApiPublicHooksAutoCancelUnpaidRouteImport } from './routes/api/public/hooks/auto-cancel-unpaid'
 import { Route as ApiPublicHooksExpireLoyaltyPointsRouteImport } from './routes/api/public/hooks/expire-loyalty-points'
+import { Route as ApiPublicHooksPickupReopenRouteImport } from './routes/api/public/hooks/pickup-reopen'
 import { Route as ApiPublicHooksPriceDropCheckRouteImport } from './routes/api/public/hooks/price-drop-check'
 import { Route as ApiPublicHooksRaffleExpireRouteImport } from './routes/api/public/hooks/raffle-expire'
 import { Route as ApiPublicHooksStackRemindersRouteImport } from './routes/api/public/hooks/stack-reminders'
@@ -489,6 +490,12 @@ const ApiPublicHooksExpireLoyaltyPointsRoute =
     path: '/api/public/hooks/expire-loyalty-points',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksPickupReopenRoute =
+  ApiPublicHooksPickupReopenRouteImport.update({
+    id: '/api/public/hooks/pickup-reopen',
+    path: '/api/public/hooks/pickup-reopen',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPriceDropCheckRoute =
   ApiPublicHooksPriceDropCheckRouteImport.update({
     id: '/api/public/hooks/price-drop-check',
@@ -719,6 +726,7 @@ export interface FileRoutesByFullPath {
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
   '/api/public/hooks/auto-cancel-unpaid': typeof ApiPublicHooksAutoCancelUnpaidRoute
   '/api/public/hooks/expire-loyalty-points': typeof ApiPublicHooksExpireLoyaltyPointsRoute
+  '/api/public/hooks/pickup-reopen': typeof ApiPublicHooksPickupReopenRoute
   '/api/public/hooks/price-drop-check': typeof ApiPublicHooksPriceDropCheckRoute
   '/api/public/hooks/raffle-expire': typeof ApiPublicHooksRaffleExpireRoute
   '/api/public/hooks/stack-reminders': typeof ApiPublicHooksStackRemindersRoute
@@ -820,6 +828,7 @@ export interface FileRoutesByTo {
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
   '/api/public/hooks/auto-cancel-unpaid': typeof ApiPublicHooksAutoCancelUnpaidRoute
   '/api/public/hooks/expire-loyalty-points': typeof ApiPublicHooksExpireLoyaltyPointsRoute
+  '/api/public/hooks/pickup-reopen': typeof ApiPublicHooksPickupReopenRoute
   '/api/public/hooks/price-drop-check': typeof ApiPublicHooksPriceDropCheckRoute
   '/api/public/hooks/raffle-expire': typeof ApiPublicHooksRaffleExpireRoute
   '/api/public/hooks/stack-reminders': typeof ApiPublicHooksStackRemindersRoute
@@ -925,6 +934,7 @@ export interface FileRoutesById {
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
   '/api/public/hooks/auto-cancel-unpaid': typeof ApiPublicHooksAutoCancelUnpaidRoute
   '/api/public/hooks/expire-loyalty-points': typeof ApiPublicHooksExpireLoyaltyPointsRoute
+  '/api/public/hooks/pickup-reopen': typeof ApiPublicHooksPickupReopenRoute
   '/api/public/hooks/price-drop-check': typeof ApiPublicHooksPriceDropCheckRoute
   '/api/public/hooks/raffle-expire': typeof ApiPublicHooksRaffleExpireRoute
   '/api/public/hooks/stack-reminders': typeof ApiPublicHooksStackRemindersRoute
@@ -1031,6 +1041,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/status'
     | '/api/public/hooks/auto-cancel-unpaid'
     | '/api/public/hooks/expire-loyalty-points'
+    | '/api/public/hooks/pickup-reopen'
     | '/api/public/hooks/price-drop-check'
     | '/api/public/hooks/raffle-expire'
     | '/api/public/hooks/stack-reminders'
@@ -1132,6 +1143,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/status'
     | '/api/public/hooks/auto-cancel-unpaid'
     | '/api/public/hooks/expire-loyalty-points'
+    | '/api/public/hooks/pickup-reopen'
     | '/api/public/hooks/price-drop-check'
     | '/api/public/hooks/raffle-expire'
     | '/api/public/hooks/stack-reminders'
@@ -1236,6 +1248,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/status'
     | '/api/public/hooks/auto-cancel-unpaid'
     | '/api/public/hooks/expire-loyalty-points'
+    | '/api/public/hooks/pickup-reopen'
     | '/api/public/hooks/price-drop-check'
     | '/api/public/hooks/raffle-expire'
     | '/api/public/hooks/stack-reminders'
@@ -1306,6 +1319,7 @@ export interface RootRouteChildren {
   ApiPublicBotStatusRoute: typeof ApiPublicBotStatusRoute
   ApiPublicHooksAutoCancelUnpaidRoute: typeof ApiPublicHooksAutoCancelUnpaidRoute
   ApiPublicHooksExpireLoyaltyPointsRoute: typeof ApiPublicHooksExpireLoyaltyPointsRoute
+  ApiPublicHooksPickupReopenRoute: typeof ApiPublicHooksPickupReopenRoute
   ApiPublicHooksPriceDropCheckRoute: typeof ApiPublicHooksPriceDropCheckRoute
   ApiPublicHooksRaffleExpireRoute: typeof ApiPublicHooksRaffleExpireRoute
   ApiPublicHooksStackRemindersRoute: typeof ApiPublicHooksStackRemindersRoute
@@ -1862,6 +1876,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksExpireLoyaltyPointsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/pickup-reopen': {
+      id: '/api/public/hooks/pickup-reopen'
+      path: '/api/public/hooks/pickup-reopen'
+      fullPath: '/api/public/hooks/pickup-reopen'
+      preLoaderRoute: typeof ApiPublicHooksPickupReopenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/price-drop-check': {
       id: '/api/public/hooks/price-drop-check'
       path: '/api/public/hooks/price-drop-check'
@@ -2220,6 +2241,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksAutoCancelUnpaidRoute: ApiPublicHooksAutoCancelUnpaidRoute,
   ApiPublicHooksExpireLoyaltyPointsRoute:
     ApiPublicHooksExpireLoyaltyPointsRoute,
+  ApiPublicHooksPickupReopenRoute: ApiPublicHooksPickupReopenRoute,
   ApiPublicHooksPriceDropCheckRoute: ApiPublicHooksPriceDropCheckRoute,
   ApiPublicHooksRaffleExpireRoute: ApiPublicHooksRaffleExpireRoute,
   ApiPublicHooksStackRemindersRoute: ApiPublicHooksStackRemindersRoute,

@@ -10,6 +10,40 @@ import { requestOrderCancellation } from "@/utils/orders.functions";
 import { checkPixOrderStatus } from "@/utils/payments.functions";
 import { toast } from "sonner";
 import { PostPurchaseSurvey } from "@/components/PostPurchaseSurvey";
+import { ScheduleSlotPicker } from "@/components/ScheduleSlotPicker";
+import { reschedulePickupFn } from "@/lib/pickup-reschedule.functions";
+import { isSlotBookable, SLOT_EXPIRED_MESSAGE } from "@/lib/scheduling";
+
+function RescheduleBox({ orderId, onDone }: { orderId: string; onDone: (at: string) => void }) {
+  const [at, setAt] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="rounded-md border border-amber-400/60 bg-amber-50 p-3 space-y-3 text-amber-950">
+      <p className="font-semibold">Reagendamento necessário</p>
+      <p className="text-xs">Não conseguimos concluir sua retirada no horário agendado. Escolha um novo horário abaixo.</p>
+      <ScheduleSlotPicker kind="pickup" value={at} onChange={setAt} />
+      <button
+        type="button"
+        disabled={!at || busy}
+        className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold disabled:opacity-50"
+        onClick={async () => {
+          if (!at) return;
+          if (!isSlotBookable("pickup", at)) { setAt(null); toast.error(SLOT_EXPIRED_MESSAGE); return; }
+          setBusy(true);
+          try {
+            await reschedulePickupFn({ data: { orderId, at } });
+            toast.success("Novo horário confirmado!");
+            onDone(at);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Não foi possível reagendar.");
+          } finally { setBusy(false); }
+        }}
+      >
+        {busy ? "Confirmando..." : "Confirmar novo horário"}
+      </button>
+    </div>
+  );
+}
 
 const PURCHASE_TRACKED_KEY = "sevii_ga_purchase_tracked";
 
@@ -429,9 +463,13 @@ function OrderDetailPage() {
                 {(order as any).schedule_kind === "delivery" ? "Entrega em mãos" : "Retirada em mãos"}
               </h2>
               <p className="text-sm mt-1">
-                Agendado para <strong>{formatSchedule((order as any).schedule_kind, (order as any).scheduled_at)}</strong>
+                {(order as any).reschedule_required ? "Horário anterior (não concluído): " : "Agendado para "}
+                <strong>{formatSchedule((order as any).schedule_kind, (order as any).scheduled_at)}</strong>
               </p>
             </div>
+            {(order as any).reschedule_required && (order as any).schedule_kind === "pickup" && (
+              <RescheduleBox orderId={order.id} onDone={(at) => setOrder({ ...order, scheduled_at: at, reschedule_required: false })} />
+            )}
             {(order as any).schedule_kind === "delivery" && (
               <>
                 <p className="text-xs text-muted-foreground">
