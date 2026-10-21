@@ -583,7 +583,7 @@ function AdminOrderDetailPage() {
         {order.scheduled_at && (
           <div className="rounded-xl border border-border bg-card p-5 space-y-2">
             <h2 className="text-xs font-bold uppercase tracking-widest">
-              {order.schedule_kind === "delivery" ? "Entrega em mãos" : "Retirada em mãos"} — agendamento
+              {order.schedule_kind === "delivery" ? "Entrega em mãos" : order.schedule_kind === "event" ? "Retirada em eventos" : "Retirada em mãos"} — agendamento
             </h2>
             <p className="text-sm">{formatSchedule(order.schedule_kind, order.scheduled_at)}</p>
             {order.reschedule_required && (

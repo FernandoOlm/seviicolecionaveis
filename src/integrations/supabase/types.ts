@@ -1167,6 +1167,48 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          end_date: string
+          end_time: string
+          id: string
+          name: string
+          per_day_times: Json | null
+          start_date: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          end_date: string
+          end_time: string
+          id?: string
+          name: string
+          per_day_times?: Json | null
+          start_date: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          end_time?: string
+          id?: string
+          name?: string
+          per_day_times?: Json | null
+          start_date?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flash_offers: {
         Row: {
           active: boolean
@@ -1413,6 +1455,7 @@ export type Database = {
           created_at: string
           discount_cents: number
           email: string
+          event_id: string | null
           hand_delivery_fee_status: string | null
           id: string
           mercadopago_payment_id: string | null
@@ -1474,6 +1517,7 @@ export type Database = {
           created_at?: string
           discount_cents?: number
           email: string
+          event_id?: string | null
           hand_delivery_fee_status?: string | null
           id?: string
           mercadopago_payment_id?: string | null
@@ -1535,6 +1579,7 @@ export type Database = {
           created_at?: string
           discount_cents?: number
           email?: string
+          event_id?: string | null
           hand_delivery_fee_status?: string | null
           id?: string
           mercadopago_payment_id?: string | null
@@ -1588,6 +1633,13 @@ export type Database = {
             columns: ["auction_id"]
             isOneToOne: false
             referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -2190,6 +2242,7 @@ export type Database = {
           code: number
           complement: string | null
           created_at: string
+          event_id: string | null
           id: string
           method: string
           neighborhood: string | null
@@ -2198,6 +2251,7 @@ export type Database = {
           payment_order_id: string | null
           phone: string | null
           recipient_name: string | null
+          scheduled_at: string | null
           shipping_cost_cents: number
           stack_id: string
           state: string | null
@@ -2218,6 +2272,7 @@ export type Database = {
           code?: number
           complement?: string | null
           created_at?: string
+          event_id?: string | null
           id?: string
           method: string
           neighborhood?: string | null
@@ -2226,6 +2281,7 @@ export type Database = {
           payment_order_id?: string | null
           phone?: string | null
           recipient_name?: string | null
+          scheduled_at?: string | null
           shipping_cost_cents?: number
           stack_id: string
           state?: string | null
@@ -2246,6 +2302,7 @@ export type Database = {
           code?: number
           complement?: string | null
           created_at?: string
+          event_id?: string | null
           id?: string
           method?: string
           neighborhood?: string | null
@@ -2254,6 +2311,7 @@ export type Database = {
           payment_order_id?: string | null
           phone?: string | null
           recipient_name?: string | null
+          scheduled_at?: string | null
           shipping_cost_cents?: number
           stack_id?: string
           state?: string | null
@@ -2266,6 +2324,13 @@ export type Database = {
           whatsapp_sent_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "service_orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_orders_stack_id_fkey"
             columns: ["stack_id"]

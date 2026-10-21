@@ -11,6 +11,9 @@ import {
 import { getShippingQuotes } from "@/utils/shipping.functions";
 import { validateArteEmCardsCode, getMyArteEmCardsCode } from "@/lib/arte-em-cards.functions";
 import { Loader2, Copy, Check, QrCode } from "lucide-react";
+import { EventSlotPicker, type EventSelection } from "@/components/EventSlotPicker";
+import { listActiveEvents } from "@/lib/events.functions";
+import { validateEventSchedule, type PickupEvent } from "@/lib/events";
 import { toast } from "sonner";
 import { copyToClipboard } from "@/lib/clipboard";
 import logoUrl from "@/assets/logo.webp";
@@ -83,7 +86,14 @@ function SolicitarPage() {
   >({ state: "idle" });
   const [arteExisting, setArteExisting] = useState<{ code: string; cycleEnd: string } | null>(null);
   const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | null>(null);
-  const [eventName, setEventName] = useState("");
+  const [eventSel, setEventSel] = useState<EventSelection | null>(null);
+  const [pickupEvents, setPickupEvents] = useState<PickupEvent[]>([]);
+
+  useEffect(() => {
+    if (method === "evento" && pickupEvents.length === 0) {
+      listActiveEvents().then(setPickupEvents).catch(() => {});
+    }
+  }, [method, pickupEvents.length]);
 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -275,9 +285,18 @@ function SolicitarPage() {
         return;
       }
     }
-    if (method === "evento" && !eventName.trim()) {
-      setErr("Informe qual evento você vai comparecer.");
-      return;
+    if (method === "evento") {
+      if (!eventSel) {
+        setErr("Escolha o evento, o dia e o horário da retirada.");
+        return;
+      }
+      const ev = pickupEvents.find((e) => e.id === eventSel.eventId);
+      const eventErr = ev ? validateEventSchedule(ev, eventSel.ymd, eventSel.slot) : "Evento não encontrado.";
+      if (eventErr) {
+        if (ev) setEventSel(null);
+        setErr(eventErr);
+        return;
+      }
     }
     if (method === "presencial" && !pickupPoint) {
       setErr("Selecione o ponto de retirada (Aruana ou Aeroporto).");
@@ -324,7 +343,9 @@ function SolicitarPage() {
               : null,
           arteEmCardsCode: arteCodeForSubmit,
           pickupPoint: method === "presencial" ? pickupPoint : null,
-          eventName: method === "evento" ? eventName.trim() : null,
+          eventName: null,
+          eventId: method === "evento" ? (eventSel?.eventId ?? null) : null,
+          eventAt: method === "evento" ? (eventSel?.iso ?? null) : null,
           notes: notes || null,
           cpf: cpf || null,
         },
@@ -540,16 +561,8 @@ function SolicitarPage() {
 
             {method === "evento" && (
               <section className="rounded-xl border border-border bg-card p-5 mb-6 space-y-2">
-                <label htmlFor="event-name" className="text-sm font-semibold uppercase tracking-widest block">Qual evento você vai comparecer? *</label>
-                <input
-                  id="event-name"
-                  required
-                  maxLength={200}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
-                  placeholder="Ex: Encontro Pokémon TCG - Praça X"
-                  value={eventName}
-                  onChange={(e) => setEventName(e.target.value)}
-                />
+                <h2 className="text-sm font-semibold uppercase tracking-widest">Escolha o evento, o dia e o horário</h2>
+                <EventSlotPicker events={pickupEvents} value={eventSel} onChange={setEventSel} />
               </section>
             )}
 

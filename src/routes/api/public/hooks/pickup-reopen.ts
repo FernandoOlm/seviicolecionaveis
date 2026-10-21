@@ -8,8 +8,10 @@ export const Route = createFileRoute("/api/public/hooks/pickup-reopen")({
       POST: async ({ request }) => {
         const unauthorized = verifyCronAuth(request);
         if (unauthorized) return unauthorized;
-        const { reopenExpiredPickups } = await import("@/lib/pickup-reschedule.server");
-        return Response.json(await reopenExpiredPickups());
+        const { reopenExpiredPickups, reopenExpiredEventPickups } = await import("@/lib/pickup-reschedule.server");
+        const pickups = await reopenExpiredPickups();
+        const events = await reopenExpiredEventPickups();
+        return Response.json({ ...pickups, eventsReopened: events.reopened });
       },
     },
   },

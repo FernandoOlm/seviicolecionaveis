@@ -29,6 +29,8 @@ const InputSchema = z.object({
   arteEmCardsCode: z.string().trim().max(40).nullable().optional(),
   pickupPoint: z.enum(["aruana", "aeroporto"]).nullable().optional(),
   eventName: z.string().trim().max(200).nullable().optional(),
+  eventId: z.string().uuid().nullable().optional(),
+  eventAt: z.string().datetime().nullable().optional(),
   notes: z.string().max(500).nullable().optional(),
   cpf: z.string().max(20).nullable().optional(),
 });
@@ -47,6 +49,8 @@ export const createServiceOrderRequest = createServerFn({ method: "POST" })
       arteEmCardsCode: data.arteEmCardsCode ?? null,
       pickupPoint: data.pickupPoint ?? null,
       eventName: data.eventName ?? null,
+      eventId: data.eventId ?? null,
+      eventAt: data.eventAt ?? null,
       notes: data.notes ?? null,
       cpf: data.cpf ?? null,
     });

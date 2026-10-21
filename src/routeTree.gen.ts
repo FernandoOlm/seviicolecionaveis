@@ -45,6 +45,7 @@ import { Route as AdminCriarLeilaoRouteImport } from './routes/admin.criar-leila
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminEmailsRouteImport } from './routes/admin.emails'
 import { Route as AdminEventoRouteImport } from './routes/admin.evento'
+import { Route as AdminEventosRouteImport } from './routes/admin.eventos'
 import { Route as AdminIntegrationsRouteImport } from './routes/admin.integrations'
 import { Route as AdminLeiloesRouteImport } from './routes/admin.leiloes'
 import { Route as AdminLeiloesWhatsappRouteImport } from './routes/admin.leiloes-whatsapp'
@@ -291,6 +292,11 @@ const AdminEmailsRoute = AdminEmailsRouteImport.update({
 const AdminEventoRoute = AdminEventoRouteImport.update({
   id: '/evento',
   path: '/evento',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEventosRoute = AdminEventosRouteImport.update({
+  id: '/eventos',
+  path: '/eventos',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminIntegrationsRoute = AdminIntegrationsRouteImport.update({
@@ -687,6 +693,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/evento': typeof AdminEventoRoute
+  '/admin/eventos': typeof AdminEventosRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/leiloes': typeof AdminLeiloesRoute
   '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
@@ -789,6 +796,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/evento': typeof AdminEventoRoute
+  '/admin/eventos': typeof AdminEventosRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/leiloes': typeof AdminLeiloesRoute
   '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
@@ -895,6 +903,7 @@ export interface FileRoutesById {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/evento': typeof AdminEventoRoute
+  '/admin/eventos': typeof AdminEventosRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/leiloes': typeof AdminLeiloesRoute
   '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
@@ -1002,6 +1011,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/emails'
     | '/admin/evento'
+    | '/admin/eventos'
     | '/admin/integrations'
     | '/admin/leiloes'
     | '/admin/leiloes-whatsapp'
@@ -1104,6 +1114,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/emails'
     | '/admin/evento'
+    | '/admin/eventos'
     | '/admin/integrations'
     | '/admin/leiloes'
     | '/admin/leiloes-whatsapp'
@@ -1209,6 +1220,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/emails'
     | '/admin/evento'
+    | '/admin/eventos'
     | '/admin/integrations'
     | '/admin/leiloes'
     | '/admin/leiloes-whatsapp'
@@ -1601,6 +1613,13 @@ declare module '@tanstack/react-router' {
       path: '/evento'
       fullPath: '/admin/evento'
       preLoaderRoute: typeof AdminEventoRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/eventos': {
+      id: '/admin/eventos'
+      path: '/eventos'
+      fullPath: '/admin/eventos'
+      preLoaderRoute: typeof AdminEventosRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/integrations': {
@@ -2086,6 +2105,7 @@ interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminEmailsRoute: typeof AdminEmailsRoute
   AdminEventoRoute: typeof AdminEventoRoute
+  AdminEventosRoute: typeof AdminEventosRoute
   AdminIntegrationsRoute: typeof AdminIntegrationsRoute
   AdminLeiloesRoute: typeof AdminLeiloesRoute
   AdminLeiloesWhatsappRoute: typeof AdminLeiloesWhatsappRoute
@@ -2116,6 +2136,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminEmailsRoute: AdminEmailsRoute,
   AdminEventoRoute: AdminEventoRoute,
+  AdminEventosRoute: AdminEventosRoute,
   AdminIntegrationsRoute: AdminIntegrationsRoute,
   AdminLeiloesRoute: AdminLeiloesRoute,
   AdminLeiloesWhatsappRoute: AdminLeiloesWhatsappRoute,

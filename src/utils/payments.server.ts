@@ -1,5 +1,5 @@
 import { isPaidOrderStatus } from "@/lib/order-status";
-import { validateSchedule } from "@/lib/scheduling";
+import { localParts, validateSchedule } from "@/lib/scheduling";
 import { type StripeEnv, createStripeClient } from "@/lib/stripe.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { createPixPayment, getPixPayment, createCardPaymentMP } from "@/lib/mercadopago.server";
@@ -87,9 +87,35 @@ async function resolveArteEmCardsFee(
   return { feeCents: ARTE_EM_CARDS_FEE_CENTS, codeUsed: null };
 }
 
-function assertSchedule(data: { shippingMethod: string; schedule?: { kind: "delivery" | "pickup"; at: string } | null }) {
+async function assertSchedule(data: {
+  shippingMethod: string;
+  schedule?: { kind: "delivery" | "pickup" | "event"; at: string; eventId?: string | null } | null;
+}) {
   if (data.shippingMethod !== "arrange") return;
   if (!data.schedule) throw new Error("Escolha o dia e horário da entrega ou retirada.");
+  if (data.schedule.kind === "event") {
+    if (!data.schedule.eventId) throw new Error("Escolha o evento em que você vai retirar o pedido.");
+    const { data: ev } = await supabaseAdmin.from("events").select("*").eq("id", data.schedule.eventId).maybeSingle();
+    if (!ev) throw new Error("Evento não encontrado.");
+    const { validateEventSchedule, ymdOfIso } = await import("@/lib/events");
+    const err = validateEventSchedule(
+      {
+        id: ev.id,
+        name: ev.name,
+        description: ev.description ?? null,
+        start_date: ev.start_date,
+        end_date: ev.end_date,
+        start_time: String(ev.start_time).slice(0, 5),
+        end_time: String(ev.end_time).slice(0, 5),
+        per_day_times: (ev.per_day_times as any) ?? null,
+        active: ev.active,
+      },
+      ymdOfIso(data.schedule.at),
+      localParts(data.schedule.at).time,
+    );
+    if (err) throw new Error(err);
+    return;
+  }
   const err = validateSchedule(data.schedule.kind, data.schedule.at);
   if (err) throw new Error(err);
 }
@@ -760,7 +786,7 @@ export async function createOrderCheckoutServer(data: StripeInput, userId: strin
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
-  assertSchedule(data);
+  await assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -800,6 +826,7 @@ export async function createOrderCheckoutServer(data: StripeInput, userId: strin
       scheduled_at: data.schedule?.at ?? null,
       schedule_kind: data.schedule?.kind ?? null,
       hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
+      event_id: data.schedule?.kind === "event" ? (data.schedule?.eventId ?? null) : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -922,7 +949,7 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
-  assertSchedule(data);
+  await assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -969,6 +996,7 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
       scheduled_at: data.schedule?.at ?? null,
       schedule_kind: data.schedule?.kind ?? null,
       hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
+      event_id: data.schedule?.kind === "event" ? (data.schedule?.eventId ?? null) : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -1130,7 +1158,7 @@ export async function createCardOrderServer(data: CardInput, userId: string) {
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
-  assertSchedule(data);
+  await assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -1170,6 +1198,7 @@ export async function createCardOrderServer(data: CardInput, userId: string) {
       scheduled_at: data.schedule?.at ?? null,
       schedule_kind: data.schedule?.kind ?? null,
       hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
+      event_id: data.schedule?.kind === "event" ? (data.schedule?.eventId ?? null) : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -1508,7 +1537,7 @@ export async function createAdminTestOrderServer(data: AdminTestInput, userId: s
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
-  assertSchedule(data);
+  await assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -1530,6 +1559,7 @@ export async function createAdminTestOrderServer(data: AdminTestInput, userId: s
       scheduled_at: data.schedule?.at ?? null,
       schedule_kind: data.schedule?.kind ?? null,
       hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
+      event_id: data.schedule?.kind === "event" ? (data.schedule?.eventId ?? null) : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: 0,
