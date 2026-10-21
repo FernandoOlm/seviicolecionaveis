@@ -20,6 +20,7 @@ import { TrustBadges } from "@/components/TrustBadges";
 import { computeBundleDiscount } from "@/lib/bundles";
 import { copyToClipboard } from "@/lib/clipboard";
 import { ScheduleSlotPicker } from "@/components/ScheduleSlotPicker";
+import { validatePickupEvent } from "@/lib/checkout-pickup";
 import { formatSchedule, HAND_DELIVERY_PIX_KEY } from "@/lib/scheduling";
 import { CardStackTermsDialog } from "@/components/CardStackTermsDialog";
 import {
@@ -566,8 +567,9 @@ function CheckoutPage() {
     if (shipping === "arrange" && !pickupPoint) {
       return "Selecione uma opção: Aruana, Aeroporto, Entrega em mãos ou Retirada em eventos.";
     }
-    if (shipping === "arrange" && pickupPoint === "evento" && !pickupEvent.trim()) {
-      return "Informe o evento em que deseja retirar o pedido.";
+    if (shipping === "arrange" && pickupPoint === "evento") {
+      const eventError = validatePickupEvent(pickupEvent);
+      if (eventError) return eventError;
     }
     if (shipping === "arrange" && pickupPoint !== "evento" && !scheduleAt) {
       return pickupPoint === "app" ? "Escolha a quinta-feira da entrega." : "Escolha o dia e horário da retirada.";
@@ -915,11 +917,11 @@ function CheckoutPage() {
                 {shipping === "arrange" && pickupPoint === "evento" && (
                   <div className="px-4 pb-4">
                     <Field
-                      label="Evento de retirada"
+                      label="Qual evento você vai comparecer?"
                       required
                       value={pickupEvent}
                       onChange={(value) => setPickupEvent(value.slice(0, 200))}
-                      placeholder="Nome do evento"
+                      placeholder="Ex: Encontro Pokémon TCG - Praça X"
                     />
                   </div>
                 )}
