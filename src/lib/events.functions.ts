@@ -166,7 +166,7 @@ export const countEventOrders = createServerFn({ method: "POST" })
     const { count, error } = await context.supabase
       .from("orders")
       .select("id", { count: "exact", head: true })
-      .eq("event_id", data.id)
+      .eq("event_id", data.eventId)
       .not("status", "in", '("delivered","cancelled")');
     if (error) throw new Error(error.message);
     return { count: count ?? 0 };
