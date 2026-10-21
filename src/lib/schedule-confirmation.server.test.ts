@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  send: vi.fn(async () => ({ success: true })),
+  send: vi.fn(async (_params: { recipientEmail: string; idempotencyKey?: string; templateData?: Record<string, unknown> }) => ({ success: true })),
   setting: vi.fn(async () => ({ data: { value: { email: "loja@example.com" } }, error: null })),
 }));
 vi.mock("@/integrations/supabase/client.server", () => ({
