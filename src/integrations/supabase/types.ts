@@ -1413,6 +1413,7 @@ export type Database = {
           created_at: string
           discount_cents: number
           email: string
+          hand_delivery_fee_status: string | null
           id: string
           mercadopago_payment_id: string | null
           neighborhood: string
@@ -1431,6 +1432,8 @@ export type Database = {
           pre_cancel_status: string | null
           recipient_name: string
           refunded_cents: number
+          schedule_kind: string | null
+          scheduled_at: string | null
           shipping_cost_cents: number
           shipping_method: string
           state: string
@@ -1468,6 +1471,7 @@ export type Database = {
           created_at?: string
           discount_cents?: number
           email: string
+          hand_delivery_fee_status?: string | null
           id?: string
           mercadopago_payment_id?: string | null
           neighborhood: string
@@ -1486,6 +1490,8 @@ export type Database = {
           pre_cancel_status?: string | null
           recipient_name: string
           refunded_cents?: number
+          schedule_kind?: string | null
+          scheduled_at?: string | null
           shipping_cost_cents?: number
           shipping_method: string
           state: string
@@ -1523,6 +1529,7 @@ export type Database = {
           created_at?: string
           discount_cents?: number
           email?: string
+          hand_delivery_fee_status?: string | null
           id?: string
           mercadopago_payment_id?: string | null
           neighborhood?: string
@@ -1541,6 +1548,8 @@ export type Database = {
           pre_cancel_status?: string | null
           recipient_name?: string
           refunded_cents?: number
+          schedule_kind?: string | null
+          scheduled_at?: string | null
           shipping_cost_cents?: number
           shipping_method?: string
           state?: string
