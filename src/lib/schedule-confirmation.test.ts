@@ -26,8 +26,8 @@ describe("confirmação de agendamento", () => {
     expect(url.searchParams.get("location")).toBe("Rua A, 10 · Aracaju/SE");
   });
   it("retirada usa o ponto escolhido e bloco de 30 minutos", () => {
-    const data = scheduleConfirmationData({ ...order, schedule_kind: "pickup", scheduled_at: "2026-10-30T17:30:00Z", notes: "Retirada em mãos: Aruana — sexta, 30/10/2026 às 14:30." });
-    expect(data?.address).toBe("Aruana");
+    const data = scheduleConfirmationData({ ...order, schedule_kind: "pickup", scheduled_at: "2026-10-30T17:30:00Z", notes: "Retirada em mãos: Aruana — Rua Josepha Andrade Irmã Fontes, 600, Residencial Vista Aruana — sexta, 30/10/2026 às 14:30." });
+    expect(data?.address).toBe("Aruana — Rua Josepha Andrade Irmã Fontes, 600, Residencial Vista Aruana");
     expect(data?.service).toBe("Retirada em mãos");
     expect(new URL(data?.calendarUrl ?? "https://invalid.example").searchParams.get("dates")).toBe("20261030T173000Z/20261030T180000Z");
   });

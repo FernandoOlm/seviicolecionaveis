@@ -26,7 +26,9 @@ export function scheduleConfirmationData(order: ScheduledOrder) {
   const service = kind === "delivery" ? "Entrega em mãos" : "Retirada em mãos";
   const shortId = `#${order.id.slice(0, 8).toUpperCase()}`;
   // O ponto de retirada foi persistido nas observações; não usar o endereço residencial.
-  const pickupAddress = order.notes?.match(/Retirada em mãos: (.+?) — /)?.[1] ?? "";
+  const pickupLine = order.notes?.split("\n").find((line) => line.startsWith("Retirada em mãos: ")) ?? "";
+  const scheduleSeparator = pickupLine.lastIndexOf(" — ");
+  const pickupAddress = scheduleSeparator >= 0 ? pickupLine.slice("Retirada em mãos: ".length, scheduleSeparator) : "";
   const address = kind === "pickup" ? pickupAddress : [
     [order.street, order.number].filter(Boolean).join(", "),
     order.complement, order.neighborhood,
