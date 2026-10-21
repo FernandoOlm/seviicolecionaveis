@@ -786,7 +786,7 @@ export async function createOrderCheckoutServer(data: StripeInput, userId: strin
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
-  assertSchedule(data);
+  await assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -826,6 +826,7 @@ export async function createOrderCheckoutServer(data: StripeInput, userId: strin
       scheduled_at: data.schedule?.at ?? null,
       schedule_kind: data.schedule?.kind ?? null,
       hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
+      event_id: data.schedule?.kind === "event" ? (data.schedule?.eventId ?? null) : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -948,7 +949,7 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
-  assertSchedule(data);
+  await assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -995,6 +996,7 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
       scheduled_at: data.schedule?.at ?? null,
       schedule_kind: data.schedule?.kind ?? null,
       hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
+      event_id: data.schedule?.kind === "event" ? (data.schedule?.eventId ?? null) : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -1156,7 +1158,7 @@ export async function createCardOrderServer(data: CardInput, userId: string) {
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
-  assertSchedule(data);
+  await assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -1196,6 +1198,7 @@ export async function createCardOrderServer(data: CardInput, userId: string) {
       scheduled_at: data.schedule?.at ?? null,
       schedule_kind: data.schedule?.kind ?? null,
       hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
+      event_id: data.schedule?.kind === "event" ? (data.schedule?.eventId ?? null) : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: discountCents,
@@ -1534,7 +1537,7 @@ export async function createAdminTestOrderServer(data: AdminTestInput, userId: s
     (s, i) => s + Math.round(i.unitPrice * 100) * i.quantity,
     0,
   );
-  assertSchedule(data);
+  await assertSchedule(data);
   const baseShippingCents = computeShippingCents(data);
   const arte = data.shippingMethod === "arte_em_cards"
     ? await resolveArteEmCardsFee(userId, data.arteEmCardsCode)
@@ -1556,6 +1559,7 @@ export async function createAdminTestOrderServer(data: AdminTestInput, userId: s
       scheduled_at: data.schedule?.at ?? null,
       schedule_kind: data.schedule?.kind ?? null,
       hand_delivery_fee_status: data.schedule?.kind === "delivery" ? "pending" : null,
+      event_id: data.schedule?.kind === "event" ? (data.schedule?.eventId ?? null) : null,
       shipping_cost_cents: shippingCents,
       subtotal_cents: subtotalCents,
       discount_cents: 0,
