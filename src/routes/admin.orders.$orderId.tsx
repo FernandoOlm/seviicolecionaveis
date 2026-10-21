@@ -50,6 +50,7 @@ const SHIPPING_METHOD_LABEL: Record<string, string> = {
   arte_em_cards: "Retirada na Arte em Cards",
   card_stack: "Pilha de Cartas",
   presencial: "Retirada presencial",
+  evento: "Retirada em evento",
   combinar: "Envio a combinar",
   delivery_app: "Aplicativo de entrega",
 };

@@ -27,6 +27,7 @@ const METHOD_LABEL: Record<string, string> = {
   correios: "Envio Correios",
   app: "Envio por App",
   arte_em_cards: "Retirada Arte em Cards",
+  evento: "Retirada em Evento",
   presencial: "Retirada Presencial",
 };
 
@@ -197,7 +198,7 @@ function AdminPilhaPage() {
   const [orderInput, setOrderInput] = useState("");
   const [addingOrder, setAddingOrder] = useState(false);
   const [stackSelected, setStackSelected] = useState<Record<string, Set<string>>>({});
-  const [stackMethod, setStackMethod] = useState<Record<string, "correios" | "app" | "arte_em_cards" | "presencial">>({});
+  const [stackMethod, setStackMethod] = useState<Record<string, "correios" | "app" | "arte_em_cards" | "presencial" | "evento">>({});
   const [stackStatus, setStackStatus] = useState<Record<string, "paid" | "preparing" | "dispatched" | "delivered">>({});
   const [stackBusy, setStackBusy] = useState<string | null>(null);
   const [selectedOSStatuses, setSelectedOSStatuses] = useState<string[]>(() => {
