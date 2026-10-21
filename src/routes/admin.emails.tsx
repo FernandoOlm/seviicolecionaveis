@@ -3,9 +3,17 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getEmailLogs } from "@/utils/emailLogs.functions";
 import ManualEmailComposer from "@/components/admin/ManualEmailComposer";
+import { ScheduleEmailSettings } from "@/components/admin/ScheduleEmailSettings";
 
 export const Route = createFileRoute("/admin/emails")({
-  head: () => ({ meta: [{ title: "Admin · E-mails" }] }),
+  head: () => ({ meta: [
+    { title: "E-mails e agendamentos · Sevii Admin" },
+    { name: "description", content: "Gerencie os e-mails e as confirmações de agendamento da Sevii Colecionáveis." },
+    { property: "og:title", content: "E-mails e agendamentos · Sevii Admin" },
+    { property: "og:description", content: "Configurações e acompanhamento dos e-mails da loja." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: EmailsAdminPage,
 });
 
@@ -183,6 +191,7 @@ function EmailsAdminPage() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
+        <ScheduleEmailSettings />
         <ManualEmailComposer onSent={() => setTimeout(() => load(), 1500)} />
 
         <div className="flex flex-wrap items-center gap-2">

@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendTransactionalEmailSafe } from "@/lib/email/send.server";
 import { parseVariants, parseAccessoryCartId } from "@/lib/accessory-variants";
+import { sendScheduleConfirmations } from "@/lib/schedule-confirmation.server";
 
 /**
  * Debita o saldo de vale-presente carteira reservado em wallet_deduction_cents.
@@ -300,7 +301,7 @@ export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymen
   // Lookup do pedido (necessário para decidir Superfrete x Pilha)
   const { data: full } = await supabaseAdmin
     .from("orders")
-    .select("id, email, recipient_name, total_cents, user_id, shipping_method, shipping_cost_cents, arte_em_cards_code")
+    .select("id, email, recipient_name, total_cents, user_id, shipping_method, shipping_cost_cents, arte_em_cards_code, scheduled_at, schedule_kind, street, number, complement, neighborhood, city, state, notes, hand_delivery_fee_status")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -363,8 +364,13 @@ export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymen
     }
   }
 
+  if (full?.scheduled_at) {
+    try { await sendScheduleConfirmations(full); }
+    catch (error) { console.error("[markOrderPaid] schedule confirmation failed", error); }
+  }
+
   if (full?.email) {
-    await sendTransactionalEmailSafe({
+    if (!full.scheduled_at) await sendTransactionalEmailSafe({
       templateName: "payment-confirmed",
       recipientEmail: full.email,
       idempotencyKey: `payment-confirmed-${full.id}`,

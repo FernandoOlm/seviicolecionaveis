@@ -1,1 +1,2 @@
 Checkout pickup validation lives in browser-safe helpers under src/lib, with focused tests; event pickup uses shippingMethod arrange and persists the event in order notes without a schedule, keeping all payment paths compatible.
+Schedule confirmations run in the paid-order pipeline with separate per-order client/store idempotency keys, reuse the existing email sender and app_settings recipient, and generate Google Calendar links in a pure tested helper; no OAuth or email queue is needed.
