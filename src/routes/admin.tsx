@@ -1,3 +1,4 @@
+import { ORDER_STATUSES, ORDER_STATUS_LABELS, PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,24 +10,22 @@ import { ChevronRight, ImageOff, Search } from "lucide-react";
 
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin — Sevii Colecionáveis" }] }),
+  head: () => ({ meta: [
+    { title: "Admin — Sevii Colecionáveis" },
+    { name: "description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:title", content: "Admin — Sevii Colecionáveis" },
+    { property: "og:description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   validateSearch: (search: { focus?: string }): { focus?: string } => ({
     focus: typeof search.focus === "string" ? search.focus : undefined,
   }),
   component: AdminPage,
 });
 
-const STATUSES = ["pending", "paid", "preparing", "shipped", "awaiting_pickup", "delivered", "cancelled"] as const;
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pedido recebido",
-  paid: "Pago",
-  preparing: "Em preparação",
-  shipped: "Enviado",
-  awaiting_pickup: "Aguardando retirada na Arte em Cards",
-  delivered: "Entregue",
-  cancelled: "Cancelado",
-  cancellation_requested: "Cancelamento solicitado",
-};
+const STATUSES = ORDER_STATUSES;
+const STATUS_LABEL = ORDER_STATUS_LABELS;
 
 const SHIPPING_METHODS = ["fixed", "arrange", "card_stack", "arte_em_cards", "presencial", "superfrete", "delivery_app"] as const;
 const SHIPPING_METHOD_LABEL: Record<string, string> = {
@@ -50,7 +49,7 @@ function AdminPage() {
   const ALL_STATUSES = [...STATUSES, "cancellation_requested"] as const;
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
     if (typeof window === "undefined") return [...ALL_STATUSES];
-    const raw = localStorage.getItem("admin-orders-filter-v2");
+    const raw = localStorage.getItem("admin-orders-filter-v3");
     if (!raw) return [...ALL_STATUSES];
     try {
       const parsed = JSON.parse(raw);
@@ -73,7 +72,7 @@ function AdminPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("admin-orders-filter-v2", JSON.stringify(selectedStatuses));
+      localStorage.setItem("admin-orders-filter-v3", JSON.stringify(selectedStatuses));
     }
   }, [selectedStatuses]);
 

@@ -1,3 +1,4 @@
+import { PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -89,7 +90,7 @@ export const adminGetPilhaData = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("orders")
         .select("id, status, created_at")
-        .in("status", ["paid", "preparing", "shipped", "awaiting_pickup", "dispatched", "delivered"])
+        .in("status", [...PAID_ORDER_STATUSES, "dispatched"])
         .order("created_at", { ascending: false })
         .limit(20),
     ]);
@@ -253,7 +254,7 @@ export const adminAddOrderToStack = createServerFn({ method: "POST" })
       order = list?.[0] ?? null;
     }
     if (!order) throw new Error("Pedido não encontrado.");
-    const allowed = ["paid", "preparing", "shipped", "awaiting_pickup", "dispatched", "delivered"];
+    const allowed = [...PAID_ORDER_STATUSES, "dispatched"];
     if (!allowed.includes(order.status)) {
       throw new Error(`Pedido está com status "${order.status}". Só pedidos pagos podem ir à pilha.`);
     }
@@ -367,7 +368,7 @@ export const adminAddOrderItemsToStack = createServerFn({ method: "POST" })
       .maybeSingle();
     if (orderErr) throw new Error(orderErr.message);
     if (!order) throw new Error("Pedido não encontrado.");
-    const allowed = ["paid", "preparing", "shipped", "awaiting_pickup", "dispatched", "delivered"];
+    const allowed = [...PAID_ORDER_STATUSES, "dispatched"];
     if (!allowed.includes(order.status)) {
       throw new Error(`Pedido está com status "${order.status}". Só pedidos pagos podem ir à pilha.`);
     }

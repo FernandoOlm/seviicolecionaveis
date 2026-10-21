@@ -1,3 +1,4 @@
+import { ORDER_STATUSES, PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -6,16 +7,7 @@ export const adminUpdateOrderStatus = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z.object({
       order_id: z.string().uuid(),
-      status: z.enum([
-        "pending",
-        "paid",
-        "preparing",
-        "shipped",
-        "awaiting_pickup",
-        "delivered",
-        "cancelled",
-        "cancellation_requested",
-      ]),
+      status: z.enum([...ORDER_STATUSES, "cancellation_requested"]),
       tracking_code: z.string().trim().max(60).optional().nullable(),
       carrier: z.enum(["correios", "latam", "pickup"]).optional().nullable(),
       tracking_url: z.preprocess(
@@ -52,7 +44,7 @@ export const adminUpdateOrderStatus = createServerFn({ method: "POST" })
     // (paid / preparing / shipped / delivered). Antes, apenas a transição para "paid"
     // disparava o decremento, então mover direto para "preparing" deixava o estoque intacto.
     const PRE_PAID = ["pending", "cancellation_requested", "cancelled"];
-    const POST_PAID = ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"];
+    const POST_PAID = PAID_ORDER_STATUSES;
     if (statusChanged && PRE_PAID.includes(order.status) && POST_PAID.includes(data.status)) {
       const { markOrderPaid } = await import("@/lib/orders.server");
       await markOrderPaid(order.id);
@@ -328,7 +320,7 @@ export const adminPartialCancelItem = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!order) throw new Response("Pedido não encontrado", { status: 404 });
 
-    const POST_PAID = ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"];
+    const POST_PAID = PAID_ORDER_STATUSES;
     if (!POST_PAID.includes(order.status)) {
       throw new Response(
         "Só é possível cancelar itens em pedidos pagos. Para pedidos não pagos, cancele o pedido inteiro.",

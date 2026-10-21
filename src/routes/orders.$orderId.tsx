@@ -1,3 +1,4 @@
+import { ORDER_STATUS_LABELS } from "@/lib/order-status";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { formatSchedule, HAND_DELIVERY_PIX_KEY, STORE_WHATSAPP } from "@/lib/scheduling";
 import { useEffect, useState } from "react";
@@ -13,21 +14,23 @@ import { PostPurchaseSurvey } from "@/components/PostPurchaseSurvey";
 const PURCHASE_TRACKED_KEY = "sevii_ga_purchase_tracked";
 
 export const Route = createFileRoute("/orders/$orderId")({
-  head: () => ({ meta: [{ title: "Pedido — Sevii Colecionáveis" }] }),
+  head: () => ({ meta: [
+    { title: "Pedido — Sevii Colecionáveis" },
+    { name: "description", content: "Acompanhe pagamento, envio e retirada do seu pedido na Sevii Colecionáveis." },
+    { property: "og:title", content: "Pedido — Sevii Colecionáveis" },
+    { property: "og:description", content: "Acompanhe pagamento, envio e retirada do seu pedido na Sevii Colecionáveis." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: OrderDetailPage,
 });
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pedido recebido — aguardando pagamento",
-  paid: "Pago",
-  shipped: "Enviado",
-  awaiting_pickup: "Aguardando retirada na Arte em Cards",
-  delivered: "Entregue",
-  cancelled: "Cancelado",
-  cancellation_requested: "Cancelamento em análise",
-};
+const STATUS_LABEL = { ...ORDER_STATUS_LABELS, pending: "Pedido recebido — aguardando pagamento", cancellation_requested: "Cancelamento em análise" };
 
 const STATUS_ICON: Record<string, any> = {
+  preparing: Package,
+  separated: CheckCircle2,
+  cards_pending_delivery: AlertTriangle,
   pending: Clock,
   paid: CheckCircle2,
   shipped: Truck,
@@ -38,6 +41,9 @@ const STATUS_ICON: Record<string, any> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
+  preparing: "text-muted-foreground",
+  separated: "text-primary",
+  cards_pending_delivery: "text-foreground",
   pending: "text-yellow-600",
   paid: "text-green-600",
   shipped: "text-purple-600",

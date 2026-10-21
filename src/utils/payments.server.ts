@@ -1,3 +1,4 @@
+import { isPaidOrderStatus } from "@/lib/order-status";
 import { validateSchedule } from "@/lib/scheduling";
 import { type StripeEnv, createStripeClient } from "@/lib/stripe.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -1084,7 +1085,7 @@ export async function checkPixOrderStatusServer(orderId: string, userId: string)
   if (error) throw new Error(error.message);
   if (!order || order.user_id !== userId) throw new Error("Pedido não encontrado");
 
-  if (order.status === "paid" || order.status === "preparing" || order.status === "delivered") {
+  if (isPaidOrderStatus(order.status)) {
     return { status: "paid" as const };
   }
 

@@ -1,3 +1,4 @@
+import { ORDER_STATUSES, ORDER_STATUS_LABELS, PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { formatSchedule } from "@/lib/scheduling";
 import { useEffect, useState } from "react";
@@ -20,30 +21,20 @@ import { useCardMetaMap } from "@/hooks/useCardMetaMap";
 import { sortByCardGroup } from "@/lib/sortCards";
 
 export const Route = createFileRoute("/admin/orders/$orderId")({
-  head: () => ({ meta: [{ title: "Pedido — Sevii Admin" }] }),
+  head: () => ({ meta: [
+    { title: "Pedido — Sevii Admin" },
+    { name: "description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:title", content: "Pedido — Sevii Admin" },
+    { property: "og:description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: AdminOrderDetailPage,
 });
 
-const STATUSES = [
-  "pending",
-  "paid",
-  "preparing",
-  "shipped",
-  "awaiting_pickup",
-  "delivered",
-  "cancelled",
-] as const;
+const STATUSES = ORDER_STATUSES;
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pedido recebido",
-  paid: "Pago",
-  preparing: "Em preparação",
-  shipped: "Enviado",
-  awaiting_pickup: "Aguardando retirada na Arte em Cards",
-  delivered: "Entregue",
-  cancelled: "Cancelado",
-  cancellation_requested: "Cancelamento solicitado",
-};
+const STATUS_LABEL = ORDER_STATUS_LABELS;
 
 const SHIPPING_METHOD_LABEL: Record<string, string> = {
   fixed: "Frete fixo",
@@ -379,7 +370,7 @@ function AdminOrderDetailPage() {
 
         {/* Itens */}
         {(() => {
-          const stackEligible = ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"].includes(order.status);
+          const stackEligible = PAID_ORDER_STATUSES.includes(order.status);
           const selectedCount = Object.keys(selectedForStack).length;
           return (
             <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -446,7 +437,7 @@ function AdminOrderDetailPage() {
                   const refundCents = it.refund_cents ?? 0;
                   const canCancel =
                     activeQty > 0 &&
-                    ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"].includes(order.status);
+                    PAID_ORDER_STATUSES.includes(order.status);
                   const inStack = stackedItemIds.has(it.id);
                   const canStack = stackEligible && !inStack && activeQty > 0;
                   const selectedQty = selectedForStack[it.id];
@@ -1001,7 +992,7 @@ function FullCancelDialog({
   onClose: () => void;
   onDone: () => void | Promise<void>;
 }) {
-  const POST_PAID = ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"];
+  const POST_PAID = PAID_ORDER_STATUSES;
   const wasPaid = POST_PAID.includes(order.status) || POST_PAID.includes(order.pre_cancel_status ?? "");
   const pending = Math.max(0, (order.total_cents ?? 0) - (order.refunded_cents ?? 0));
   const [method, setMethod] = useState<"mercadopago" | "coupon" | "manual" | "none">(
