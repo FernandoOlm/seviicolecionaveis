@@ -32,15 +32,24 @@ export interface StackDTO {
 
 export const getMyStack = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<StackDTO | null> => {
-    const { supabase, userId } = context;
+  .handler(async ({ context }): Promise<StackDTO | null> => loadStack(context.supabase, context.userId, null));
 
-    const { data: stack, error: stackErr } = await supabase
+// Pilha específica do cliente (inclusive vencida) — usada pelo link do e-mail de fim de prazo.
+export const getStackById = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { stackId: string }) => {
+    if (!d || typeof d.stackId !== "string" || !/^[0-9a-f-]{36}$/i.test(d.stackId)) throw new Error("Pilha inválida.");
+    return d;
+  })
+  .handler(async ({ data, context }): Promise<StackDTO | null> => loadStack(context.supabase, context.userId, data.stackId));
+
+async function loadStack(supabase: any, userId: string, stackId: string | null): Promise<StackDTO | null> {
+    let q = supabase
       .from("card_stacks")
       .select("id, started_at, expires_at, status")
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .maybeSingle();
+      .eq("user_id", userId);
+    q = stackId ? q.eq("id", stackId) : q.eq("status", "active");
+    const { data: stack, error: stackErr } = await q.maybeSingle();
 
     if (stackErr) throw new Error(stackErr.message);
     if (!stack) return null;
@@ -57,7 +66,7 @@ export const getMyStack = createServerFn({ method: "GET" })
     if (itemsErr) throw new Error(itemsErr.message);
 
     const orderIds = Array.from(
-      new Set((items ?? []).map((i) => i.order_id).filter((v): v is string => !!v)),
+      new Set((items ?? []).map((i: any) => i.order_id).filter((v): v is string => !!v)),
     );
     let createdAtByOrder = new Map<string, string>();
     if (orderIds.length > 0) {
@@ -65,10 +74,10 @@ export const getMyStack = createServerFn({ method: "GET" })
         .from("orders")
         .select("id, created_at")
         .in("id", orderIds);
-      createdAtByOrder = new Map((orders ?? []).map((o) => [o.id, o.created_at]));
+      createdAtByOrder = new Map((orders ?? []).map((o: any) => [o.id, o.created_at]));
     }
 
-    const dtoItems: StackItemDTO[] = (items ?? []).map((i) => ({
+    const dtoItems: StackItemDTO[] = (items ?? []).map((i: any) => ({
       id: i.id,
       cardId: i.card_id,
       cardName: i.card_name,
@@ -99,4 +108,4 @@ export const getMyStack = createServerFn({ method: "GET" })
       totalOrders: orderIds.length + auctionCount,
       items: dtoItems,
     };
-  });
+}
