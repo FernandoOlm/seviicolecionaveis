@@ -1,6 +1,6 @@
 # Confirmações de agendamento
 ## Status de pedidos
-- [ ] Adicionar os três status ao painel e ao acompanhamento, preservando pagamento e estoque.
+- [x] Adicionar os três status ao painel e ao acompanhamento, preservando pagamento e estoque; testes passando e opções verificadas no painel autenticado.
 
 - [x] E-mail da loja configurável no painel.
 - [x] Confirmação de entrega/retirada para cliente e loja, com dados do pedido após pagamento confirmado.
