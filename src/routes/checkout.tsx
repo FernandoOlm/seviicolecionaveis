@@ -20,6 +20,7 @@ import { TrustBadges } from "@/components/TrustBadges";
 import { computeBundleDiscount } from "@/lib/bundles";
 import { copyToClipboard } from "@/lib/clipboard";
 import { ScheduleSlotPicker } from "@/components/ScheduleSlotPicker";
+import { isSlotBookable, SLOT_EXPIRED_MESSAGE } from "@/lib/scheduling";
 import { validatePickupEvent } from "@/lib/checkout-pickup";
 import { formatSchedule, HAND_DELIVERY_PIX_KEY } from "@/lib/scheduling";
 import { CardStackTermsDialog } from "@/components/CardStackTermsDialog";
@@ -573,6 +574,10 @@ function CheckoutPage() {
     }
     if (shipping === "arrange" && pickupPoint !== "evento" && !scheduleAt) {
       return pickupPoint === "app" ? "Escolha a quinta-feira da entrega." : "Escolha o dia e horário da retirada.";
+    }
+    if (shipping === "arrange" && pickupPoint !== "evento" && scheduleAt && !isSlotBookable(pickupPoint === "app" ? "delivery" : "pickup", scheduleAt)) {
+      setScheduleAt(null);
+      return SLOT_EXPIRED_MESSAGE;
     }
     if (shipping === "arrange" && pickupPoint === "app" && (!form.street.trim() || !form.number.trim())) {
       return "Informe o endereço completo de entrega.";
