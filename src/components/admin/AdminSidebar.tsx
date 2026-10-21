@@ -60,6 +60,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/pilha", label: "Pilha de Cartas", icon: Layers },
       { to: "/admin/leiloes", label: "Leilões (Pilha)", icon: Gift },
       { to: "/admin/leiloes-whatsapp", label: "Leilões WhatsApp", icon: Gavel },
+      { to: "/admin/eventos", label: "Eventos", icon: CalendarClock },
       { to: "/admin/evento", label: "Modo Evento", icon: CalendarClock },
       { to: "/admin/sorteios", label: "Sorteios", icon: Ticket },
     ],
