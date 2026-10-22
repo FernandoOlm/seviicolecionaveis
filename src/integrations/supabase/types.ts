@@ -140,6 +140,72 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notifications: {
+        Row: {
+          action: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          dedupe_key: string
+          details: Json
+          email_status: Json
+          event_id: string | null
+          event_name: string | null
+          id: string
+          kind: string
+          modality: string | null
+          read_at: string | null
+          scheduled_at: string | null
+          source: string | null
+          target_code: string | null
+          target_id: string
+          target_type: string
+          title: string
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          dedupe_key: string
+          details?: Json
+          email_status?: Json
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          kind: string
+          modality?: string | null
+          read_at?: string | null
+          scheduled_at?: string | null
+          source?: string | null
+          target_code?: string | null
+          target_id: string
+          target_type: string
+          title: string
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          dedupe_key?: string
+          details?: Json
+          email_status?: Json
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          kind?: string
+          modality?: string | null
+          read_at?: string | null
+          scheduled_at?: string | null
+          source?: string | null
+          target_code?: string | null
+          target_id?: string
+          target_type?: string
+          title?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
