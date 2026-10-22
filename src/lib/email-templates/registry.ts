@@ -19,6 +19,7 @@ import { template as stackExpiredTemplate } from './stack-expired'
 import { template as pickupReopenedTemplate } from './pickup-reopened'
 import { template as scheduleConfirmedTemplate } from './schedule-confirmed'
 import { template as eventChangedTemplate } from './event-changed'
+import { template as buyerReceiptConfirmedTemplate } from './buyer-receipt-confirmed'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -54,4 +55,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'pickup-reopened': pickupReopenedTemplate,
   'schedule-confirmed': scheduleConfirmedTemplate,
   'event-changed': eventChangedTemplate,
+  'buyer-receipt-confirmed': buyerReceiptConfirmedTemplate,
 }

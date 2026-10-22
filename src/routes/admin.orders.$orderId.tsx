@@ -299,6 +299,13 @@ function AdminOrderDetailPage() {
               <p className="text-xs text-muted-foreground mt-1">
                 {new Date(order.created_at).toLocaleString("pt-BR")}
               </p>
+              {order.buyer_received_at && (
+                <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                  <p className="font-medium text-foreground">Recebimento confirmado pelo comprador</p>
+                  <p>{new Date(order.buyer_received_at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })} (Fortaleza)</p>
+                  <p className="break-all">Usuário: {order.buyer_received_by}</p>
+                </div>
+              )}
             </div>
             <div className="flex flex-col items-end gap-1">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</label>

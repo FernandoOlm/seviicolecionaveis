@@ -25,3 +25,7 @@ export const PAID_ORDER_STATUSES: readonly string[] = [
 export function isPaidOrderStatus(status: string): boolean {
   return PAID_ORDER_STATUSES.includes(status);
 }
+
+export function canBuyerConfirmReceipt(status: string): boolean {
+  return status === "shipped" || status === "awaiting_pickup";
+}

@@ -1,4 +1,5 @@
-import { ORDER_STATUS_LABELS } from "@/lib/order-status";
+import { ORDER_STATUS_LABELS, canBuyerConfirmReceipt } from "@/lib/order-status";
+import { BuyerReceiptConfirmation } from "@/components/BuyerReceiptConfirmation";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { formatSchedule, HAND_DELIVERY_PIX_KEY, STORE_WHATSAPP } from "@/lib/scheduling";
 import { useEffect, useState } from "react";
@@ -307,6 +308,11 @@ function OrderDetailPage() {
           </h1>
           <p className="text-xs text-muted-foreground font-mono">Pedido #{order.id.slice(0, 8)}</p>
           <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString("pt-BR")}</p>
+          {order.status === "delivered" && <p className="text-sm font-medium">Entregue</p>}
+          {user?.id === order.user_id && canBuyerConfirmReceipt(order.status) && (
+            <BuyerReceiptConfirmation orderId={order.id} onConfirmed={(receipt) => setOrder((previous: any) => ({ ...previous, ...receipt, reschedule_required: false }))} />
+          )}
+          {order.buyer_received_at && <p className="text-xs text-muted-foreground">Recebimento confirmado em {new Date(order.buyer_received_at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}.</p>}
         </div>
 
         {(order.status === "shipped" || order.status === "delivered") && order.tracking_code && (
