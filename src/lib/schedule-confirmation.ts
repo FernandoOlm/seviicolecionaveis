@@ -55,7 +55,7 @@ export function scheduleConfirmationData(order: ScheduledOrder) {
   return {
     orderId: order.id, recipientName: order.recipient_name ?? "Cliente", service, when, address,
     delivery: kind === "delivery",
-    deliveryFeePending: kind === "delivery" && order.hand_delivery_fee_status !== "paid",
+    deliveryFeePending: kind === "delivery" && !["paid", "confirmed"].includes(order.hand_delivery_fee_status ?? ""),
     calendarUrl: `https://calendar.google.com/calendar/render?${params.toString()}`,
   };
 }
