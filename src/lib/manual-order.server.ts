@@ -194,6 +194,10 @@ export async function createManualOrder(admin: { id: string; email: string | nul
     scheduled_at: scheduled ? ship.at : null,
     event_id: ship.mode === "event" ? ship.eventId : null,
     hand_delivery_fee_status: ship.mode === "delivery" ? ship.feeStatus : null,
+    ...(ship.mode === "delivery" && ship.feeStatus === "confirmed" ? {
+      hand_delivery_fee_confirmed_at: now.toISOString(), hand_delivery_fee_confirmed_by: admin.id,
+      hand_delivery_fee_history: [{ at: now.toISOString(), admin_id: admin.id, admin_email: admin.email, previous: null, next: "confirmed", note: "Marcado como pago pelo admin" }],
+    } : {}),
     shipping_cost_cents: shippingCents,
     subtotal_cents: totals.subtotal,
     discount_cents: totals.discount,
