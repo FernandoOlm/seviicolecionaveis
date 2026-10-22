@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { isHandDeliveryFeePaid } from "@/lib/hand-delivery";
 import { MODALITIES, MODALITY_LABELS, matchesScheduleRange, formatScheduleShort, type DateRange, type Modality } from "@/lib/fulfillment-alerts";
 
 export interface FulfillmentFilterState {
@@ -9,17 +10,23 @@ export interface FulfillmentFilterState {
   range: DateRange;
   from: string;
   to: string;
+  /** Pagamento da taxa da Entrega em mãos. */
+  fee?: "all" | "pending" | "paid";
 }
 export const DEFAULT_FULFILLMENT_FILTER: FulfillmentFilterState = { modality: "all", onlyUnread: false, eventId: "", range: "all", from: "", to: "" };
 
 export function matchesFulfillmentFilter(
   f: FulfillmentFilterState,
-  row: { id: string; modality: Modality; eventId?: string | null; scheduledAt?: string | null },
+  row: { id: string; modality: Modality; eventId?: string | null; scheduledAt?: string | null; feeStatus?: string | null },
   unreadTargets: Set<string>,
 ): boolean {
   if (f.modality !== "all" && row.modality !== f.modality) return false;
   if (f.onlyUnread && !unreadTargets.has(row.id)) return false;
   if (f.modality === "event" && f.eventId && row.eventId !== f.eventId) return false;
+  if (f.fee && f.fee !== "all") {
+    if (row.modality !== "delivery") return false;
+    if ((f.fee === "paid") !== isHandDeliveryFeePaid(row.feeStatus)) return false;
+  }
   return matchesScheduleRange(row.scheduledAt, f.range, new Date(), f.from || undefined, f.to || undefined);
 }
 
@@ -45,7 +52,7 @@ export function FulfillmentFilters({ value, onChange, count }: { value: Fulfillm
   return (
     <div className="rounded-lg border border-border bg-card p-3 flex flex-wrap items-center gap-3 text-xs">
       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Retirada/envio</p>
-      <select className={sel} value={value.modality} onChange={(e) => set({ modality: e.target.value as any, eventId: "" })} aria-label="Modalidade">
+      <select className={sel} value={value.modality} onChange={(e) => set({ modality: e.target.value as any, eventId: "", fee: "all" })} aria-label="Modalidade">
         <option value="all">Todas</option>
         {MODALITIES.map((m) => <option key={m} value={m}>{MODALITY_LABELS[m]}</option>)}
       </select>
@@ -53,6 +60,13 @@ export function FulfillmentFilters({ value, onChange, count }: { value: Fulfillm
         <select className={sel} value={value.eventId} onChange={(e) => set({ eventId: e.target.value })} aria-label="Evento">
           <option value="">Todos os eventos</option>
           {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
+        </select>
+      )}
+      {value.modality === "delivery" && (
+        <select className={sel} value={value.fee ?? "all"} onChange={(e) => set({ fee: e.target.value as any })} aria-label="Pagamento da entrega">
+          <option value="all">Pagamento: todos</option>
+          <option value="pending">Aguardando confirmação</option>
+          <option value="paid">Pago</option>
         </select>
       )}
       <select className={sel} value={value.range} onChange={(e) => set({ range: e.target.value as DateRange })} aria-label="Data do agendamento">
