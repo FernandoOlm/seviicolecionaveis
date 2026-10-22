@@ -1,3 +1,4 @@
+import { ORDER_STATUSES, ORDER_STATUS_LABELS, PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -5,30 +6,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminCancellationBell } from "@/components/AdminCancellationBell";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { ChevronRight, ImageOff, Search } from "lucide-react";
+import { HandDeliveryFeeBadge } from "@/components/admin/HandDeliveryFeeBadge";
+import { isHandDeliveryArea, HAND_DELIVERY_OUT_OF_AREA_WARNING } from "@/lib/hand-delivery";
+import { FulfillmentFilters, ModalityBadge, matchesFulfillmentFilter, DEFAULT_FULFILLMENT_FILTER } from "@/components/admin/FulfillmentFilters";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { modalityOfOrder } from "@/lib/fulfillment-alerts";
 
 
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin — Sevii Colecionáveis" }] }),
+  head: () => ({ meta: [
+    { title: "Admin — Sevii Colecionáveis" },
+    { name: "description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:title", content: "Admin — Sevii Colecionáveis" },
+    { property: "og:description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   validateSearch: (search: { focus?: string }): { focus?: string } => ({
     focus: typeof search.focus === "string" ? search.focus : undefined,
   }),
   component: AdminPage,
 });
 
-const STATUSES = ["pending", "paid", "preparing", "shipped", "awaiting_pickup", "delivered", "cancelled"] as const;
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pedido recebido",
-  paid: "Pago",
-  preparing: "Em preparação",
-  shipped: "Enviado",
-  awaiting_pickup: "Aguardando retirada na Arte em Cards",
-  delivered: "Entregue",
-  cancelled: "Cancelado",
-  cancellation_requested: "Cancelamento solicitado",
-};
+const STATUSES = ORDER_STATUSES;
+const STATUS_LABEL = ORDER_STATUS_LABELS;
 
-const SHIPPING_METHODS = ["fixed", "arrange", "card_stack", "arte_em_cards", "presencial", "superfrete", "delivery_app"] as const;
+const SHIPPING_METHODS = ["fixed", "arrange", "card_stack", "arte_em_cards", "presencial", "superfrete", "delivery_app", "to_define"] as const;
 const SHIPPING_METHOD_LABEL: Record<string, string> = {
   fixed: "Frete fixo",
   superfrete: "SuperFrete",
@@ -37,6 +41,7 @@ const SHIPPING_METHOD_LABEL: Record<string, string> = {
   presencial: "Retirada presencial",
   arrange: "Envio a combinar",
   delivery_app: "Aplicativo de entrega",
+  to_define: "Definir depois",
 };
 
 function AdminPage() {
@@ -50,7 +55,7 @@ function AdminPage() {
   const ALL_STATUSES = [...STATUSES, "cancellation_requested"] as const;
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
     if (typeof window === "undefined") return [...ALL_STATUSES];
-    const raw = localStorage.getItem("admin-orders-filter-v2");
+    const raw = localStorage.getItem("admin-orders-filter-v3");
     if (!raw) return [...ALL_STATUSES];
     try {
       const parsed = JSON.parse(raw);
@@ -61,7 +66,7 @@ function AdminPage() {
 
   const [selectedShippingMethods, setSelectedShippingMethods] = useState<string[]>(() => {
     if (typeof window === "undefined") return [...SHIPPING_METHODS];
-    const raw = localStorage.getItem("admin-orders-shipping-filter");
+    const raw = localStorage.getItem("admin-orders-shipping-filter-v2");
     if (!raw) return [...SHIPPING_METHODS];
     try {
       const parsed = JSON.parse(raw);
@@ -73,13 +78,13 @@ function AdminPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("admin-orders-filter-v2", JSON.stringify(selectedStatuses));
+      localStorage.setItem("admin-orders-filter-v3", JSON.stringify(selectedStatuses));
     }
   }, [selectedStatuses]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("admin-orders-shipping-filter", JSON.stringify(selectedShippingMethods));
+      localStorage.setItem("admin-orders-shipping-filter-v2", JSON.stringify(selectedShippingMethods));
     }
   }, [selectedShippingMethods]);
 
@@ -95,6 +100,8 @@ function AdminPage() {
     );
   };
   const isOrdersRoute = location.pathname === "/admin";
+  const [ff, setFf] = useState(DEFAULT_FULFILLMENT_FILTER);
+  const { unreadTargets } = useAdminNotifications(300);
   const focusId = search.focus;
   const focusRef = useRef<HTMLDivElement>(null);
 
@@ -184,6 +191,7 @@ function AdminPage() {
     if (o.origin === "auction") return false;
     if (!selectedStatuses.includes(o.status)) return false;
     if (!selectedShippingMethods.includes(o.shipping_method ?? "")) return false;
+    if (!matchesFulfillmentFilter(ff, { id: o.id, modality: modalityOfOrder(o), eventId: o.event_id, scheduledAt: o.scheduled_at, feeStatus: (o as any).hand_delivery_fee_status }, unreadTargets)) return false;
     const items: any[] = o.order_items ?? [];
 
     if (!query) return true;
@@ -207,7 +215,10 @@ function AdminPage() {
       <main className="mx-auto max-w-6xl px-4 py-8">
 
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-          <h1 className="text-2xl font-bold">Pedidos ({filtered.length})</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold">Pedidos ({filtered.length})</h1>
+            <Link to="/admin/pedido-manual" className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90">Novo pedido manual</Link>
+          </div>
           <div className="flex flex-wrap gap-3">
             <div className="rounded-lg border border-border bg-card p-3">
               <div className="flex items-center justify-between gap-3 mb-2">
@@ -281,6 +292,8 @@ function AdminPage() {
 
 
 
+        <div className="mb-4"><FulfillmentFilters value={ff} onChange={setFf} count={filtered.length} /></div>
+
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
@@ -350,6 +363,13 @@ function AdminPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xs font-mono text-muted-foreground">#{o.id.slice(0, 8)}</p>
+                      {o.origin === "manual" && <span className="inline-block rounded bg-foreground text-background px-1.5 py-0.5 text-[10px] font-bold uppercase">Manual</span>}
+                      <ModalityBadge modality={modalityOfOrder(o)} scheduledAt={o.scheduled_at} unread={unreadTargets.has(o.id)} />
+                      {o.schedule_kind === "delivery" && <HandDeliveryFeeBadge status={(o as any).hand_delivery_fee_status} />}
+                      {o.schedule_kind === "delivery" && !isHandDeliveryArea({ city: o.city, state: o.state, cep: (o as any).cep }) && (
+                        <span className="inline-block rounded bg-destructive/10 text-destructive px-1.5 py-0.5 text-[10px] font-bold">{HAND_DELIVERY_OUT_OF_AREA_WARNING}</span>
+                      )}
+                      {o.reschedule_required && <span className="inline-block rounded bg-amber-100 text-amber-900 px-1.5 py-0.5 text-[10px] font-bold">Retirada reaberta</span>}
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${
                           isCancellation

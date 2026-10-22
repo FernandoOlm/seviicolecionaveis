@@ -5,7 +5,7 @@ export const ARTE_EM_CARDS_FEE_CENTS = 500;
 const PIX_EXPIRES_MINUTES = 30;
 const STORE_WHATSAPP = "5579981509552"; // Sevii Colecionáveis (somente dígitos com DDI)
 
-export type ServiceOrderMethod = "correios" | "app" | "arte_em_cards" | "presencial";
+export type ServiceOrderMethod = "correios" | "app" | "arte_em_cards" | "presencial" | "evento";
 
 export interface ServiceOrderAddress {
   recipientName: string;
@@ -27,6 +27,9 @@ export interface CreateServiceOrderInput {
   address?: ServiceOrderAddress | null;
   arteEmCardsCode?: string | null;
   pickupPoint?: "aruana" | "aeroporto" | null;
+  eventName?: string | null;
+  eventId?: string | null;
+  eventAt?: string | null;
   notes?: string | null;
   cpf?: string | null;
 }
@@ -92,6 +95,7 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
   let amountCents = 0;
   let shippingCostCents = 0;
   let arteCodeUsed: string | null = null;
+  let eventName = input.eventName?.trim() ?? "";
 
   if (input.method === "correios") {
     if (!input.address) throw new Error("Endereço obrigatório para envio pelos Correios.");
@@ -103,6 +107,38 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
     amountCents = arte.feeCents;
     arteCodeUsed = arte.codeUsed;
   } else if (input.method === "app") {
+    const { isHandDeliveryArea, HAND_DELIVERY_AREA_MESSAGE } = await import("@/lib/hand-delivery");
+    let addr: { city?: string | null; state?: string | null; cep?: string | null } | null = input.address ?? null;
+    if (!addr) {
+      const { data: saved } = await supabaseAdmin.from("addresses").select("city, state, cep")
+        .eq("user_id", input.userId).order("is_default", { ascending: false }).limit(1).maybeSingle();
+      addr = saved ?? null;
+    }
+    if (!isHandDeliveryArea(addr)) throw new Error(HAND_DELIVERY_AREA_MESSAGE);
+    amountCents = 0;
+  } else if (input.method === "evento") {
+    if (!input.eventId || !input.eventAt) throw new Error("Escolha o evento, o dia e o horário da retirada.");
+    const { data: ev } = await supabaseAdmin.from("events").select("*").eq("id", input.eventId).maybeSingle();
+    if (!ev) throw new Error("Evento não encontrado.");
+    const { validateEventSchedule, ymdOfIso } = await import("@/lib/events");
+    const { localParts } = await import("@/lib/scheduling");
+    const eventErr = validateEventSchedule(
+      {
+        id: ev.id,
+        name: ev.name,
+        description: ev.description ?? null,
+        start_date: ev.start_date,
+        end_date: ev.end_date,
+        start_time: String(ev.start_time).slice(0, 5),
+        end_time: String(ev.end_time).slice(0, 5),
+        per_day_times: (ev.per_day_times as any) ?? null,
+        active: ev.active,
+      },
+      ymdOfIso(input.eventAt),
+      localParts(input.eventAt).time,
+    );
+    if (eventErr) throw new Error(eventErr);
+    eventName = ev.name;
     amountCents = 0;
   } else if (input.method === "presencial") {
     if (!input.pickupPoint) throw new Error("Selecione o ponto de retirada (Aruana ou Aeroporto).");
@@ -130,8 +166,12 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
       city: input.address?.city ?? null,
       state: input.address?.state?.toUpperCase() ?? null,
       phone: input.address?.phone ?? null,
+      event_id: input.method === "evento" ? (input.eventId ?? null) : null,
+      scheduled_at: input.method === "evento" ? (input.eventAt ?? null) : null,
       notes:
-        input.method === "presencial" && input.pickupPoint
+        input.method === "evento"
+          ? `Retirada em eventos: ${eventName}.${input.notes ? `\n\n${input.notes}` : ""}`
+          : input.method === "presencial" && input.pickupPoint
           ? `Retirada presencial: ${input.pickupPoint === "aruana" ? "Aruana" : "Aeroporto"}.${input.notes ? `\n\n${input.notes}` : ""}`
           : (input.notes ?? null),
       arte_em_cards_code: arteCodeUsed,
@@ -147,8 +187,8 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
     .in("id", input.itemIds);
   if (updErr) throw new Error(updErr.message);
 
-  // TODO Fase 3: notificar admin por e-mail e adicionar contador no sino.
   console.log(`[service-orders] Nova OS #${created.code} criada (${input.method}) — ${items.length} item(s).`);
+  await notifyServiceOrderChoice(created.id).catch((e: unknown) => console.error("[service-orders] alert", e));
 
   // Sem cobrança: já está paga
   if (amountCents === 0) {
@@ -242,3 +282,54 @@ export async function checkServiceOrderStatusServer(serviceOrderId: string, user
   return { status: so.status as string };
 }
 
+
+/** Alerta central para a escolha feita pela Pilha de Cartas (um alerta único listando os pedidos incluídos). */
+export async function notifyServiceOrderChoice(
+  serviceOrderId: string,
+  opts?: { notifyClient?: boolean; source?: "customer" | "admin" | "auto" },
+) {
+  const db = supabaseAdmin as any;
+  const { data: so } = await db.from("service_orders").select("*").eq("id", serviceOrderId).maybeSingle();
+  if (!so) return;
+  const [{ data: its }, { data: userData }, ev] = await Promise.all([
+    db.from("card_stack_items").select("card_name, quantity, order_id").eq("service_order_id", so.id),
+    supabaseAdmin.auth.admin.getUserById(so.user_id),
+    so.event_id ? db.from("events").select("name").eq("id", so.event_id).maybeSingle().then((r: any) => r.data) : Promise.resolve(null),
+  ]);
+  const { data: profile } = await db.from("profiles").select("full_name, phone").eq("user_id", so.user_id).maybeSingle();
+  const { modalityOfServiceOrder } = await import("@/lib/fulfillment-alerts");
+  const { formatSchedule } = await import("@/lib/scheduling");
+  const modality = modalityOfServiceOrder(so.method);
+  const firstLine = typeof so.notes === "string" ? so.notes.split("\n")[0] : "";
+  const location = so.method === "presencial"
+    ? firstLine.replace(/^Retirada presencial:\s*/, "").replace(/\.$/, "")
+    : so.method === "correios"
+    ? [[so.street, so.number].filter(Boolean).join(", "), so.neighborhood, [so.city, so.state].filter(Boolean).join("/")].filter(Boolean).join(" · ")
+    : null;
+  const orderIds = [...new Set((its ?? []).map((i: any) => i.order_id).filter(Boolean))] as string[];
+  const name = profile?.full_name ?? so.recipient_name ?? null;
+  let calendarUrl: string | null = null;
+  if (so.scheduled_at) {
+    const start = new Date(so.scheduled_at);
+    const end = new Date(start.getTime() + 60 * 60_000);
+    const compact = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    calendarUrl = `https://calendar.google.com/calendar/render?${new URLSearchParams({
+      action: "TEMPLATE", text: `Retirada em eventos · OS #${so.code} · ${name ?? "Cliente"}`,
+      dates: `${compact(start)}/${compact(end)}`, ctz: "America/Maceio", location: ev?.name ?? "",
+      details: `OS Pilha #${so.code}\nhttps://seviicolecionaveis.com.br/admin/pilha`,
+    }).toString()}`;
+  }
+  const { notifyFulfillmentChange } = await import("@/lib/fulfillment-alerts.server");
+  await notifyFulfillmentChange({
+    targetType: "service_order", targetId: so.id, code: `OS #${so.code}`,
+    action: "defined", source: opts?.source ?? "customer", modality,
+    customerName: name, customerEmail: userData?.user?.email ?? null,
+    customerPhone: so.phone ?? profile?.phone ?? null,
+    scheduledAt: so.scheduled_at ?? null, when: so.scheduled_at ? formatSchedule("pickup", so.scheduled_at) : null,
+    eventId: so.event_id ?? null, eventName: ev?.name ?? null, location,
+    fee: so.method === "app" ? "R$ 15,00 (combinar via WhatsApp)" : so.amount_cents > 0 ? `R$ ${(so.amount_cents / 100).toFixed(2).replace(".", ",")}` : null,
+    items: (its ?? []).map((i: any) => `${i.quantity}× ${i.card_name}`),
+    relatedOrders: orderIds.map((id) => `#${id.slice(0, 8).toUpperCase()}`),
+    calendarUrl, notifyClient: opts?.notifyClient,
+  });
+}

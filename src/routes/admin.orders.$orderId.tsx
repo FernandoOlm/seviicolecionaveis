@@ -1,4 +1,7 @@
+import { MANUAL_PAYMENT_METHODS, MANUAL_SOURCES } from "@/lib/manual-order";
+import { ORDER_STATUSES, ORDER_STATUS_LABELS, PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { formatSchedule } from "@/lib/scheduling";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,35 +17,28 @@ import { ItemFacetFilter } from "@/components/admin/ItemFacetFilter";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowLeft, Gavel, ImageOff, Layers, MessageCircle, X } from "lucide-react";
+import { AdminShippingEditor } from "@/components/admin/AdminShippingEditor";
+import { HandDeliveryFeePanel } from "@/components/admin/HandDeliveryFeePanel";
+import { canAdminEditShipping } from "@/lib/admin-shipping-edit";
 import { AdminTrackingEditor, type TrackingInfo } from "@/components/admin/AdminTrackingEditor";
 import { useCardMetaMap } from "@/hooks/useCardMetaMap";
 import { sortByCardGroup } from "@/lib/sortCards";
 
 export const Route = createFileRoute("/admin/orders/$orderId")({
-  head: () => ({ meta: [{ title: "Pedido — Sevii Admin" }] }),
+  head: () => ({ meta: [
+    { title: "Pedido — Sevii Admin" },
+    { name: "description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:title", content: "Pedido — Sevii Admin" },
+    { property: "og:description", content: "Acompanhe e gerencie os pedidos da Sevii Colecionáveis." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: AdminOrderDetailPage,
 });
 
-const STATUSES = [
-  "pending",
-  "paid",
-  "preparing",
-  "shipped",
-  "awaiting_pickup",
-  "delivered",
-  "cancelled",
-] as const;
+const STATUSES = ORDER_STATUSES;
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pedido recebido",
-  paid: "Pago",
-  preparing: "Em preparação",
-  shipped: "Enviado",
-  awaiting_pickup: "Aguardando retirada na Arte em Cards",
-  delivered: "Entregue",
-  cancelled: "Cancelado",
-  cancellation_requested: "Cancelamento solicitado",
-};
+const STATUS_LABEL = ORDER_STATUS_LABELS;
 
 const SHIPPING_METHOD_LABEL: Record<string, string> = {
   fixed: "Frete fixo",
@@ -50,11 +46,15 @@ const SHIPPING_METHOD_LABEL: Record<string, string> = {
   arte_em_cards: "Retirada na Arte em Cards",
   card_stack: "Pilha de Cartas",
   presencial: "Retirada presencial",
+  evento: "Retirada em evento",
   combinar: "Envio a combinar",
   delivery_app: "Aplicativo de entrega",
+  arrange: "Envio a combinar",
+  to_define: "Definir depois",
 };
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  ...MANUAL_PAYMENT_METHODS,
   pix: "Pix",
   mercadopago_card: "Cartão de crédito (Mercado Pago)",
   mercadopago_pix: "Pix (Mercado Pago)",
@@ -76,6 +76,7 @@ function AdminOrderDetailPage() {
   const [stackedItemIds, setStackedItemIds] = useState<Set<string>>(new Set());
   const [selectedForStack, setSelectedForStack] = useState<Record<string, number>>({});
   const [sendingToStack, setSendingToStack] = useState(false);
+  const [internalNotes, setInternalNotes] = useState<string | null>(null);
   const addItemsToStackFn = useServerFn(adminAddOrderItemsToStack);
 
   useEffect(() => {
@@ -89,6 +90,10 @@ function AdminOrderDetailPage() {
       .eq("id", orderId)
       .maybeSingle();
     setOrder(data);
+    if (data?.origin === "manual") {
+      const { data: n } = await (supabase as any).from("order_admin_notes").select("internal_notes").eq("order_id", orderId).maybeSingle();
+      setInternalNotes(n?.internal_notes ?? null);
+    }
     if (data?.coupon_code) {
       const { data: c } = await supabase
         .from("coupons")
@@ -328,6 +333,24 @@ function AdminOrderDetailPage() {
                   </a>
                 )}
               </div>
+              {order.origin === "manual" && (
+                <div className="mt-3 rounded-md border border-border bg-secondary/40 p-3 text-xs space-y-1">
+                  <p><span className="inline-block rounded bg-foreground text-background px-1.5 py-0.5 text-[10px] font-bold uppercase mr-2">Manual</span>
+                    Criado por {order.manual_created_by_email ?? "admin"} em {new Date(order.manual_created_at ?? order.created_at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })} (Fortaleza)</p>
+                  {order.manual_source && <p>Origem: {MANUAL_SOURCES[order.manual_source as keyof typeof MANUAL_SOURCES] ?? order.manual_source}</p>}
+                  <p>Pagamento: {order.manual_adjustments?.payment_status === "pending" ? "Pendente" : "Pago"}{order.payment_paid_at ? ` em ${new Date(order.payment_paid_at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}` : ""}{order.payment_note ? ` — ${order.payment_note}` : ""}</p>
+                  {order.manual_adjustments?.discount?.cents > 0 && <p>Desconto: {fmtBRL(order.manual_adjustments.discount.cents)}{order.manual_adjustments.discount.reason ? ` — ${order.manual_adjustments.discount.reason}` : ""}</p>}
+                  {order.manual_adjustments?.surcharge?.cents > 0 && <p>Acréscimo: {fmtBRL(order.manual_adjustments.surcharge.cents)}{order.manual_adjustments.surcharge.reason ? ` — ${order.manual_adjustments.surcharge.reason}` : ""}</p>}
+                  {internalNotes && <p className="whitespace-pre-wrap"><span className="font-semibold">Observações internas:</span> {internalNotes}</p>}
+                </div>
+              )}
+              {order.buyer_received_at && (
+                <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                  <p className="font-medium text-foreground">Recebimento confirmado pelo comprador</p>
+                  <p>{new Date(order.buyer_received_at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })} (Fortaleza)</p>
+                  <p className="break-all">Usuário: {order.buyer_received_by}</p>
+                </div>
+              )}
             </div>
             <div className="flex flex-col items-end gap-1">
               <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</label>
@@ -399,7 +422,7 @@ function AdminOrderDetailPage() {
 
         {/* Itens */}
         {(() => {
-          const stackEligible = ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"].includes(order.status);
+          const stackEligible = PAID_ORDER_STATUSES.includes(order.status);
           const selectedCount = Object.keys(selectedForStack).length;
           return (
             <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -466,7 +489,7 @@ function AdminOrderDetailPage() {
                   const refundCents = it.refund_cents ?? 0;
                   const canCancel =
                     activeQty > 0 &&
-                    ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"].includes(order.status);
+                    PAID_ORDER_STATUSES.includes(order.status);
                   const inStack = stackedItemIds.has(it.id);
                   const canStack = stackEligible && !inStack && activeQty > 0;
                   const selectedQty = selectedForStack[it.id];
@@ -608,6 +631,55 @@ function AdminOrderDetailPage() {
           </dl>
         </div>
 
+
+        {(canAdminEditShipping(order) || order.shipping_edited_by_admin_at || (order.shipping_edit_history ?? []).length > 0) && (
+          <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                Envio/retirada: {order.schedule_kind === "delivery" ? "Entrega em mãos" : order.schedule_kind === "event" ? "Retirada em eventos" : order.schedule_kind === "pickup" ? "Retirada em mãos" : shippingLabel}
+                {order.shipping_edited_by_admin_at && <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold normal-case tracking-normal">Editado pelo admin</span>}
+              </h2>
+              {canAdminEditShipping(order)
+                ? <AdminShippingEditor order={order} onSaved={load} />
+                : <span className="text-xs text-muted-foreground">Pedido entregue — edição bloqueada</span>}
+            </div>
+            {(order.shipping_edit_history ?? []).length > 0 && (
+              <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+                {(order.shipping_edit_history as any[]).map((h, i) => (
+                  <li key={i}>
+                    {new Date(h.at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })} — {h.admin_email ?? "admin"}: {h.previous} → {h.next}
+                    {h.out_of_window && <strong className="text-destructive"> (fora do prazo padrão)</strong>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {order.scheduled_at && (
+          <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+            <h2 className="text-xs font-bold uppercase tracking-widest">
+              {order.schedule_kind === "delivery" ? "Entrega em mãos" : order.schedule_kind === "event" ? "Retirada em eventos" : "Retirada em mãos"} — agendamento
+            </h2>
+            <p className="text-sm">{formatSchedule(order.schedule_kind, order.scheduled_at)}</p>
+            {order.reschedule_required && (
+              <p className="text-xs font-semibold rounded-md bg-amber-100 text-amber-900 px-2 py-1 inline-block">
+                Retirada reaberta — reagendamento necessário (cliente ainda não escolheu novo horário)
+              </p>
+            )}
+            {Array.isArray(order.schedule_history) && order.schedule_history.length > 0 && (
+              <div className="text-xs text-muted-foreground">
+                <p className="font-semibold">Histórico de agendamentos</p>
+                <ul className="list-disc pl-4">
+                  {(order.schedule_history as any[]).map((h, i) => (
+                    <li key={i}>{formatSchedule(h.kind, h.scheduled_at)} — {h.outcome}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {order.schedule_kind === "delivery" && <HandDeliveryFeePanel order={order} onSaved={load} />}
+          </div>
+        )}
 
         {/* Observações */}
         {order.notes && (
@@ -992,7 +1064,7 @@ function FullCancelDialog({
   onClose: () => void;
   onDone: () => void | Promise<void>;
 }) {
-  const POST_PAID = ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"];
+  const POST_PAID = PAID_ORDER_STATUSES;
   const wasPaid = POST_PAID.includes(order.status) || POST_PAID.includes(order.pre_cancel_status ?? "");
   const pending = Math.max(0, (order.total_cents ?? 0) - (order.refunded_cents ?? 0));
   const [method, setMethod] = useState<"mercadopago" | "coupon" | "manual" | "none">(

@@ -19,8 +19,8 @@ export const Route = createFileRoute("/envios")({
       { property: "og:title", content: "Política de Envios e Retirada — Sevii Colecionáveis" },
       {
         property: "og:description",
-        content:
-          "Retirada em Aruana e Aeroporto, envio por 99 Entrega/Uber Entrega e presença em eventos. Atendimento via WhatsApp.",
+          content:
+            "Retirada em Aruana e Aeroporto, envio por Uber Entrega e entregador parceiro da loja e presença em eventos. Atendimento via WhatsApp.",
       },
     ],
   }),
@@ -136,8 +136,8 @@ function EnviosPage() {
             cta={{ label: "Falar pelo WhatsApp", href: WHATSAPP_URL }}
           >
             <p>
-              Trabalhamos com <span className="font-medium text-neutral-800">99 Entrega</span> e{" "}
-              <span className="font-medium text-neutral-800">Uber Entrega</span>. O valor do
+              Trabalhamos com <span className="font-medium text-neutral-800">Uber Entrega</span> e{" "}
+              <span className="font-medium text-neutral-800">Entregador parceiro da loja</span>. O valor do
               frete varia conforme a sua localização e é calculado no momento do envio.
             </p>
             <p className="mt-3">
@@ -147,7 +147,7 @@ function EnviosPage() {
 
           <PolicyCard
             icon={CalendarCheck}
-            title="Retirada em eventos e lojas parceiras"
+            title="Retirada em eventos"
             cta={{ label: "Verificar agenda", href: WHATSAPP_URL }}
           >
             <p>

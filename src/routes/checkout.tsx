@@ -14,11 +14,18 @@ import {
 import { getMpCustomerForCheckout } from "@/lib/saved-cards.functions";
 import { getShippingQuotes } from "@/utils/shipping.functions";
 import { toast } from "sonner";
+import { isHandDeliveryArea, HAND_DELIVERY_AREA_MESSAGE } from "@/lib/hand-delivery";
 import { Copy, Check, QrCode, CreditCard, Loader2, ShieldCheck, Sparkles, MessageCircle, X } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { TrustBadges } from "@/components/TrustBadges";
 import { computeBundleDiscount } from "@/lib/bundles";
 import { copyToClipboard } from "@/lib/clipboard";
+import { ScheduleSlotPicker } from "@/components/ScheduleSlotPicker";
+import { EventSlotPicker, type EventSelection } from "@/components/EventSlotPicker";
+import { listActiveEvents } from "@/lib/events.functions";
+import { validateEventSchedule, type PickupEvent } from "@/lib/events";
+import { isSlotBookable, SLOT_EXPIRED_MESSAGE } from "@/lib/scheduling";
+import { formatSchedule, HAND_DELIVERY_PIX_KEY } from "@/lib/scheduling";
 import { CardStackTermsDialog } from "@/components/CardStackTermsDialog";
 import {
   Dialog,
@@ -48,6 +55,8 @@ export const Route = createFileRoute("/checkout")({
       { name: "description", content: "Finalize seu pedido de cartas Pokémon na Sevii Colecionáveis. Pagamento seguro via Pix." },
       { property: "og:title", content: "Checkout — Sevii Colecionáveis" },
       { property: "og:description", content: "Finalize seu pedido com segurança." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:url", content: "https://seviicolecionaveis.lovable.app/checkout" },
       { name: "robots", content: "noindex, nofollow" },
     ],
@@ -145,6 +154,7 @@ interface CardState {
   couponCode: string | null;
   pointsToRedeem: number;
   arteEmCardsCode: string | null;
+  schedule: { kind: "delivery" | "pickup" | "event"; at: string; eventId?: string | null } | null;
 }
 
 function CheckoutPage() {
@@ -155,7 +165,31 @@ function CheckoutPage() {
   const [shipping, setShipping] = useState<"fixed" | "arrange" | "card_stack">("fixed");
   const [stackTermsAccepted, setStackTermsAccepted] = useState(false);
   const [stackTermsOpen, setStackTermsOpen] = useState(false);
-  const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | "app" | null>(null);
+  const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | "app" | "evento" | null>(null);
+  const handDeliveryEligible = isHandDeliveryArea({ city: form.city, state: form.state, cep: form.cep });
+  useEffect(() => {
+    if (!handDeliveryEligible && pickupPoint === "app") {
+      setPickupPoint(null);
+      toast.warning(HAND_DELIVERY_AREA_MESSAGE);
+    }
+  }, [handDeliveryEligible, pickupPoint]);
+  const [eventSel, setEventSel] = useState<EventSelection | null>(null);
+  const [pickupEvents, setPickupEvents] = useState<PickupEvent[]>([]);
+  const [scheduleAt, setScheduleAt] = useState<string | null>(null);
+  const [deliveryInfo, setDeliveryInfo] = useState("");
+  useEffect(() => {
+    if (shipping === "arrange" && pickupPoint === "evento" && pickupEvents.length === 0) {
+      listActiveEvents().then(setPickupEvents).catch(() => {});
+    }
+  }, [shipping, pickupPoint, pickupEvents.length]);
+  const schedulePayload = () => {
+    if (shipping !== "arrange") return null;
+    if (pickupPoint === "evento")
+      return eventSel ? { kind: "event" as const, at: eventSel.iso, eventId: eventSel.eventId } : null;
+    return scheduleAt
+      ? { kind: (pickupPoint === "app" ? "delivery" : "pickup") as "delivery" | "pickup", at: scheduleAt }
+      : null;
+  };
   const [quotes, setQuotes] = useState<ShippingQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
   const [quotesError, setQuotesError] = useState<string | null>(null);
@@ -433,10 +467,11 @@ function CheckoutPage() {
       quantity: i.quantity,
     }));
 
-  const PICKUP_LABELS: Record<"aruana" | "aeroporto" | "app", string> = {
+  const PICKUP_LABELS: Record<"aruana" | "aeroporto" | "app" | "evento", string> = {
     aruana: "Aruana — Rua Josepha Andrade Irmã Fontes, 600, Residencial Vista Aruana",
     aeroporto: "Aeroporto — Av. Silvério Leite Fontes, 1128, Palm Ville Residence",
-    app: "Entrega por aplicativo (somente Uber)",
+    app: "Entrega em mãos (somente em Aracaju)",
+    evento: "Retirada em eventos",
   };
 
   const buildNotes = () => {
@@ -446,9 +481,11 @@ function CheckoutPage() {
     const favsLine = favs.length ? `Pokémons favoritos: ${favs.join(", ")}` : "";
     const pickupLine =
       shipping === "arrange" && pickupPoint
-        ? pickupPoint === "app"
-          ? `Entrega por aplicativo (somente Uber): cliente solicitará disponibilidade pelo WhatsApp. Envios realizados às terças e quintas, das 14h às 18h.`
-          : `Retirada em mãos: ${PICKUP_LABELS[pickupPoint]}. Horário: tarde das 14h às 18h em dias úteis, mediante contato com 24h de antecedência.`
+        ? pickupPoint === "evento"
+          ? `Retirada em eventos: ${pickupEvents.find((e) => e.id === eventSel?.eventId)?.name ?? "Evento"} — ${eventSel ? formatSchedule("pickup", eventSel.iso) : "horário a definir"}.`
+          : pickupPoint === "app"
+          ? `Entrega em mãos (Aracaju) — ${scheduleAt ? formatSchedule("delivery", scheduleAt) : "data a definir"}. Taxa R$ 15,00 via Pix (${HAND_DELIVERY_PIX_KEY}) — aguardando comprovante.${deliveryInfo.trim() ? `\nInformações adicionais: ${deliveryInfo.trim()}` : ""}`
+          : `Retirada em mãos: ${PICKUP_LABELS[pickupPoint]} — ${scheduleAt ? formatSchedule("pickup", scheduleAt) : "horário a definir"}.`
         : "";
     const combined = [pickupLine, favsLine, form.notes.trim()].filter(Boolean).join("\n\n");
     return combined ? combined.slice(0, 2000) : null;
@@ -501,6 +538,7 @@ function CheckoutPage() {
           address: buildAddressPayload(),
           notes: buildNotes(),
           arteEmCardsCode: null,
+          schedule: schedulePayload(),
         },
       });
       clear();
@@ -548,7 +586,31 @@ function CheckoutPage() {
       return "Selecione uma opção de frete (informe o CEP para carregar).";
     }
     if (shipping === "arrange" && !pickupPoint) {
-      return "Selecione uma opção: Aruana, Aeroporto ou Entrega por aplicativo.";
+      return "Selecione uma opção: Aruana, Aeroporto, Entrega em mãos ou Retirada em eventos.";
+    }
+    if (shipping === "arrange" && pickupPoint === "evento") {
+      if (!eventSel) return "Escolha o evento, o dia e o horário da retirada.";
+      const ev = pickupEvents.find((e) => e.id === eventSel.eventId);
+      const eventError = ev ? validateEventSchedule(ev, eventSel.ymd, eventSel.slot) : "Evento não encontrado.";
+      if (eventError) {
+        if (ev) setEventSel(null);
+        return eventError;
+      }
+    }
+    if (shipping === "arrange" && pickupPoint !== "evento" && !scheduleAt) {
+      return pickupPoint === "app" ? "Escolha a quinta-feira da entrega." : "Escolha o dia e horário da retirada.";
+    }
+    if (shipping === "arrange" && pickupPoint !== "evento" && scheduleAt && !isSlotBookable(pickupPoint === "app" ? "delivery" : "pickup", scheduleAt)) {
+      setScheduleAt(null);
+      return SLOT_EXPIRED_MESSAGE;
+    }
+    if (shipping === "arrange" && pickupPoint === "app" && (!form.street.trim() || !form.number.trim())) {
+      return "Informe o endereço completo de entrega.";
+    }
+    if (shipping === "arrange" && pickupPoint === "app" && !isHandDeliveryArea({ city: form.city, state: form.state, cep: form.cep })) {
+      setPickupPoint(null);
+      setScheduleAt(null);
+      return HAND_DELIVERY_AREA_MESSAGE;
     }
     if (shipping === "card_stack" && !stackTermsAccepted) {
       return "Aceite os termos da Pilha de Cartas para continuar.";
@@ -582,6 +644,7 @@ function CheckoutPage() {
         couponCode: couponNormalized || null,
         pointsToRedeem: pointsRedeemed,
         arteEmCardsCode: null,
+        schedule: schedulePayload(),
       });
       setStep("card");
     } catch (e: any) {
@@ -617,6 +680,7 @@ function CheckoutPage() {
           couponCode: couponNormalized || null,
           pointsToRedeem: pointsRedeemed,
           arteEmCardsCode: null,
+          schedule: schedulePayload(),
         },
       });
       if ((result as any).status === "paid") {
@@ -758,42 +822,65 @@ function CheckoutPage() {
                 </div>
               </label>
 
-              <label className="flex items-start gap-3 rounded-lg border border-border p-4 cursor-pointer hover:bg-secondary/50">
-                <input
-                  type="radio"
-                  name="ship"
-                  checked={shipping === "arrange" && pickupPoint === "app"}
-                  onChange={() => {
-                    setShipping("arrange");
-                    setPickupPoint("app");
-                  }}
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">Entrega por aplicativo (somente Uber)</p>
-                  <p className="text-xs text-muted-foreground">
-                    Após a compra, solicite a disponibilidade pelo WhatsApp — o valor da corrida é por sua conta. Envios realizados às terças e quintas, das 14h às 18h.
-                  </p>
-                  {shipping === "arrange" && pickupPoint === "app" && (
-                    <div className="mt-2 rounded-md bg-secondary/60 border border-border p-3 text-xs text-muted-foreground">
-                      Assim que o pedido for confirmado, abra o pedido em <span className="font-semibold text-foreground">Meus pedidos</span> e
-                      clique no botão <span className="font-semibold text-foreground">"Solicitar entrega por aplicativo"</span> para falar com a loja no WhatsApp.
-                      <br /><br />
-                      Envios por aplicativo são feitos apenas às <span className="font-semibold text-foreground">terças e quintas</span>, no período das <span className="font-semibold text-foreground">14h às 18h</span>.
+              {handDeliveryEligible && (
+              <div className="rounded-lg border border-border">
+                <label className="flex items-start gap-3 p-4 cursor-pointer hover:bg-secondary/50">
+                  <input
+                    type="radio"
+                    name="ship"
+                    checked={shipping === "arrange" && pickupPoint === "app"}
+                    onChange={() => {
+                      setShipping("arrange");
+                      setPickupPoint("app");
+                      setScheduleAt(null);
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">🛵 Entrega em mãos (somente em Aracaju)</p>
+                    <p className="text-xs text-muted-foreground">
+                      Entrega feita por entregador parceiro às quintas-feiras, a partir das 19h. Taxa fixa de R$15. A rota é montada de acordo com os endereços do dia, então o horário de chegada pode variar conforme a distância.
+                    </p>
+                  </div>
+                </label>
+                {shipping === "arrange" && pickupPoint === "app" && (
+                  <div className="px-4 pb-4 space-y-3">
+                    <ScheduleSlotPicker kind="delivery" value={scheduleAt} onChange={setScheduleAt} />
+                    <div className="rounded-md border border-border p-3 text-xs">
+                      <p className="font-semibold text-sm mb-1">Endereço de entrega</p>
+                      <p className="text-muted-foreground">
+                        {form.street ? `${form.street}, ${form.number || "s/n"}${form.complement ? ` — ${form.complement}` : ""} · ${form.neighborhood} · ${form.city}/${form.state}` : "Preencha o endereço completo acima."}
+                      </p>
                     </div>
-                  )}
-                </div>
-              </label>
+                    <textarea
+                      className="w-full border rounded-md px-3 py-2 text-sm min-h-[60px] bg-background"
+                      maxLength={300}
+                      placeholder='Informações adicionais (ex: "deixar na portaria", "caixa de correio", "só recebo em mãos")'
+                      value={deliveryInfo}
+                      onChange={(e) => setDeliveryInfo(e.target.value)}
+                    />
+                    <div className="rounded-md bg-secondary/60 border border-border p-3 text-xs text-muted-foreground space-y-1">
+                      <p>
+                        <span className="font-semibold text-foreground">Pagamento da entrega:</span> R$ 15,00 via Pix para a chave{" "}
+                        <span className="font-mono font-semibold text-foreground">{HAND_DELIVERY_PIX_KEY}</span>.
+                      </p>
+                      <p>Depois de finalizar o pedido, envie o comprovante pelo botão "Enviar comprovante no WhatsApp" na página do pedido. A entrega fica aguardando confirmação do pagamento pela loja.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              )}
 
               <div className="rounded-lg border border-border">
                 <label className="flex items-start gap-3 p-4 cursor-pointer hover:bg-secondary/50">
                   <input
                     type="radio"
                     name="ship"
-                    checked={shipping === "arrange" && pickupPoint !== "app"}
+                    checked={shipping === "arrange" && pickupPoint !== "app" && pickupPoint !== "evento"}
                     onChange={() => {
                       setShipping("arrange");
-                      if (pickupPoint === "app") setPickupPoint(null);
+                      if (pickupPoint === "app" || pickupPoint === "evento") setPickupPoint(null);
+                      setScheduleAt(null);
                     }}
                     className="mt-1"
                   />
@@ -802,7 +889,7 @@ function CheckoutPage() {
                     <p className="text-xs text-muted-foreground">Escolha um dos pontos de retirada abaixo</p>
                   </div>
                 </label>
-                {shipping === "arrange" && pickupPoint !== "app" && (
+                {shipping === "arrange" && pickupPoint !== "app" && pickupPoint !== "evento" && (
                   <div className="px-4 pb-4 space-y-2">
                     <label className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer hover:bg-secondary/50">
                       <input
@@ -835,12 +922,39 @@ function CheckoutPage() {
                       </div>
                     </label>
                     {pickupPoint && (
-                      <div className="rounded-md bg-secondary/60 border border-border p-3 text-xs text-muted-foreground">
-                        <span className="font-semibold text-foreground">Atenção:</span> retiradas são feitas no período da
-                        tarde, das <span className="font-semibold text-foreground">14h às 18h</span>, em qualquer dia útil
-                        da semana, desde que você entre em contato com a gente pela manhã do mesmo dia.
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold">Agende sua retirada (gratuita)</p>
+                        <ScheduleSlotPicker kind="pickup" value={scheduleAt} onChange={setScheduleAt} />
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-border">
+                <label className="flex items-start gap-3 p-4 cursor-pointer hover:bg-secondary/50">
+                  <input
+                    type="radio"
+                    name="ship"
+                    checked={shipping === "arrange" && pickupPoint === "evento"}
+                    onChange={() => {
+                      setShipping("arrange");
+                      setPickupPoint("evento");
+                      setScheduleAt(null);
+                    }}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">🎪 Retirada em eventos</p>
+                    <p className="text-xs text-muted-foreground">
+                      Gratuita. Retire seu pedido no evento em que você vai comparecer.
+                    </p>
+                  </div>
+                </label>
+                {shipping === "arrange" && pickupPoint === "evento" && (
+                  <div className="px-4 pb-4">
+                    <p className="text-xs font-semibold mb-2">Escolha o evento, o dia e o horário da retirada</p>
+                    <EventSlotPicker events={pickupEvents} value={eventSel} onChange={setEventSel} />
                   </div>
                 )}
               </div>
@@ -1488,6 +1602,7 @@ function CardScreen({
                     couponCode: card.couponCode,
                     pointsToRedeem: card.pointsToRedeem,
                     arteEmCardsCode: card.arteEmCardsCode,
+                    schedule: card.schedule,
                     card: {
                       token: cardFormData.token,
                       paymentMethodId: cardFormData.payment_method_id,

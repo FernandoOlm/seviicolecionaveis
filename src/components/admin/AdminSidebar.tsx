@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { AdminNotificationsBell } from "@/components/admin/AdminNotificationsBell";
 import {
   BadgePercent,
   Bell,
@@ -41,6 +42,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin", label: "Pedidos", icon: ShoppingBag, exact: true },
       { to: "/admin/pedidos-leilao", label: "Pedidos Leilão", icon: Gavel },
       { to: "/admin/dashboard", label: "Dashboard", icon: Gauge },
+      { to: "/admin/notificacoes", label: "Notificações", icon: Bell },
     ],
   },
   {
@@ -61,6 +63,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/pilha", label: "Pilha de Cartas", icon: Layers },
       { to: "/admin/leiloes", label: "Leilões (Pilha)", icon: Gift },
       { to: "/admin/leiloes-whatsapp", label: "Leilões WhatsApp", icon: Gavel },
+      { to: "/admin/eventos", label: "Eventos", icon: CalendarClock },
       { to: "/admin/evento", label: "Modo Evento", icon: CalendarClock },
       { to: "/admin/sorteios", label: "Sorteios", icon: Ticket },
     ],
@@ -138,6 +141,7 @@ export function AdminSidebar() {
   const [open, setOpen] = useState(false);
   return (
     <>
+      <AdminNotificationsBell />
       <aside className="no-print hidden lg:block w-60 shrink-0 border-r border-border bg-card">
         <div className="sticky top-0 max-h-screen overflow-y-auto">
           <NavContent />

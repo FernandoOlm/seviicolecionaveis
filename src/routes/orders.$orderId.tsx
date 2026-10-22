@@ -1,4 +1,9 @@
+import { MANUAL_PAYMENT_METHODS } from "@/lib/manual-order";
+import { ORDER_STATUS_LABELS, canBuyerConfirmReceipt } from "@/lib/order-status";
+import { BuyerReceiptConfirmation } from "@/components/BuyerReceiptConfirmation";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { formatSchedule, HAND_DELIVERY_PIX_KEY, STORE_WHATSAPP } from "@/lib/scheduling";
+import { isHandDeliveryFeePaid } from "@/lib/hand-delivery";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,25 +13,105 @@ import { requestOrderCancellation } from "@/utils/orders.functions";
 import { checkPixOrderStatus } from "@/utils/payments.functions";
 import { toast } from "sonner";
 import { PostPurchaseSurvey } from "@/components/PostPurchaseSurvey";
+import { ScheduleSlotPicker } from "@/components/ScheduleSlotPicker";
+import { EventSlotPicker, type EventSelection } from "@/components/EventSlotPicker";
+import { listActiveEvents } from "@/lib/events.functions";
+import { validateEventSchedule, type PickupEvent } from "@/lib/events";
+import { reschedulePickupFn } from "@/lib/pickup-reschedule.functions";
+import { isSlotBookable, SLOT_EXPIRED_MESSAGE } from "@/lib/scheduling";
+
+function RescheduleBox({ orderId, onDone }: { orderId: string; onDone: (at: string) => void }) {
+  const [at, setAt] = useState<string | null>(null);
+  const [mode, setMode] = useState<"pickup" | "event">("pickup");
+  const [eventSel, setEventSel] = useState<EventSelection | null>(null);
+  const [events, setEvents] = useState<PickupEvent[]>([]);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (mode === "event" && events.length === 0) listActiveEvents().then(setEvents).catch(() => {});
+  }, [mode, events.length]);
+  const waUrl = `https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(`Olá! Quero reagendar a retirada do pedido #${orderId.slice(0, 8).toUpperCase()}`)}`;
+  return (
+    <div className="rounded-md border border-amber-400/60 bg-amber-50 p-3 space-y-3 text-amber-950">
+      <p className="font-semibold">Reagendamento necessário</p>
+      <p className="text-xs">Não conseguimos concluir sua retirada no horário agendado. Escolha uma nova forma de retirada abaixo.</p>
+      <div className="flex gap-2 text-xs font-semibold">
+        <button
+          type="button"
+          onClick={() => setMode("pickup")}
+          className={mode === "pickup" ? "rounded-md bg-primary px-3 py-1.5 text-primary-foreground" : "rounded-md border border-amber-400/60 px-3 py-1.5"}
+        >
+          🏪 Retirada em mãos
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("event")}
+          className={mode === "event" ? "rounded-md bg-primary px-3 py-1.5 text-primary-foreground" : "rounded-md border border-amber-400/60 px-3 py-1.5"}
+        >
+          🎪 Retirada em eventos
+        </button>
+      </div>
+      {mode === "pickup" ? (
+        <ScheduleSlotPicker kind="pickup" value={at} onChange={setAt} />
+      ) : (
+        <EventSlotPicker events={events} value={eventSel} onChange={setEventSel} />
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={(mode === "pickup" ? !at : !eventSel) || busy}
+          className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold disabled:opacity-50"
+          onClick={async () => {
+            setBusy(true);
+            try {
+              if (mode === "pickup") {
+                if (!at) return;
+                if (!isSlotBookable("pickup", at)) { setAt(null); toast.error(SLOT_EXPIRED_MESSAGE); return; }
+                await reschedulePickupFn({ data: { orderId, at, kind: "pickup" } });
+                onDone(at);
+              } else {
+                if (!eventSel) return;
+                const ev = events.find((e) => e.id === eventSel.eventId);
+                const err = ev ? validateEventSchedule(ev, eventSel.ymd, eventSel.slot) : "Evento não encontrado.";
+                if (err) { if (ev) setEventSel(null); toast.error(err); return; }
+                await reschedulePickupFn({ data: { orderId, at: eventSel.iso, kind: "event", eventId: eventSel.eventId } });
+                onDone(eventSel.iso);
+              }
+              toast.success("Novo horário confirmado!");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Não foi possível reagendar.");
+            } finally { setBusy(false); }
+          }}
+        >
+          {busy ? "Confirmando..." : "Confirmar novo horário"}
+        </button>
+        <a href={waUrl} target="_blank" rel="noreferrer" className="rounded-full border border-emerald-600 px-4 py-2 text-xs font-semibold text-emerald-700">
+          Combinar outra forma pelo WhatsApp
+        </a>
+      </div>
+    </div>
+  );
+}
 
 const PURCHASE_TRACKED_KEY = "sevii_ga_purchase_tracked";
 
 export const Route = createFileRoute("/orders/$orderId")({
-  head: () => ({ meta: [{ title: "Pedido — Sevii Colecionáveis" }] }),
+  head: () => ({ meta: [
+    { title: "Pedido — Sevii Colecionáveis" },
+    { name: "description", content: "Acompanhe pagamento, envio e retirada do seu pedido na Sevii Colecionáveis." },
+    { property: "og:title", content: "Pedido — Sevii Colecionáveis" },
+    { property: "og:description", content: "Acompanhe pagamento, envio e retirada do seu pedido na Sevii Colecionáveis." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: OrderDetailPage,
 });
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pedido recebido — aguardando pagamento",
-  paid: "Pago",
-  shipped: "Enviado",
-  awaiting_pickup: "Aguardando retirada na Arte em Cards",
-  delivered: "Entregue",
-  cancelled: "Cancelado",
-  cancellation_requested: "Cancelamento em análise",
-};
+const STATUS_LABEL: Record<string, string> = { ...ORDER_STATUS_LABELS, pending: "Pedido recebido — aguardando pagamento", cancellation_requested: "Cancelamento em análise" };
 
 const STATUS_ICON: Record<string, any> = {
+  preparing: Package,
+  separated: CheckCircle2,
+  cards_pending_delivery: AlertTriangle,
   pending: Clock,
   paid: CheckCircle2,
   shipped: Truck,
@@ -37,6 +122,9 @@ const STATUS_ICON: Record<string, any> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
+  preparing: "text-muted-foreground",
+  separated: "text-primary",
+  cards_pending_delivery: "text-foreground",
   pending: "text-yellow-600",
   paid: "text-green-600",
   shipped: "text-purple-600",
@@ -222,6 +310,11 @@ function OrderDetailPage() {
           </h1>
           <p className="text-xs text-muted-foreground font-mono">Pedido #{order.id.slice(0, 8)}</p>
           <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleString("pt-BR")}</p>
+          {order.status === "delivered" && <p className="text-sm font-medium">Entregue</p>}
+          {user?.id === order.user_id && canBuyerConfirmReceipt(order.status) && (
+            <BuyerReceiptConfirmation orderId={order.id} onConfirmed={(receipt) => setOrder((previous: any) => ({ ...previous, ...receipt, reschedule_required: false }))} />
+          )}
+          {order.buyer_received_at && <p className="text-xs text-muted-foreground">Recebimento confirmado em {new Date(order.buyer_received_at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}.</p>}
         </div>
 
         {(order.status === "shipped" || order.status === "delivered") && order.tracking_code && (
@@ -378,7 +471,7 @@ function OrderDetailPage() {
                   ? "Cartão de crédito (Stripe)"
                   : order.payment_method === "mercadopago_card"
                     ? "Cartão de crédito (Mercado Pago)"
-                    : order.payment_method ?? "A definir"}
+                    : MANUAL_PAYMENT_METHODS[order.payment_method as keyof typeof MANUAL_PAYMENT_METHODS] ?? order.payment_method ?? "A definir"}
             </span>
           </div>
         </section>
@@ -412,6 +505,45 @@ function OrderDetailPage() {
             <p className="text-xs text-amber-900">
               Retiradas: 14h às 18h em dias úteis, mediante contato com 24h de antecedência.
             </p>
+          </section>
+        )}
+
+        {(order as any).scheduled_at && (
+          <section className="rounded-xl border border-border bg-card p-5 text-sm space-y-3">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                {(order as any).schedule_kind === "delivery" ? "Entrega em mãos" : (order as any).schedule_kind === "event" ? "Retirada em eventos" : "Retirada em mãos"}
+              </h2>
+              <p className="text-sm mt-1">
+                {(order as any).reschedule_required ? "Horário anterior (não concluído): " : "Agendado para "}
+                <strong>{formatSchedule((order as any).schedule_kind, (order as any).scheduled_at)}</strong>
+              </p>
+            </div>
+            {(order as any).reschedule_required && ["pickup", "event"].includes((order as any).schedule_kind) && (
+              <RescheduleBox orderId={order.id} onDone={(at) => setOrder({ ...order, scheduled_at: at, reschedule_required: false })} />
+            )}
+            {(order as any).schedule_kind === "delivery" && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Taxa de entrega: <strong>R$ 15,00</strong> via Pix para a chave{" "}
+                  <span className="font-mono font-semibold text-foreground">{HAND_DELIVERY_PIX_KEY}</span>.{" "}
+                  Status:{" "}
+                  <strong>{isHandDeliveryFeePaid((order as any).hand_delivery_fee_status) ? "pagamento confirmado" : "aguardando confirmação de pagamento"}</strong>
+                </p>
+                {!isHandDeliveryFeePaid((order as any).hand_delivery_fee_status) && (
+                  <a
+                    href={`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(
+                      `Olá! Envio o comprovante do Pix da Entrega em Mãos referente ao pedido #${order.id.slice(0, 8).toUpperCase()}`,
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold hover:opacity-90"
+                  >
+                    Enviar comprovante no WhatsApp
+                  </a>
+                )}
+              </>
+            )}
           </section>
         )}
 

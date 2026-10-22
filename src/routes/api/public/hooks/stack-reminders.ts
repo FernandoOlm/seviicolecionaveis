@@ -30,6 +30,53 @@ async function handler({ request }: { request: Request }) {
   const now = Date.now();
   const supabase = supabaseAdmin as any;
 
+  // 0) Aviso de fim de prazo (30 dias): e-mail com link para escolher envio/retirada
+  let expiryNotices = 0;
+  const { data: dueRows } = await supabase
+    .from("card_stacks")
+    .select("id, user_id")
+    .eq("status", "active")
+    .is("expiry_notice_sent_at", null)
+    .lt("expires_at", new Date(now).toISOString())
+    .limit(500);
+  for (const s of (dueRows ?? []) as { id: string; user_id: string }[]) {
+    try {
+      const { count } = await supabase
+        .from("card_stack_items")
+        .select("id", { count: "exact", head: true })
+        .eq("stack_id", s.id)
+        .eq("status", "stored");
+      if ((count ?? 0) > 0) {
+        const { data: userRes } = await supabase.auth.admin.getUserById(s.user_id);
+        const email = userRes?.user?.email;
+        if (email) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("user_id", s.user_id)
+            .maybeSingle();
+          await sendTransactionalEmailSafe({
+            templateName: "stack-expired",
+            recipientEmail: email,
+            idempotencyKey: `stack-${s.id}-expired`,
+            templateData: {
+              recipientName: profile?.full_name?.split(" ")[0],
+              stackId: s.id,
+              itemCount: count ?? 0,
+            },
+          });
+          expiryNotices++;
+        }
+      }
+      await supabase
+        .from("card_stacks")
+        .update({ expiry_notice_sent_at: new Date().toISOString() })
+        .eq("id", s.id);
+    } catch (e: any) {
+      console.error("[stack-reminders] expiry notice", s.id, e?.message ?? e);
+    }
+  }
+
   // 1) Expire pilhas vencidas
   const { data: expiredRows, error: expErr } = await supabase
     .from("card_stacks")
@@ -130,6 +177,7 @@ async function handler({ request }: { request: Request }) {
 
   return Response.json({
     ok: true,
+    expiryNotices,
     expired,
     checked: stacks?.length ?? 0,
     sent7,

@@ -140,6 +140,72 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notifications: {
+        Row: {
+          action: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          dedupe_key: string
+          details: Json
+          email_status: Json
+          event_id: string | null
+          event_name: string | null
+          id: string
+          kind: string
+          modality: string | null
+          read_at: string | null
+          scheduled_at: string | null
+          source: string | null
+          target_code: string | null
+          target_id: string
+          target_type: string
+          title: string
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          dedupe_key: string
+          details?: Json
+          email_status?: Json
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          kind: string
+          modality?: string | null
+          read_at?: string | null
+          scheduled_at?: string | null
+          source?: string | null
+          target_code?: string | null
+          target_id: string
+          target_type: string
+          title: string
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          dedupe_key?: string
+          details?: Json
+          email_status?: Json
+          event_id?: string | null
+          event_name?: string | null
+          id?: string
+          kind?: string
+          modality?: string | null
+          read_at?: string | null
+          scheduled_at?: string | null
+          source?: string | null
+          target_code?: string | null
+          target_id?: string
+          target_type?: string
+          title?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -764,6 +830,7 @@ export type Database = {
         Row: {
           created_at: string
           expires_at: string
+          expiry_notice_sent_at: string | null
           id: string
           reminder_24h_sent_at: string | null
           reminder_48h_sent_at: string | null
@@ -776,6 +843,7 @@ export type Database = {
         Insert: {
           created_at?: string
           expires_at: string
+          expiry_notice_sent_at?: string | null
           id?: string
           reminder_24h_sent_at?: string | null
           reminder_48h_sent_at?: string | null
@@ -788,6 +856,7 @@ export type Database = {
         Update: {
           created_at?: string
           expires_at?: string
+          expiry_notice_sent_at?: string | null
           id?: string
           reminder_24h_sent_at?: string | null
           reminder_48h_sent_at?: string | null
@@ -1176,6 +1245,48 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          end_date: string
+          end_time: string
+          id: string
+          name: string
+          per_day_times: Json | null
+          start_date: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          end_date: string
+          end_time: string
+          id?: string
+          name: string
+          per_day_times?: Json | null
+          start_date: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          end_time?: string
+          id?: string
+          name?: string
+          per_day_times?: Json | null
+          start_date?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flash_offers: {
         Row: {
           active: boolean
@@ -1324,6 +1435,38 @@ export type Database = {
         }
         Relationships: []
       }
+      order_admin_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          internal_notes: string | null
+          order_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          internal_notes?: string | null
+          order_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          internal_notes?: string | null
+          order_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_admin_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           cancelled_at: string | null
@@ -1412,6 +1555,8 @@ export type Database = {
           arte_em_cards_code: string | null
           auction_id: string | null
           bundle_discount_cents: number
+          buyer_received_at: string | null
+          buyer_received_by: string | null
           carrier: string | null
           cep: string
           city: string
@@ -1422,13 +1567,28 @@ export type Database = {
           created_at: string
           discount_cents: number
           email: string
+          event_added_by: string | null
+          event_added_manually_at: string | null
+          event_id: string | null
+          event_previous: Json | null
+          hand_delivery_fee_confirmed_at: string | null
+          hand_delivery_fee_confirmed_by: string | null
+          hand_delivery_fee_history: Json
+          hand_delivery_fee_status: string | null
           id: string
+          manual_adjustments: Json
+          manual_created_at: string | null
+          manual_created_by: string | null
+          manual_created_by_email: string | null
+          manual_source: string | null
           mercadopago_payment_id: string | null
           neighborhood: string
           notes: string | null
           number: string
           origin: string
           payment_method: string
+          payment_note: string | null
+          payment_paid_at: string | null
           phone: string | null
           pix_discount_cents: number
           pix_expires_at: string | null
@@ -1440,7 +1600,14 @@ export type Database = {
           pre_cancel_status: string | null
           recipient_name: string
           refunded_cents: number
+          reschedule_required: boolean
+          schedule_history: Json
+          schedule_kind: string | null
+          schedule_reopened_at: string | null
+          scheduled_at: string | null
           shipping_cost_cents: number
+          shipping_edit_history: Json
+          shipping_edited_by_admin_at: string | null
           shipping_method: string
           state: string
           status: string
@@ -1467,6 +1634,8 @@ export type Database = {
           arte_em_cards_code?: string | null
           auction_id?: string | null
           bundle_discount_cents?: number
+          buyer_received_at?: string | null
+          buyer_received_by?: string | null
           carrier?: string | null
           cep: string
           city: string
@@ -1477,13 +1646,28 @@ export type Database = {
           created_at?: string
           discount_cents?: number
           email: string
+          event_added_by?: string | null
+          event_added_manually_at?: string | null
+          event_id?: string | null
+          event_previous?: Json | null
+          hand_delivery_fee_confirmed_at?: string | null
+          hand_delivery_fee_confirmed_by?: string | null
+          hand_delivery_fee_history?: Json
+          hand_delivery_fee_status?: string | null
           id?: string
+          manual_adjustments?: Json
+          manual_created_at?: string | null
+          manual_created_by?: string | null
+          manual_created_by_email?: string | null
+          manual_source?: string | null
           mercadopago_payment_id?: string | null
           neighborhood: string
           notes?: string | null
           number: string
           origin?: string
           payment_method?: string
+          payment_note?: string | null
+          payment_paid_at?: string | null
           phone?: string | null
           pix_discount_cents?: number
           pix_expires_at?: string | null
@@ -1495,7 +1679,14 @@ export type Database = {
           pre_cancel_status?: string | null
           recipient_name: string
           refunded_cents?: number
+          reschedule_required?: boolean
+          schedule_history?: Json
+          schedule_kind?: string | null
+          schedule_reopened_at?: string | null
+          scheduled_at?: string | null
           shipping_cost_cents?: number
+          shipping_edit_history?: Json
+          shipping_edited_by_admin_at?: string | null
           shipping_method: string
           state: string
           status?: string
@@ -1522,6 +1713,8 @@ export type Database = {
           arte_em_cards_code?: string | null
           auction_id?: string | null
           bundle_discount_cents?: number
+          buyer_received_at?: string | null
+          buyer_received_by?: string | null
           carrier?: string | null
           cep?: string
           city?: string
@@ -1532,13 +1725,28 @@ export type Database = {
           created_at?: string
           discount_cents?: number
           email?: string
+          event_added_by?: string | null
+          event_added_manually_at?: string | null
+          event_id?: string | null
+          event_previous?: Json | null
+          hand_delivery_fee_confirmed_at?: string | null
+          hand_delivery_fee_confirmed_by?: string | null
+          hand_delivery_fee_history?: Json
+          hand_delivery_fee_status?: string | null
           id?: string
+          manual_adjustments?: Json
+          manual_created_at?: string | null
+          manual_created_by?: string | null
+          manual_created_by_email?: string | null
+          manual_source?: string | null
           mercadopago_payment_id?: string | null
           neighborhood?: string
           notes?: string | null
           number?: string
           origin?: string
           payment_method?: string
+          payment_note?: string | null
+          payment_paid_at?: string | null
           phone?: string | null
           pix_discount_cents?: number
           pix_expires_at?: string | null
@@ -1550,7 +1758,14 @@ export type Database = {
           pre_cancel_status?: string | null
           recipient_name?: string
           refunded_cents?: number
+          reschedule_required?: boolean
+          schedule_history?: Json
+          schedule_kind?: string | null
+          schedule_reopened_at?: string | null
+          scheduled_at?: string | null
           shipping_cost_cents?: number
+          shipping_edit_history?: Json
+          shipping_edited_by_admin_at?: string | null
           shipping_method?: string
           state?: string
           status?: string
@@ -1579,6 +1794,13 @@ export type Database = {
             columns: ["auction_id"]
             isOneToOne: false
             referencedRelation: "auctions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -2181,6 +2403,7 @@ export type Database = {
           code: number
           complement: string | null
           created_at: string
+          event_id: string | null
           id: string
           method: string
           neighborhood: string | null
@@ -2189,6 +2412,7 @@ export type Database = {
           payment_order_id: string | null
           phone: string | null
           recipient_name: string | null
+          scheduled_at: string | null
           shipping_cost_cents: number
           stack_id: string
           state: string | null
@@ -2209,6 +2433,7 @@ export type Database = {
           code?: number
           complement?: string | null
           created_at?: string
+          event_id?: string | null
           id?: string
           method: string
           neighborhood?: string | null
@@ -2217,6 +2442,7 @@ export type Database = {
           payment_order_id?: string | null
           phone?: string | null
           recipient_name?: string | null
+          scheduled_at?: string | null
           shipping_cost_cents?: number
           stack_id: string
           state?: string | null
@@ -2237,6 +2463,7 @@ export type Database = {
           code?: number
           complement?: string | null
           created_at?: string
+          event_id?: string | null
           id?: string
           method?: string
           neighborhood?: string | null
@@ -2245,6 +2472,7 @@ export type Database = {
           payment_order_id?: string | null
           phone?: string | null
           recipient_name?: string | null
+          scheduled_at?: string | null
           shipping_cost_cents?: number
           stack_id?: string
           state?: string | null
@@ -2257,6 +2485,13 @@ export type Database = {
           whatsapp_sent_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "service_orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_orders_stack_id_fkey"
             columns: ["stack_id"]
@@ -2598,6 +2833,7 @@ export type Database = {
         }[]
       }
       clear_event_reserved: { Args: never; Returns: number }
+      confirm_order_receipt: { Args: { _order_id: string }; Returns: Json }
       expire_old_loyalty_points: { Args: never; Returns: number }
       find_user_by_phone: { Args: { _digits: string }; Returns: string }
       has_role: {

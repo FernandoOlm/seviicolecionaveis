@@ -53,7 +53,7 @@ export function CardStackTermsDialog({ open, onAccept, onCancel }: Props) {
             <ul className="list-disc pl-5 space-y-1">
               <li>O prazo de armazenamento é de <strong>30 dias</strong> a partir da primeira compra enviada para a pilha.</li>
               <li>Durante esse período, você pode continuar adicionando novas cartas à sua pilha.</li>
-              <li>Ao final do prazo, entraremos em contato para combinar o envio ou retirada das cartas.</li>
+              <li>Ao final do prazo, você será notificado por e-mail para que possa escolher o envio ou retirada.</li>
             </ul>
           </div>
 
@@ -73,10 +73,9 @@ export function CardStackTermsDialog({ open, onAccept, onCancel }: Props) {
               </div>
 
               <div className="rounded-md border border-border p-3">
-                <p className="font-semibold">🛵 Aplicativo de Entrega</p>
+                <p className="font-semibold">🛵 Entrega em mãos (somente em Aracaju)</p>
                 <p className="text-muted-foreground text-xs mt-1">
-                  Será disponibilizado um botão para contato via WhatsApp. Nossa equipe realizará a
-                  cotação e combinará o envio com você.
+                  Entregador parceiro às quintas-feiras, a partir das 19h. Taxa fixa de R$ 15.
                 </p>
               </div>
 
@@ -92,9 +91,10 @@ export function CardStackTermsDialog({ open, onAccept, onCancel }: Props) {
               </div>
 
               <div className="rounded-md border border-border p-3">
-                <p className="font-semibold">🎴 Retirada na Arte em Cards</p>
+                <p className="font-semibold">🎪 Retirada em Eventos</p>
                 <p className="text-muted-foreground text-xs mt-1">
-                  Taxa fixa de R$ 5,00. A cobrança será gerada automaticamente pelo site.
+                  Gratuita. Retire suas cartas no evento que você vai comparecer — basta informar
+                  qual evento ao solicitar a retirada.
                 </p>
               </div>
             </div>

@@ -1,0 +1,1 @@
+ALTER TABLE public.card_stacks ADD COLUMN IF NOT EXISTS expiry_notice_sent_at timestamptz;

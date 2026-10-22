@@ -8,8 +8,13 @@ import type { Condition, Finish, Language, LigaSubcategory, PokemonType, Trainer
 import { CONDITIONS, CONDITION_LABEL, EXTRA_COLLECTIONS, LIGA_SUBCATEGORIES, POKEMON_TYPES, TRAINER_SUBCATEGORIES } from "@/data/cards";
 import { notifyStockBack } from "@/lib/stock-alerts.functions";
 import { cardSlug } from "@/lib/slug";
+import { toast } from "sonner";
+import { Check, Copy } from "lucide-react";
+import { copyToClipboard } from "@/lib/clipboard";
 import { IllustratorCombobox } from "@/components/admin/IllustratorCombobox";
 import { useCustomCollections } from "@/lib/custom-collections";
+import { Button } from "@/components/ui/button";
+import { useIllustrators } from "@/lib/illustrators";
 
 export const Route = createFileRoute("/admin/manage-cards")({
   head: () => ({ meta: [{ title: "Gerenciar cartas — Admin" }] }),
@@ -112,6 +117,16 @@ function AdminCardsManagePage() {
   const [trainerSubFilter, setTrainerSubFilter] = useState<TrainerSubcategory[]>([]);
   const [noPriceOnly, setNoPriceOnly] = useState(false);
   const [collectionFilter, setCollectionFilter] = useState<string>("");
+  const [numberFilter, setNumberFilter] = useState("");
+  const [finishFilter, setFinishFilter] = useState<string[]>([]);
+  const [languageFilter, setLanguageFilter] = useState<string[]>([]);
+  const [conditionFilter, setConditionFilter] = useState<string[]>([]);
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [illustratorFilter, setIllustratorFilter] = useState("");
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const { illustrators } = useIllustrators();
+  const [sortBy, setSortBy] = useState<"name-asc" | "name-desc" | "number-asc" | "number-desc">("name-asc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -130,6 +145,40 @@ function AdminCardsManagePage() {
   const [quickMsg, setQuickMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [uploadingMain, setUploadingMain] = useState(false);
   const [uploadingQuick, setUploadingQuick] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkRemoving, setBulkRemoving] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  useEffect(() => {
+    const v = localStorage.getItem("admin-cards-view");
+    if (v === "grid" || v === "list") setViewMode(v);
+  }, []);
+  const changeViewMode = (m: "list" | "grid") => {
+    setViewMode(m);
+    localStorage.setItem("admin-cards-view", m);
+  };
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+
+  const handleBulkRemoveStock = async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    if (!confirm(`Zerar o estoque de ${ids.length} carta(s) selecionada(s)? O cadastro será mantido.`)) return;
+    setBulkRemoving(true);
+    setBulkMsg(null);
+    const { error } = await supabase.from("cards").update({ stock: 0 }).in("id", ids);
+    setBulkRemoving(false);
+    if (error) { setBulkMsg({ type: "err", text: `Erro: ${error.message}` }); return; }
+    invalidateCardsCache();
+    setRows((prev) => prev.map((r) => (selectedIds.has(r.id) ? { ...r, stock: 0 } : r)));
+    setSelectedIds(new Set());
+    setBulkMsg({ type: "ok", text: `${ids.length} carta(s) removida(s) do estoque.` });
+  };
 
   const uploadImage = async (file: File): Promise<string | null> => {
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
@@ -184,12 +233,25 @@ function AdminCardsManagePage() {
 
   const filteredAll = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
+    const nq = numberFilter.trim().toLowerCase();
+    const out = rows.filter((r) => {
       if (categoryFilter.length > 0 && !categoryFilter.includes(r.category)) return false;
       if (pokemonTypeFilter.length > 0 && (!r.pokemon_type || !pokemonTypeFilter.includes(r.pokemon_type))) return false;
       if (trainerSubFilter.length > 0 && (r.category !== "Treinador" || !r.trainer_subcategory || !trainerSubFilter.includes(r.trainer_subcategory))) return false;
       if (noPriceOnly && r.base_price_cents != null) return false;
       if (collectionFilter && r.collection !== collectionFilter) return false;
+      if (nq && !r.card_number.toLowerCase().includes(nq)) return false;
+      if (finishFilter.length && !finishFilter.includes(r.finish)) return false;
+      if (languageFilter.length && !languageFilter.includes(r.language)) return false;
+      if (conditionFilter.length && !conditionFilter.includes(r.condition ?? "NM")) return false;
+      if (illustratorFilter && r.illustrator_id !== illustratorFilter) return false;
+      if (inStockOnly && r.stock <= 0) return false;
+      if (priceMin !== "" || priceMax !== "") {
+        if (r.base_price_cents == null) return false;
+        const v = r.base_price_cents / 100;
+        if (priceMin !== "" && v < Number(priceMin)) return false;
+        if (priceMax !== "" && v > Number(priceMax)) return false;
+      }
       if (!q) return true;
       return (
         r.name.toLowerCase().includes(q) ||
@@ -197,9 +259,23 @@ function AdminCardsManagePage() {
         r.card_number.toLowerCase().includes(q)
       );
     });
-  }, [rows, search, categoryFilter, pokemonTypeFilter, trainerSubFilter, noPriceOnly, collectionFilter]);
+    const numKey = (cardNumber: string) => {
+      const m = cardNumber.match(/\d+/);
+      return m ? parseInt(m[0], 10) : Number.MAX_SAFE_INTEGER;
+    };
+    return out.sort((a, b) => {
+      if (sortBy === "name-desc") return b.name.localeCompare(a.name, "pt-BR") || a.collection.localeCompare(b.collection, "pt-BR");
+      if (sortBy === "number-asc" || sortBy === "number-desc") {
+        const cmp = a.collection.localeCompare(b.collection, "pt-BR");
+        if (cmp !== 0) return cmp;
+        const d = numKey(a.card_number) - numKey(b.card_number);
+        return sortBy === "number-asc" ? d : -d;
+      }
+      return a.name.localeCompare(b.name, "pt-BR") || a.collection.localeCompare(b.collection, "pt-BR");
+    });
+  }, [rows, search, categoryFilter, pokemonTypeFilter, trainerSubFilter, noPriceOnly, collectionFilter, numberFilter, sortBy, finishFilter, languageFilter, conditionFilter, illustratorFilter, inStockOnly, priceMin, priceMax]);
 
-  useEffect(() => { setPage(1); }, [search, pageSize, categoryFilter, pokemonTypeFilter, trainerSubFilter, noPriceOnly, collectionFilter]);
+  useEffect(() => { setPage(1); }, [search, pageSize, categoryFilter, pokemonTypeFilter, trainerSubFilter, noPriceOnly, collectionFilter, numberFilter, sortBy, finishFilter, languageFilter, conditionFilter, illustratorFilter, inStockOnly, priceMin, priceMax]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAll.length / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -235,6 +311,10 @@ function AdminCardsManagePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    const saveAndGoNext = submitter instanceof HTMLButtonElement && submitter.value === "next";
+    const editingIndex = editingId ? filteredAll.findIndex((row) => row.id === editingId) : -1;
+    const nextCard = saveAndGoNext && editingIndex >= 0 ? filteredAll[editingIndex + 1] : undefined;
     setMsg(null);
     if (!form.name.trim() || !form.card_number.trim() || !form.collection.trim()) {
       setMsg({ type: "err", text: "Preencha nome, número e coleção." });
@@ -289,8 +369,20 @@ function AdminCardsManagePage() {
     }
     setMsg({ type: "ok", text: editingId ? "Carta atualizada!" : "Carta adicionada!" });
     invalidateCardsCache();
-    resetForm();
     await load();
+    if (saveAndGoNext && editingId) {
+      if (nextCard) {
+        const nextIndex = editingIndex + 1;
+        setPage(Math.floor(nextIndex / pageSize) + 1);
+        handleEdit(nextCard);
+        setMsg({ type: "ok", text: "Carta atualizada! Próxima carta aberta para edição." });
+      } else {
+        resetForm();
+        setMsg({ type: "ok", text: "Carta atualizada! Não há próxima carta na lista filtrada." });
+      }
+      return;
+    }
+    resetForm();
   };
 
   const handleEdit = (r: CardRow) => {
@@ -500,7 +592,11 @@ function AdminCardsManagePage() {
               </span>
               <input
                 value={form.collection}
-                onChange={(e) => setForm({ ...form, collection: e.target.value })}
+                onChange={(e) => {
+                  const collection = e.target.value;
+                  const is30C = collection.trim().toLowerCase() === "30c - celebração de 30 anos";
+                  setForm({ ...form, collection, ...(is30C ? { finish: "Foil" as Finish } : {}) });
+                }}
                 placeholder="Ex: SVI - Escarlate e Violeta"
                 list="collections-list"
                 className="w-full rounded border border-border bg-background px-3 py-2 text-sm"
@@ -706,13 +802,27 @@ function AdminCardsManagePage() {
             </label>
 
             <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
-              <button
+              <Button
                 type="submit"
                 disabled={saving}
-                className="rounded bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wide text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                size="sm"
+                className="text-xs font-bold uppercase tracking-wide"
               >
                 {saving ? "Salvando..." : editingId ? "💾 Atualizar carta" : "+ Adicionar carta"}
-              </button>
+              </Button>
+              {editingId && (
+                <Button
+                  type="submit"
+                  name="saveAction"
+                  value="next"
+                  variant="secondary"
+                  size="sm"
+                  disabled={saving}
+                  className="text-xs font-bold uppercase tracking-wide"
+                >
+                  {saving ? "Salvando..." : "💾 Salvar e ir p/ próxima →"}
+                </Button>
+              )}
               {editingId && (
                 <button
                   type="button"
@@ -793,6 +903,57 @@ function AdminCardsManagePage() {
             )}
           </div>
 
+          <div className="mt-3 rounded border border-border bg-card p-3 space-y-3 text-xs">
+            {(() => {
+              const toggleIn = (arr: string[], v: string) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
+              const groups: { label: string; opts: string[]; val: string[]; set: (v: string[]) => void; fmt?: (v: string) => string; key: (r: CardRow) => string }[] = [
+                { label: "Extras", opts: FINISHES as unknown as string[], val: finishFilter, set: setFinishFilter, key: (r) => r.finish },
+                { label: "Idioma", opts: LANGUAGES as unknown as string[], val: languageFilter, set: setLanguageFilter, key: (r) => r.language },
+                { label: "Condição", opts: CONDITIONS as unknown as string[], val: conditionFilter, set: setConditionFilter, fmt: (v) => CONDITION_LABEL[v as Condition] ?? v, key: (r) => r.condition ?? "NM" },
+              ];
+              return groups.map((g) => (
+                <div key={g.label} className="flex flex-wrap items-center gap-1.5">
+                  <span className="mr-1 font-bold uppercase tracking-wide">{g.label}:</span>
+                  {g.opts.map((o) => {
+                    const count = rows.filter((r) => g.key(r) === o).length;
+                    if (!count) return null;
+                    const on = g.val.includes(o);
+                    return (
+                      <button type="button" key={o} onClick={() => g.set(toggleIn(g.val, o))}
+                        className={`rounded-full border px-2.5 py-1 font-medium ${on ? "border-foreground bg-foreground text-background" : "border-border bg-background text-muted-foreground hover:border-foreground/30"}`}>
+                        {g.fmt ? g.fmt(o) : o} <span className="opacity-60">({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ));
+            })()}
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-1.5">
+                <span className="font-bold uppercase tracking-wide">Preço (R$):</span>
+                <input type="number" inputMode="numeric" placeholder="Mín" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} className="w-20 rounded border border-border bg-background px-2 py-1" />
+                <span>—</span>
+                <input type="number" inputMode="numeric" placeholder="Máx" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} className="w-20 rounded border border-border bg-background px-2 py-1" />
+              </label>
+              <label className="flex items-center gap-1.5">
+                <span className="font-bold uppercase tracking-wide">Ilustrador:</span>
+                <select value={illustratorFilter} onChange={(e) => setIllustratorFilter(e.target.value)} className="max-w-[14rem] rounded border border-border bg-background px-2 py-1">
+                  <option value="">Todos</option>
+                  {illustrators
+                    .map((i) => ({ ...i, n: rows.filter((r) => r.illustrator_id === i.id).length }))
+                    .filter((i) => i.n > 0)
+                    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+                    .map((i) => <option key={i.id} value={i.id}>{i.name} ({i.n})</option>)}
+                </select>
+              </label>
+              <label className="flex cursor-pointer items-center gap-1.5">
+                <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} className="h-4 w-4" />
+                <span className="font-semibold">Apenas em estoque</span>
+                <span className="text-muted-foreground">({rows.filter((r) => r.stock > 0).length})</span>
+              </label>
+            </div>
+          </div>
+
           {(categoryFilter.length === 0 || categoryFilter.includes("Treinador")) && (
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded border border-border bg-card px-3 py-2">
               <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Subtipo Treinador:</span>
@@ -851,9 +1012,33 @@ function AdminCardsManagePage() {
               <span className="font-semibold">Sem preço</span>
               <span className="text-muted-foreground">({rows.filter((r) => r.base_price_cents == null).length})</span>
             </label>
-            {(noPriceOnly || collectionFilter) && (
+            <label className="flex items-center gap-1.5 text-xs">
+              <span className="font-semibold">Numeração:</span>
+              <input
+                type="text"
+                placeholder="Ex: 094"
+                value={numberFilter}
+                onChange={(e) => setNumberFilter(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+                className="w-24 rounded border border-border bg-background px-2 py-1 text-xs"
+              />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs">
+              <span className="font-semibold">Ordem:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="rounded border border-border bg-background px-2 py-1 text-xs"
+              >
+                <option value="name-asc">Alfabética (A→Z)</option>
+                <option value="name-desc">Alfabética (Z→A)</option>
+                <option value="number-asc">Numeração (crescente)</option>
+                <option value="number-desc">Numeração (decrescente)</option>
+              </select>
+            </label>
+            {(noPriceOnly || collectionFilter || numberFilter || finishFilter.length || languageFilter.length || conditionFilter.length || illustratorFilter || inStockOnly || priceMin || priceMax) && (
               <button
-                onClick={() => { setNoPriceOnly(false); setCollectionFilter(""); }}
+                onClick={() => { setNoPriceOnly(false); setCollectionFilter(""); setNumberFilter(""); setFinishFilter([]); setLanguageFilter([]); setConditionFilter([]); setIllustratorFilter(""); setInStockOnly(false); setPriceMin(""); setPriceMax(""); }}
                 className="ml-auto text-xs font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
               >
                 Limpar
@@ -880,31 +1065,99 @@ function AdminCardsManagePage() {
             <p className="text-sm text-muted-foreground">Carregando...</p>
           ) : (
             <div className="space-y-2">
+              <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded border border-border bg-background/95 px-3 py-2 backdrop-blur">
+                <label className="flex cursor-pointer items-center gap-2 text-xs font-medium">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4"
+                    checked={filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id))}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      setSelectedIds((prev) => {
+                        const n = new Set(prev);
+                        filtered.forEach((r) => (on ? n.add(r.id) : n.delete(r.id)));
+                        return n;
+                      });
+                    }}
+                  />
+                  Selecionar página
+                </label>
+                <span className="text-xs text-muted-foreground">{selectedIds.size} selecionada(s)</span>
+                {selectedIds.size > 0 && (
+                  <>
+                    <button
+                      onClick={handleBulkRemoveStock}
+                      disabled={bulkRemoving}
+                      className="rounded border border-destructive px-3 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                    >
+                      {bulkRemoving ? "Removendo..." : `Remover selecionadas do estoque (${selectedIds.size})`}
+                    </button>
+                    <button onClick={() => setSelectedIds(new Set())} className="text-xs underline text-muted-foreground">
+                      Limpar seleção
+                    </button>
+                  </>
+                )}
+                {bulkMsg && (
+                  <span className={`text-xs ${bulkMsg.type === "ok" ? "text-condition-mint" : "text-destructive"}`}>{bulkMsg.text}</span>
+                )}
+                <div className="ml-auto flex overflow-hidden rounded border border-border text-xs">
+                  {(["list", "grid"] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => changeViewMode(m)}
+                      className={`px-3 py-1.5 font-semibold ${viewMode === m ? "bg-primary text-primary-foreground" : "bg-background hover:bg-secondary"}`}
+                    >
+                      {m === "list" ? "☰ Lista" : "▦ Grade"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" : "space-y-2"}>
               {filtered.map((r) => (
-                <div key={r.id} className="relative">
-                  <div className="flex items-center gap-3 rounded border border-border bg-card px-3 py-2">
+                <div key={r.id} className={`relative ${quickEditId === r.id ? "col-span-full flex flex-col gap-3 md:flex-row md:items-start" : ""}`}>
+                  <div className={(viewMode === "grid" || quickEditId === r.id)
+                    ? `flex flex-col gap-2 rounded border bg-card p-2 ${quickEditId === r.id ? "w-full md:w-56 md:shrink-0" : "h-full"} ${selectedIds.has(r.id) ? "border-destructive" : "border-border"}`
+                    : `flex items-center gap-3 rounded border bg-card px-3 py-2 ${selectedIds.has(r.id) ? "border-destructive" : "border-border"}`}>
+                    <label className={`flex shrink-0 cursor-pointer items-center justify-center ${(viewMode === "grid" || quickEditId === r.id) ? "self-start gap-2 text-[10px]" : "h-8 w-8"}`} title="Selecionar para remover do estoque">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={selectedIds.has(r.id)}
+                        onChange={() => toggleSelected(r.id)}
+                      />
+                      {(viewMode === "grid" || quickEditId === r.id) && <span>Selecionar</span>}
+                    </label>
                     {r.image ? (
-                      <img src={r.image} alt={r.name} className="w-10 h-14 object-contain rounded shrink-0 bg-secondary" loading="lazy" />
+                      <img src={r.image} alt={r.name} className={(viewMode === "grid" || quickEditId === r.id) ? `aspect-[5/7] object-contain rounded bg-secondary ${quickEditId === r.id ? "mx-auto w-40" : "w-full"}` : "w-10 h-14 object-contain rounded shrink-0 bg-secondary"} loading="lazy" />
                     ) : (
-                      <div className="w-10 h-14 rounded bg-secondary shrink-0" />
+                      <div className={(viewMode === "grid" || quickEditId === r.id) ? `aspect-[5/7] rounded bg-secondary ${quickEditId === r.id ? "mx-auto w-40" : "w-full"}` : "w-10 h-14 rounded bg-secondary shrink-0"} />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{r.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {r.collection} · #{r.card_number} · {r.finish} · {r.language} · <span className="font-bold">{r.condition ?? "NM"}</span>
+                      <p className={`text-sm font-semibold ${viewMode === "grid" ? "line-clamp-2" : "truncate"}`}>{r.name}</p>
+                      <p className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-muted-foreground">
+                        <span className="min-w-0 break-words">{r.collection}</span>
+                        <CopyNumberButton value={r.card_number} />
+                      </p>
+                      <p className="mt-1 flex min-w-0 flex-wrap items-center gap-1">
+                        <MetaBadge>{r.finish}</MetaBadge>
+                        <MetaBadge>{r.language}</MetaBadge>
+                        <MetaBadge strong>{r.condition ?? "NM"}</MetaBadge>
+                        {cardTypeLabel(r) && <MetaBadge>{cardTypeLabel(r)}</MetaBadge>}
                       </p>
                     </div>
-                    <div className="text-xs text-right shrink-0">
+
+                    <div className={`text-xs shrink-0 ${(viewMode === "grid" || quickEditId === r.id) ? "flex justify-between" : "text-right"}`}>
                       <p>Estoque: <strong>{r.stock}</strong></p>
                       <p className="text-muted-foreground">
                         {r.base_price_cents != null ? `R$ ${(r.base_price_cents / 100).toFixed(2)}` : "—"}
                       </p>
                     </div>
+                    <div className={`flex gap-1 ${(viewMode === "grid" || quickEditId === r.id) ? "flex-wrap" : "shrink-0"}`}>
                     <button
                       onClick={() => openQuickEdit(r)}
-                      className={`rounded border px-2 py-1 text-[10px] font-bold hover:bg-secondary ${quickEditId === r.id ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
+                      className={`rounded border px-2 py-1.5 text-[10px] font-bold hover:bg-secondary ${quickEditId === r.id ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}
                     >
-                      {quickEditId === r.id ? "Fechar" : "Editar"}
+                      {quickEditId === r.id ? "▲ Recolher" : "▼ Expandir"}
                     </button>
                     <button
                       onClick={() => handleEdit(r)}
@@ -916,12 +1169,14 @@ function AdminCardsManagePage() {
                     <button
                       onClick={() => handleDelete(r)}
                       className="rounded border border-destructive px-2 py-1 text-[10px] font-bold text-destructive hover:bg-destructive/10"
+                      title="Exclui o cadastro da carta"
                     >
-                      Remover
+                      Excluir
                     </button>
+                    </div>
                   </div>
                   {quickEditId === r.id && (
-                    <div className="mt-2 rounded-lg border border-primary/40 bg-card p-4 shadow-lg">
+                    <div className="min-w-0 flex-1 rounded-lg border border-primary/40 bg-card p-4 shadow-lg">
                       <p className="text-xs font-bold uppercase tracking-wide mb-3">Edição rápida</p>
                       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <label className="text-xs space-y-1">
@@ -1110,6 +1365,7 @@ function AdminCardsManagePage() {
                   )}
                 </div>
               ))}
+              </div>
               {filtered.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhuma carta encontrada.</p>
               )}
@@ -1153,6 +1409,64 @@ function AdminCardsManagePage() {
         </section>
       </main>
     </div>
+  );
+}
+
+// Copia a numeração da carta (ex.: 094) para colar na busca da Liga Pokémon.
+/** Pill discreta com um dado da carta (acabamento, idioma, condição, tipo). */
+function MetaBadge({ children, strong = false }: { children: React.ReactNode; strong?: boolean }) {
+  return (
+    <span
+      className={`inline-flex max-w-full items-center rounded-full border px-1.5 py-0.5 text-[10px] leading-none ${
+        strong
+          ? "border-primary/40 bg-primary/10 font-bold text-foreground"
+          : "border-border bg-secondary/60 font-medium text-muted-foreground"
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** Detalhe de tipo conforme a categoria: tipo de Pokémon, subtipo de Treinador ou Energia. */
+function cardTypeLabel(r: CardRow): string {
+  if (r.category === "Pokémon") return r.pokemon_type ?? "";
+  if (r.category === "Treinador") return [r.trainer_subcategory, r.liga_subcategory].filter(Boolean).join(" · ");
+  return r.category === "Energia" ? "Energia" : "";
+}
+
+function CopyNumberButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+
+  async function copy(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const ok = await copyToClipboard(value);
+    if (!ok) {
+      toast.error("Não foi possível copiar a numeração");
+      return;
+    }
+    setCopied(true);
+    toast.success(`Numeração ${value} copiada`);
+    window.setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title="Copiar numeração (Liga Pokémon)"
+      aria-label={`Copiar numeração ${value}`}
+      className="inline-flex shrink-0 items-center gap-1 rounded border border-border bg-secondary/70 px-1.5 py-0.5 font-semibold text-foreground transition hover:bg-secondary hover:border-primary"
+    >
+      <span>#{value}</span>
+      {copied ? (
+        <Check className="h-3 w-3 text-condition-mint" />
+      ) : (
+        <Copy className="h-3 w-3 opacity-60" />
+      )}
+    </button>
   );
 }
 

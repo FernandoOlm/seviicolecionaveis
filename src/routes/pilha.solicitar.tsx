@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { getMyStack } from "@/lib/card-stack.functions";
+import { getMyStack, getStackById } from "@/lib/card-stack.functions";
 import {
   createServiceOrderRequest,
   checkServiceOrderStatus,
@@ -11,13 +11,18 @@ import {
 import { getShippingQuotes } from "@/utils/shipping.functions";
 import { validateArteEmCardsCode, getMyArteEmCardsCode } from "@/lib/arte-em-cards.functions";
 import { Loader2, Copy, Check, QrCode } from "lucide-react";
+import { EventSlotPicker, type EventSelection } from "@/components/EventSlotPicker";
+import { listActiveEvents } from "@/lib/events.functions";
+import { validateEventSchedule, type PickupEvent } from "@/lib/events";
 import { toast } from "sonner";
+import { isHandDeliveryArea, HAND_DELIVERY_AREA_MESSAGE } from "@/lib/hand-delivery";
 import { copyToClipboard } from "@/lib/clipboard";
 import logoUrl from "@/assets/logo.webp";
 
 export const Route = createFileRoute("/pilha/solicitar")({
-  validateSearch: (search: { items?: string }): { items?: string } => ({
+  validateSearch: (search: { items?: string; stack?: string }): { items?: string; stack?: string } => ({
     items: typeof search.items === "string" ? search.items : undefined,
+    stack: typeof search.stack === "string" ? search.stack : undefined,
   }),
   head: () => ({
     meta: [
@@ -28,7 +33,7 @@ export const Route = createFileRoute("/pilha/solicitar")({
   component: SolicitarPage,
 });
 
-type Method = "correios" | "app" | "arte_em_cards" | "presencial";
+type Method = "correios" | "app" | "arte_em_cards" | "presencial" | "evento";
 
 interface Quote {
   id: string;
@@ -67,6 +72,13 @@ function SolicitarPage() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [notes, setNotes] = useState("");
+  const handDeliveryEligible = isHandDeliveryArea({ city, state, cep });
+  useEffect(() => {
+    if (!handDeliveryEligible && method === "app") {
+      setMethod("correios");
+      toast.warning(HAND_DELIVERY_AREA_MESSAGE);
+    }
+  }, [handDeliveryEligible, method]);
 
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
@@ -82,6 +94,14 @@ function SolicitarPage() {
   >({ state: "idle" });
   const [arteExisting, setArteExisting] = useState<{ code: string; cycleEnd: string } | null>(null);
   const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | null>(null);
+  const [eventSel, setEventSel] = useState<EventSelection | null>(null);
+  const [pickupEvents, setPickupEvents] = useState<PickupEvent[]>([]);
+
+  useEffect(() => {
+    if (method === "evento" && pickupEvents.length === 0) {
+      listActiveEvents().then(setPickupEvents).catch(() => {});
+    }
+  }, [method, pickupEvents.length]);
 
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -112,8 +132,8 @@ function SolicitarPage() {
   }, [loading, user, nav]);
 
   const { data: stack } = useQuery({
-    queryKey: ["card-stack", user?.id],
-    queryFn: () => getMyStack(),
+    queryKey: ["card-stack", user?.id, search.stack ?? null],
+    queryFn: () => (search.stack ? getStackById({ data: { stackId: search.stack } }) : getMyStack()),
     enabled: !!user,
   });
 
@@ -155,6 +175,13 @@ function SolicitarPage() {
       } catch {}
     })();
   }, [user]);
+
+  // Vindo do e-mail de fim de prazo: seleciona todas as cartas da pilha
+  useEffect(() => {
+    if (search.stack && !search.items && stack?.items?.length) {
+      setSelectedIds(stack.items.map((i) => i.id));
+    }
+  }, [search.stack, search.items, stack]);
 
   const selectedItems = useMemo(
     () => (stack?.items ?? []).filter((i) => selectedIds.includes(i.id)),
@@ -252,6 +279,11 @@ function SolicitarPage() {
 
   const handleSubmit = async () => {
     setErr(null);
+    if (method === "app" && !handDeliveryEligible) {
+      setMethod("correios");
+      setErr(HAND_DELIVERY_AREA_MESSAGE);
+      return;
+    }
     if (selectedIds.length === 0) {
       setErr("Nenhuma carta selecionada.");
       return;
@@ -263,6 +295,19 @@ function SolicitarPage() {
       }
       if (!recipientName || !cep || !street || !number || !neighborhood || !city || !state || !phone) {
         setErr("Preencha todos os campos do endereço.");
+        return;
+      }
+    }
+    if (method === "evento") {
+      if (!eventSel) {
+        setErr("Escolha o evento, o dia e o horário da retirada.");
+        return;
+      }
+      const ev = pickupEvents.find((e) => e.id === eventSel.eventId);
+      const eventErr = ev ? validateEventSchedule(ev, eventSel.ymd, eventSel.slot) : "Evento não encontrado.";
+      if (eventErr) {
+        if (ev) setEventSel(null);
+        setErr(eventErr);
         return;
       }
     }
@@ -296,7 +341,7 @@ function SolicitarPage() {
                 }
               : null,
           address:
-            method === "correios"
+            method === "correios" || method === "app"
               ? {
                   recipientName,
                   phone,
@@ -311,6 +356,9 @@ function SolicitarPage() {
               : null,
           arteEmCardsCode: arteCodeForSubmit,
           pickupPoint: method === "presencial" ? pickupPoint : null,
+          eventName: null,
+          eventId: method === "evento" ? (eventSel?.eventId ?? null) : null,
+          eventAt: method === "evento" ? (eventSel?.iso ?? null) : null,
           notes: notes || null,
           cpf: cpf || null,
         },
@@ -380,11 +428,12 @@ function SolicitarPage() {
                 {(
                   [
                     { v: "correios", label: "📦 Correios (Mini Envios)", desc: "Cobrança do frete via Pix" },
-                    { v: "app", label: "🛵 Entrega por aplicativo (somente Uber)", desc: "Combinar via WhatsApp — terças e quintas, 14h às 18h" },
+                    { v: "app", label: "🛵 Entrega em mãos (somente em Aracaju)", desc: "Entregador parceiro às quintas, a partir das 19h — taxa R$ 15, combinar via WhatsApp" },
                     { v: "presencial", label: "🏪 Retirada Presencial", desc: "Aruana ou Aeroporto — gratuito" },
+                    { v: "evento", label: "🎪 Retirada em Eventos", desc: "Retire no evento que você vai comparecer — gratuito" },
                     
                   ] as { v: Method; label: string; desc: string }[]
-                ).map((opt) => {
+                ).filter((opt) => opt.v !== "app" || handDeliveryEligible).map((opt) => {
                   const disabled = opt.v === "arte_em_cards" && hasSealedSelected;
                   return (
                     <label
@@ -523,6 +572,13 @@ function SolicitarPage() {
               </section>
             )}
 
+            {method === "evento" && (
+              <section className="rounded-xl border border-border bg-card p-5 mb-6 space-y-2">
+                <h2 className="text-sm font-semibold uppercase tracking-widest">Escolha o evento, o dia e o horário</h2>
+                <EventSlotPicker events={pickupEvents} value={eventSel} onChange={setEventSel} />
+              </section>
+            )}
+
             <section className="rounded-xl border border-border bg-card p-5 mb-6">
               <textarea
                 className="w-full border rounded-md px-3 py-2 text-sm min-h-[64px]"
@@ -551,7 +607,7 @@ function SolicitarPage() {
               className="w-full rounded-full bg-foreground px-5 py-3 text-sm font-semibold uppercase tracking-wide text-background disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {method === "app" ? "Criar solicitação" : totalCents > 0 ? "Gerar Pix" : (method === "presencial" ? "Confirmar retirada" : "Confirmar solicitação")}
+              {method === "app" ? "Criar solicitação" : totalCents > 0 ? "Gerar Pix" : (method === "presencial" || method === "evento" ? "Confirmar retirada" : "Confirmar solicitação")}
             </button>
           </>
         )}

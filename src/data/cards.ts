@@ -140,6 +140,7 @@ export const EXTRA_COLLECTIONS = [
   "PZ6 - Play! Pokémon Prize Pack Series Six",
   "PZ5 - Play! Pokémon Prize Pack Series Five",
   "PZ4 - Play! Pokémon Prize Pack Series Four",
+  "30C - Celebração de 30 Anos",
 ];
 
 const BASE_COLLECTIONS = ["ASC - Heróis Excelsos","BLK - Raio Preto","DRI - Rivais Predestinados","GRI - Guardiões Ascendentes","JTG -Amigos de Jornada","LOR - Origem Perdida","MEG - Mega Evolução","PAF - Destinos de Paldea","PAL - Evoluções de Paldea","PAR - Fenda Paradoxal","PFL - Fogo Fantasmagorico","POR - Equilíbrio Perfeito","PRE - Evoluções Prismátricas","RS - Rubi & Safira","SCR - Coroa Estelar","SM - Sol e Lua","SSP - Fagulhas Impetuosas","SVI - Escarlate e Violeta","TRR - Team Rocket Returns","TWM - Máscaras do Crepúsculo","WHT - Fogo Branco"];

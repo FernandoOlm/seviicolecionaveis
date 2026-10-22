@@ -45,13 +45,16 @@ import { Route as AdminCriarLeilaoRouteImport } from './routes/admin.criar-leila
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminEmailsRouteImport } from './routes/admin.emails'
 import { Route as AdminEventoRouteImport } from './routes/admin.evento'
+import { Route as AdminEventosRouteImport } from './routes/admin.eventos'
 import { Route as AdminIntegrationsRouteImport } from './routes/admin.integrations'
 import { Route as AdminLeiloesRouteImport } from './routes/admin.leiloes'
 import { Route as AdminLeiloesWhatsappRouteImport } from './routes/admin.leiloes-whatsapp'
 import { Route as AdminLoyaltyRouteImport } from './routes/admin.loyalty'
 import { Route as AdminManageCardsRouteImport } from './routes/admin.manage-cards'
+import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminOfertasRelampagoRouteImport } from './routes/admin.ofertas-relampago'
 import { Route as AdminPanelsRouteImport } from './routes/admin.panels'
+import { Route as AdminPedidoManualRouteImport } from './routes/admin.pedido-manual'
 import { Route as AdminPedidosLeilaoRouteImport } from './routes/admin.pedidos-leilao'
 import { Route as AdminPilhaRouteImport } from './routes/admin.pilha'
 import { Route as AdminPopupsRouteImport } from './routes/admin.popups'
@@ -85,6 +88,7 @@ import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/e
 import { Route as ApiPublicBotStatusRouteImport } from './routes/api/public/bot/status'
 import { Route as ApiPublicHooksAutoCancelUnpaidRouteImport } from './routes/api/public/hooks/auto-cancel-unpaid'
 import { Route as ApiPublicHooksExpireLoyaltyPointsRouteImport } from './routes/api/public/hooks/expire-loyalty-points'
+import { Route as ApiPublicHooksPickupReopenRouteImport } from './routes/api/public/hooks/pickup-reopen'
 import { Route as ApiPublicHooksPriceDropCheckRouteImport } from './routes/api/public/hooks/price-drop-check'
 import { Route as ApiPublicHooksRaffleExpireRouteImport } from './routes/api/public/hooks/raffle-expire'
 import { Route as ApiPublicHooksStackRemindersRouteImport } from './routes/api/public/hooks/stack-reminders'
@@ -294,6 +298,11 @@ const AdminEventoRoute = AdminEventoRouteImport.update({
   path: '/evento',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEventosRoute = AdminEventosRouteImport.update({
+  id: '/eventos',
+  path: '/eventos',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminIntegrationsRoute = AdminIntegrationsRouteImport.update({
   id: '/integrations',
   path: '/integrations',
@@ -319,6 +328,11 @@ const AdminManageCardsRoute = AdminManageCardsRouteImport.update({
   path: '/manage-cards',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminNotificacoesRoute = AdminNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOfertasRelampagoRoute = AdminOfertasRelampagoRouteImport.update({
   id: '/ofertas-relampago',
   path: '/ofertas-relampago',
@@ -327,6 +341,11 @@ const AdminOfertasRelampagoRoute = AdminOfertasRelampagoRouteImport.update({
 const AdminPanelsRoute = AdminPanelsRouteImport.update({
   id: '/panels',
   path: '/panels',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPedidoManualRoute = AdminPedidoManualRouteImport.update({
+  id: '/pedido-manual',
+  path: '/pedido-manual',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPedidosLeilaoRoute = AdminPedidosLeilaoRouteImport.update({
@@ -494,6 +513,12 @@ const ApiPublicHooksExpireLoyaltyPointsRoute =
   ApiPublicHooksExpireLoyaltyPointsRouteImport.update({
     id: '/api/public/hooks/expire-loyalty-points',
     path: '/api/public/hooks/expire-loyalty-points',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksPickupReopenRoute =
+  ApiPublicHooksPickupReopenRouteImport.update({
+    id: '/api/public/hooks/pickup-reopen',
+    path: '/api/public/hooks/pickup-reopen',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksPriceDropCheckRoute =
@@ -693,13 +718,16 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/evento': typeof AdminEventoRoute
+  '/admin/eventos': typeof AdminEventosRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/leiloes': typeof AdminLeiloesRoute
   '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
   '/admin/loyalty': typeof AdminLoyaltyRoute
   '/admin/manage-cards': typeof AdminManageCardsRoute
+  '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
+  '/admin/pedido-manual': typeof AdminPedidoManualRoute
   '/admin/pedidos-leilao': typeof AdminPedidosLeilaoRoute
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
@@ -733,6 +761,7 @@ export interface FileRoutesByFullPath {
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
   '/api/public/hooks/auto-cancel-unpaid': typeof ApiPublicHooksAutoCancelUnpaidRoute
   '/api/public/hooks/expire-loyalty-points': typeof ApiPublicHooksExpireLoyaltyPointsRoute
+  '/api/public/hooks/pickup-reopen': typeof ApiPublicHooksPickupReopenRoute
   '/api/public/hooks/price-drop-check': typeof ApiPublicHooksPriceDropCheckRoute
   '/api/public/hooks/raffle-expire': typeof ApiPublicHooksRaffleExpireRoute
   '/api/public/hooks/stack-reminders': typeof ApiPublicHooksStackRemindersRoute
@@ -796,13 +825,16 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/evento': typeof AdminEventoRoute
+  '/admin/eventos': typeof AdminEventosRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/leiloes': typeof AdminLeiloesRoute
   '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
   '/admin/loyalty': typeof AdminLoyaltyRoute
   '/admin/manage-cards': typeof AdminManageCardsRoute
+  '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
+  '/admin/pedido-manual': typeof AdminPedidoManualRoute
   '/admin/pedidos-leilao': typeof AdminPedidosLeilaoRoute
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
@@ -836,6 +868,7 @@ export interface FileRoutesByTo {
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
   '/api/public/hooks/auto-cancel-unpaid': typeof ApiPublicHooksAutoCancelUnpaidRoute
   '/api/public/hooks/expire-loyalty-points': typeof ApiPublicHooksExpireLoyaltyPointsRoute
+  '/api/public/hooks/pickup-reopen': typeof ApiPublicHooksPickupReopenRoute
   '/api/public/hooks/price-drop-check': typeof ApiPublicHooksPriceDropCheckRoute
   '/api/public/hooks/raffle-expire': typeof ApiPublicHooksRaffleExpireRoute
   '/api/public/hooks/stack-reminders': typeof ApiPublicHooksStackRemindersRoute
@@ -903,13 +936,16 @@ export interface FileRoutesById {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/emails': typeof AdminEmailsRoute
   '/admin/evento': typeof AdminEventoRoute
+  '/admin/eventos': typeof AdminEventosRoute
   '/admin/integrations': typeof AdminIntegrationsRoute
   '/admin/leiloes': typeof AdminLeiloesRoute
   '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
   '/admin/loyalty': typeof AdminLoyaltyRoute
   '/admin/manage-cards': typeof AdminManageCardsRoute
+  '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
+  '/admin/pedido-manual': typeof AdminPedidoManualRoute
   '/admin/pedidos-leilao': typeof AdminPedidosLeilaoRoute
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
@@ -943,6 +979,7 @@ export interface FileRoutesById {
   '/api/public/bot/status': typeof ApiPublicBotStatusRoute
   '/api/public/hooks/auto-cancel-unpaid': typeof ApiPublicHooksAutoCancelUnpaidRoute
   '/api/public/hooks/expire-loyalty-points': typeof ApiPublicHooksExpireLoyaltyPointsRoute
+  '/api/public/hooks/pickup-reopen': typeof ApiPublicHooksPickupReopenRoute
   '/api/public/hooks/price-drop-check': typeof ApiPublicHooksPriceDropCheckRoute
   '/api/public/hooks/raffle-expire': typeof ApiPublicHooksRaffleExpireRoute
   '/api/public/hooks/stack-reminders': typeof ApiPublicHooksStackRemindersRoute
@@ -1011,13 +1048,16 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/emails'
     | '/admin/evento'
+    | '/admin/eventos'
     | '/admin/integrations'
     | '/admin/leiloes'
     | '/admin/leiloes-whatsapp'
     | '/admin/loyalty'
     | '/admin/manage-cards'
+    | '/admin/notificacoes'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
+    | '/admin/pedido-manual'
     | '/admin/pedidos-leilao'
     | '/admin/pilha'
     | '/admin/popups'
@@ -1051,6 +1091,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/status'
     | '/api/public/hooks/auto-cancel-unpaid'
     | '/api/public/hooks/expire-loyalty-points'
+    | '/api/public/hooks/pickup-reopen'
     | '/api/public/hooks/price-drop-check'
     | '/api/public/hooks/raffle-expire'
     | '/api/public/hooks/stack-reminders'
@@ -1114,13 +1155,16 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/emails'
     | '/admin/evento'
+    | '/admin/eventos'
     | '/admin/integrations'
     | '/admin/leiloes'
     | '/admin/leiloes-whatsapp'
     | '/admin/loyalty'
     | '/admin/manage-cards'
+    | '/admin/notificacoes'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
+    | '/admin/pedido-manual'
     | '/admin/pedidos-leilao'
     | '/admin/pilha'
     | '/admin/popups'
@@ -1154,6 +1198,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/status'
     | '/api/public/hooks/auto-cancel-unpaid'
     | '/api/public/hooks/expire-loyalty-points'
+    | '/api/public/hooks/pickup-reopen'
     | '/api/public/hooks/price-drop-check'
     | '/api/public/hooks/raffle-expire'
     | '/api/public/hooks/stack-reminders'
@@ -1220,13 +1265,16 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/emails'
     | '/admin/evento'
+    | '/admin/eventos'
     | '/admin/integrations'
     | '/admin/leiloes'
     | '/admin/leiloes-whatsapp'
     | '/admin/loyalty'
     | '/admin/manage-cards'
+    | '/admin/notificacoes'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
+    | '/admin/pedido-manual'
     | '/admin/pedidos-leilao'
     | '/admin/pilha'
     | '/admin/popups'
@@ -1260,6 +1308,7 @@ export interface FileRouteTypes {
     | '/api/public/bot/status'
     | '/api/public/hooks/auto-cancel-unpaid'
     | '/api/public/hooks/expire-loyalty-points'
+    | '/api/public/hooks/pickup-reopen'
     | '/api/public/hooks/price-drop-check'
     | '/api/public/hooks/raffle-expire'
     | '/api/public/hooks/stack-reminders'
@@ -1331,6 +1380,7 @@ export interface RootRouteChildren {
   ApiPublicBotStatusRoute: typeof ApiPublicBotStatusRoute
   ApiPublicHooksAutoCancelUnpaidRoute: typeof ApiPublicHooksAutoCancelUnpaidRoute
   ApiPublicHooksExpireLoyaltyPointsRoute: typeof ApiPublicHooksExpireLoyaltyPointsRoute
+  ApiPublicHooksPickupReopenRoute: typeof ApiPublicHooksPickupReopenRoute
   ApiPublicHooksPriceDropCheckRoute: typeof ApiPublicHooksPriceDropCheckRoute
   ApiPublicHooksRaffleExpireRoute: typeof ApiPublicHooksRaffleExpireRoute
   ApiPublicHooksStackRemindersRoute: typeof ApiPublicHooksStackRemindersRoute
@@ -1615,6 +1665,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEventoRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/eventos': {
+      id: '/admin/eventos'
+      path: '/eventos'
+      fullPath: '/admin/eventos'
+      preLoaderRoute: typeof AdminEventosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/integrations': {
       id: '/admin/integrations'
       path: '/integrations'
@@ -1650,6 +1707,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminManageCardsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/notificacoes': {
+      id: '/admin/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/admin/notificacoes'
+      preLoaderRoute: typeof AdminNotificacoesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/ofertas-relampago': {
       id: '/admin/ofertas-relampago'
       path: '/ofertas-relampago'
@@ -1662,6 +1726,13 @@ declare module '@tanstack/react-router' {
       path: '/panels'
       fullPath: '/admin/panels'
       preLoaderRoute: typeof AdminPanelsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pedido-manual': {
+      id: '/admin/pedido-manual'
+      path: '/pedido-manual'
+      fullPath: '/admin/pedido-manual'
+      preLoaderRoute: typeof AdminPedidoManualRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/pedidos-leilao': {
@@ -1895,6 +1966,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksExpireLoyaltyPointsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/pickup-reopen': {
+      id: '/api/public/hooks/pickup-reopen'
+      path: '/api/public/hooks/pickup-reopen'
+      fullPath: '/api/public/hooks/pickup-reopen'
+      preLoaderRoute: typeof ApiPublicHooksPickupReopenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/price-drop-check': {
       id: '/api/public/hooks/price-drop-check'
       path: '/api/public/hooks/price-drop-check'
@@ -2105,13 +2183,16 @@ interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminEmailsRoute: typeof AdminEmailsRoute
   AdminEventoRoute: typeof AdminEventoRoute
+  AdminEventosRoute: typeof AdminEventosRoute
   AdminIntegrationsRoute: typeof AdminIntegrationsRoute
   AdminLeiloesRoute: typeof AdminLeiloesRoute
   AdminLeiloesWhatsappRoute: typeof AdminLeiloesWhatsappRoute
   AdminLoyaltyRoute: typeof AdminLoyaltyRoute
   AdminManageCardsRoute: typeof AdminManageCardsRoute
+  AdminNotificacoesRoute: typeof AdminNotificacoesRoute
   AdminOfertasRelampagoRoute: typeof AdminOfertasRelampagoRoute
   AdminPanelsRoute: typeof AdminPanelsRoute
+  AdminPedidoManualRoute: typeof AdminPedidoManualRoute
   AdminPedidosLeilaoRoute: typeof AdminPedidosLeilaoRoute
   AdminPilhaRoute: typeof AdminPilhaRoute
   AdminPopupsRoute: typeof AdminPopupsRoute
@@ -2136,13 +2217,16 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminEmailsRoute: AdminEmailsRoute,
   AdminEventoRoute: AdminEventoRoute,
+  AdminEventosRoute: AdminEventosRoute,
   AdminIntegrationsRoute: AdminIntegrationsRoute,
   AdminLeiloesRoute: AdminLeiloesRoute,
   AdminLeiloesWhatsappRoute: AdminLeiloesWhatsappRoute,
   AdminLoyaltyRoute: AdminLoyaltyRoute,
   AdminManageCardsRoute: AdminManageCardsRoute,
+  AdminNotificacoesRoute: AdminNotificacoesRoute,
   AdminOfertasRelampagoRoute: AdminOfertasRelampagoRoute,
   AdminPanelsRoute: AdminPanelsRoute,
+  AdminPedidoManualRoute: AdminPedidoManualRoute,
   AdminPedidosLeilaoRoute: AdminPedidosLeilaoRoute,
   AdminPilhaRoute: AdminPilhaRoute,
   AdminPopupsRoute: AdminPopupsRoute,
@@ -2262,6 +2346,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksAutoCancelUnpaidRoute: ApiPublicHooksAutoCancelUnpaidRoute,
   ApiPublicHooksExpireLoyaltyPointsRoute:
     ApiPublicHooksExpireLoyaltyPointsRoute,
+  ApiPublicHooksPickupReopenRoute: ApiPublicHooksPickupReopenRoute,
   ApiPublicHooksPriceDropCheckRoute: ApiPublicHooksPriceDropCheckRoute,
   ApiPublicHooksRaffleExpireRoute: ApiPublicHooksRaffleExpireRoute,
   ApiPublicHooksStackRemindersRoute: ApiPublicHooksStackRemindersRoute,

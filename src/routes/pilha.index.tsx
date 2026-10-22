@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getMyStack } from "@/lib/card-stack.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 import logoUrl from "@/assets/logo.webp";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/pilha/")({
   head: () => ({
@@ -44,6 +45,15 @@ function PilhaPage() {
   const { data: stack, isLoading } = useQuery({
     queryKey: ["card-stack", user?.id],
     queryFn: () => getMyStack(),
+    enabled: !!user,
+  });
+
+  const { data: reopened } = useQuery({
+    queryKey: ["pickup-reopened", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("orders").select("id").eq("reschedule_required", true).eq("schedule_kind", "pickup");
+      return data ?? [];
+    },
     enabled: !!user,
   });
 
@@ -92,6 +102,12 @@ function PilhaPage() {
         <p className="text-sm text-muted-foreground mb-6">
           Guarde suas cartas por até 30 dias e solicite o envio quando quiser.
         </p>
+        {(reopened ?? []).map((o) => (
+          <Link key={o.id} to="/orders/$orderId" params={{ orderId: o.id }}
+            className="mb-4 block rounded-md border border-amber-400/60 bg-amber-50 p-3 text-sm text-amber-950 hover:underline">
+            <strong>Reagendamento necessário</strong> — pedido #{o.id.slice(0, 8).toUpperCase()}: escolha um novo horário de retirada →
+          </Link>
+        ))}
 
         {isLoading && <p className="text-sm text-muted-foreground">Carregando sua pilha…</p>}
 

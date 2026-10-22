@@ -1,3 +1,4 @@
+import { ORDER_STATUS_LABELS } from "@/lib/order-status";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +8,8 @@ import { ChevronRight } from "lucide-react";
 export const Route = createFileRoute("/orders/")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Meus pedidos — Sevii Colecionáveis" },
       { name: "description", content: "Histórico e status dos seus pedidos de cartas Pokémon na Sevii Colecionáveis." },
       { property: "og:title", content: "Meus pedidos — Sevii Colecionáveis" },
@@ -18,16 +21,11 @@ export const Route = createFileRoute("/orders/")({
   component: OrdersPage,
 });
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Aguardando pagamento",
-  paid: "Pago",
-  shipped: "Enviado",
-  awaiting_pickup: "Aguardando retirada na Arte em Cards",
-  delivered: "Entregue",
-  cancelled: "Cancelado",
-  cancellation_requested: "Cancelamento em análise",
-};
+const STATUS_LABEL: Record<string, string> = { ...ORDER_STATUS_LABELS, pending: "Aguardando pagamento", cancellation_requested: "Cancelamento em análise" };
 const STATUS_COLOR: Record<string, string> = {
+  preparing: "bg-muted text-muted-foreground",
+  separated: "bg-secondary text-secondary-foreground",
+  cards_pending_delivery: "bg-accent text-accent-foreground",
   pending: "bg-yellow-100 text-yellow-800",
   paid: "bg-blue-100 text-blue-800",
   shipped: "bg-purple-100 text-purple-800",

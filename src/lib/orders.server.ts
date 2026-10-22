@@ -1,6 +1,8 @@
+import { PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendTransactionalEmailSafe } from "@/lib/email/send.server";
 import { parseVariants, parseAccessoryCartId } from "@/lib/accessory-variants";
+import { sendScheduleConfirmations } from "@/lib/schedule-confirmation.server";
 
 /**
  * Debita o saldo de vale-presente carteira reservado em wallet_deduction_cents.
@@ -113,19 +115,8 @@ async function applyLoyaltyForOrder(orderId: string) {
   }
 }
 
-export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymentIntent?: string; mercadopagoPaymentId?: string }) {
-  const { data: order } = await supabaseAdmin
-    .from("orders")
-    .select("id, status")
-    .eq("id", orderId)
-    .maybeSingle();
-  if (!order) return;
-  if (order.status === "paid") return;
-  // Pedidos que já passaram do pagamento (em preparo, enviado, entregue…) já
-  // tiveram o estoque baixado — nunca baixar de novo.
-  const POST_PAID = ["preparing", "shipped", "awaiting_pickup", "delivered"];
-  if (POST_PAID.includes(order.status)) return;
-
+/** Baixa o estoque dos itens do pedido uma única vez (trava em stock_decremented). */
+export async function decrementOrderStock(orderId: string) {
   // Trava atômica: só um processamento consegue marcar stock_decremented de
   // false -> true. Webhooks repetidos/concorrentes do Mercado Pago não baixam
   // o estoque mais de uma vez.
@@ -261,6 +252,28 @@ export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymen
     }
   }
 
+}
+
+export async function markOrderPaid(
+  orderId: string,
+  paymentRef?: { stripePaymentIntent?: string; mercadopagoPaymentId?: string },
+  opts?: { notifyCustomer?: boolean; skipShippingLabel?: boolean },
+) {
+  const notifyCustomer = opts?.notifyCustomer !== false;
+  const { data: order } = await supabaseAdmin
+    .from("orders")
+    .select("id, status")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order) return;
+  if (order.status === "paid") return;
+  // Pedidos que já passaram do pagamento (em preparo, enviado, entregue…) já
+  // tiveram o estoque baixado — nunca baixar de novo.
+  const POST_PAID = PAID_ORDER_STATUSES;
+  if (POST_PAID.includes(order.status)) return;
+
+  await decrementOrderStock(orderId);
+
   await supabaseAdmin.from("stock_reservations").delete().eq("order_id", orderId);
 
   await supabaseAdmin
@@ -300,7 +313,7 @@ export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymen
   // Lookup do pedido (necessário para decidir Superfrete x Pilha)
   const { data: full } = await supabaseAdmin
     .from("orders")
-    .select("id, email, recipient_name, total_cents, user_id, shipping_method, shipping_cost_cents, arte_em_cards_code")
+    .select("id, email, recipient_name, total_cents, user_id, shipping_method, shipping_cost_cents, arte_em_cards_code, scheduled_at, schedule_kind, street, number, complement, neighborhood, city, state, notes, hand_delivery_fee_status")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -321,7 +334,7 @@ export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymen
     } catch (e) {
       console.error("[markOrderPaid] addOrderToStack falhou:", e);
     }
-  } else {
+  } else if (!opts?.skipShippingLabel) {
     // Compra etiqueta Superfrete automaticamente (best-effort)
     try {
       const { purchaseShippingLabel } = await import("@/lib/superfrete-label.server");
@@ -363,8 +376,13 @@ export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymen
     }
   }
 
+  if (full?.scheduled_at) {
+    try { await sendScheduleConfirmations(full, "", { skipClient: !notifyCustomer }); }
+    catch (error) { console.error("[markOrderPaid] schedule confirmation failed", error); }
+  }
+
   if (full?.email) {
-    await sendTransactionalEmailSafe({
+    if (!full.scheduled_at && notifyCustomer) await sendTransactionalEmailSafe({
       templateName: "payment-confirmed",
       recipientEmail: full.email,
       idempotencyKey: `payment-confirmed-${full.id}`,

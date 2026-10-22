@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { listActivePresalePages } from "@/lib/presale.functions";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -31,14 +31,15 @@ export const Route = createFileRoute("/pre-venda/")({
   ),
 });
 
-function PresaleError({ error }: { error: Error }) {
+function PresaleError({ error }: ErrorComponentProps) {
   const router = useRouter();
+  const message = error instanceof Error ? error.message : "Não foi possível carregar as pré-vendas agora.";
   return (
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-4xl px-4 py-12">
         <h1 className="text-3xl font-bold mb-4">Pré-Vendas ativas</h1>
         <p role="alert" className="text-muted-foreground mb-4">
-          {error.message || "Não foi possível carregar as pré-vendas agora."}
+          {message}
         </p>
         <button
           type="button"

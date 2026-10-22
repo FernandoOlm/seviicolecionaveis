@@ -264,20 +264,31 @@ export function CatalogView({ heading = "Catálogo de Cartas Pokémon — Sevii 
               <span className="font-semibold text-foreground">{filtered.length}</span>{" "}
               {filtered.length === 1 ? "carta encontrada" : "cartas encontradas"}
             </p>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as Sort)}
-              className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium focus:outline-none"
-            >
-              <option value="relevance">Relevância</option>
-              <option value="price-desc">Preço: Maior → Menor</option>
-              <option value="price-asc">Preço: Menor → Maior</option>
-              <option value="name">Nome (A-Z)</option>
-              <option value="number-asc">Numeração do Card [0-9]</option>
-              <option value="number-desc">Numeração do Card [9-0]</option>
-              <option value="newest">Adicionadas Recentemente</option>
-              <option value="oldest">Adicionadas Antigamente</option>
-            </select>
+            <div className="flex items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={filters.inStockOnly}
+                  onChange={(e) => setFilters({ ...filters, inStockOnly: e.target.checked })}
+                  className="rounded border-border accent-foreground"
+                />
+                Apenas em estoque
+              </label>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as Sort)}
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium focus:outline-none"
+              >
+                <option value="relevance">Relevância</option>
+                <option value="price-desc">Preço: Maior → Menor</option>
+                <option value="price-asc">Preço: Menor → Maior</option>
+                <option value="name">Nome (A-Z)</option>
+                <option value="number-asc">Numeração do Card [0-9]</option>
+                <option value="number-desc">Numeração do Card [9-0]</option>
+                <option value="newest">Adicionadas Recentemente</option>
+                <option value="oldest">Adicionadas Antigamente</option>
+              </select>
+            </div>
           </div>
 
           {cardsLoading && filtered.length === 0 ? (

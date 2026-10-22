@@ -1,3 +1,4 @@
+import { PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -23,7 +24,7 @@ export async function restoreStockIfPaid(orderId: string, statusBefore: string) 
     .maybeSingle();
   const wasDecremented =
     (orderRow as any)?.stock_decremented === true ||
-    ["paid", "preparing", "shipped", "awaiting_pickup", "delivered"].includes(statusBefore);
+    PAID_ORDER_STATUSES.includes(statusBefore);
   if (!wasDecremented) return;
 
   const { data: items } = await supabaseAdmin

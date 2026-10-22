@@ -15,6 +15,13 @@ import { template as arteEmCardsCodeTemplate } from './arte-em-cards-code'
 import { template as stackAuctionStoredTemplate } from './stack-auction-stored'
 import { template as stackOrderStoredTemplate } from './stack-order-stored'
 import { template as stackReminderTemplate } from './stack-reminder'
+import { template as stackExpiredTemplate } from './stack-expired'
+import { template as pickupReopenedTemplate } from './pickup-reopened'
+import { template as scheduleConfirmedTemplate } from './schedule-confirmed'
+import { template as eventChangedTemplate } from './event-changed'
+import { template as buyerReceiptConfirmedTemplate } from './buyer-receipt-confirmed'
+import { template as handDeliveryFeeConfirmedTemplate } from './hand-delivery-fee-confirmed'
+import { template as fulfillmentUpdateTemplate } from './fulfillment-update'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -46,4 +53,11 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'stack-auction-stored': stackAuctionStoredTemplate,
   'stack-order-stored': stackOrderStoredTemplate,
   'stack-reminder': stackReminderTemplate,
+  'stack-expired': stackExpiredTemplate,
+  'pickup-reopened': pickupReopenedTemplate,
+  'schedule-confirmed': scheduleConfirmedTemplate,
+  'event-changed': eventChangedTemplate,
+  'buyer-receipt-confirmed': buyerReceiptConfirmedTemplate,
+  'hand-delivery-fee-confirmed': handDeliveryFeeConfirmedTemplate,
+  'fulfillment-update': fulfillmentUpdateTemplate,
 }

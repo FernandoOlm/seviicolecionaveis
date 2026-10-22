@@ -1,16 +1,20 @@
-import { createFileRoute, notFound, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, notFound, Link, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, ArrowLeft, ZoomIn, X, MessageCircle } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 import { SiteFooter } from "@/components/SiteFooter";
-import { getActivePresalePageBySlug, type PublicPresaleProduct } from "@/lib/presale.functions";
+import { getActivePresalePageBySlug, type PublicPresalePage, type PublicPresaleProduct } from "@/lib/presale.functions";
 import logoUrl from "@/assets/logo.webp";
 
 const WHATSAPP_NUMBER = "5579981509552";
 
 export const Route = createFileRoute("/pre-venda/$slug")({
-  loader: async ({ params }) => {
-    const { page, error } = await getActivePresalePageBySlug({ data: { slug: params.slug } });
+  loader: async ({ params }): Promise<{ page: PublicPresalePage }> => {
+    const result = await getActivePresalePageBySlug({ data: { slug: params.slug } }) as {
+      page: PublicPresalePage | null;
+      error: boolean;
+    };
+    const { page, error } = result;
     if (error) throw new Error("Não foi possível carregar esta pré-venda agora. Tente novamente.");
     if (!page) throw notFound();
     return { page };
@@ -42,15 +46,16 @@ export const Route = createFileRoute("/pre-venda/$slug")({
   errorComponent: PresaleLoadError,
 });
 
-function PresaleLoadError({ error }: { error: Error }) {
+function PresaleLoadError({ error }: ErrorComponentProps) {
   const router = useRouter();
+  const message = error instanceof Error ? error.message : "Tente novamente em instantes.";
   return (
     <Shell>
       <main className="grid min-h-[50vh] place-items-center px-4">
         <div className="text-center space-y-3">
           <h1 className="text-2xl font-bold">Não foi possível carregar</h1>
           <p role="alert" className="text-muted-foreground">
-            {error.message || "Tente novamente em instantes."}
+            {message}
           </p>
           <button
             type="button"

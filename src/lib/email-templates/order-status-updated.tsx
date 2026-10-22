@@ -1,3 +1,4 @@
+import { ORDER_STATUS_LABELS } from "@/lib/order-status";
 import * as React from 'react'
 import { Heading, Section, Text, Button } from '@react-email/components'
 import type { TemplateEntry } from './registry'
@@ -45,23 +46,16 @@ const REFUND_METHOD_LABEL: Record<string, string> = {
   manual: 'estorno manual (entraremos em contato)',
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  pending: 'Aguardando pagamento',
-  paid: 'Pago',
-  preparing: 'Em preparação',
-  shipped: 'Enviado',
-  awaiting_pickup: 'Aguardando retirada na Arte em Cards',
-  delivered: 'Entregue',
-  cancelled: 'Cancelado',
-  cancellation_requested: 'Cancelamento solicitado',
-}
+const STATUS_LABEL = ORDER_STATUS_LABELS;
 
 const STATUS_MESSAGE: Record<string, string> = {
   pending: 'Seu pedido está aguardando a confirmação do pagamento.',
   paid: 'O pagamento do seu pedido foi confirmado e ele já está em preparação.',
   preparing: 'Seu pedido está sendo preparado para envio.',
+  separated: 'Seu pedido foi separado.',
+  cards_pending_delivery: 'Ainda faltam cartas a serem entregues no seu pedido. Acompanhe as próximas atualizações.',
   shipped: 'Seu pedido foi enviado! Em breve chega aí.',
-  awaiting_pickup: 'Seu pedido já está disponível para retirada na loja Arte em Cards. Lembre-se de levar um documento com foto.',
+  awaiting_pickup: 'Seu pedido está pronto para retirada no local combinado.',
   delivered: 'Seu pedido foi entregue. Esperamos que goste! 🎉',
   cancelled: 'Seu pedido foi cancelado. Se tiver dúvidas, fala com a gente.',
   cancellation_requested: 'Recebemos sua solicitação de cancelamento e vamos analisar em breve.',

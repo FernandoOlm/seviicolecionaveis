@@ -60,16 +60,69 @@ export const Route = createFileRoute("/api/public/bot/auctions/bids/live")({
 
           if (isRetraction) {
             // Marca lances prévios desse usuário no lote/leilão como cancelados/retirados
-            let query = (supabaseAdmin as any)
+            let selectQ = (supabaseAdmin as any)
               .from("auction_bids")
-              .update({ status: "retracted" })
+              .select("id, item_id")
               .eq("auction_id", auctionId)
-              .eq("phone", phone);
+              .eq("phone", phone)
+              .neq("status", "retracted");
 
             if (itemId) {
-              query = query.eq("item_id", itemId);
+              selectQ = selectQ.eq("item_id", itemId);
             }
-            await query;
+            const { data: toRetract } = await selectQ;
+            if (toRetract && toRetract.length > 0) {
+              await (supabaseAdmin as any)
+                .from("auction_bids")
+                .update({ status: "retracted" })
+                .in("id", toRetract.map((r: any) => r.id));
+            }
+
+            // Recalcula o vencedor dos lotes afetados a partir dos lances restantes
+            const affectedItemIds = new Set<string>();
+            if (itemId) {
+              affectedItemIds.add(String(itemId));
+            } else {
+              const { data: wonItems } = await (supabaseAdmin as any)
+                .from("auction_items")
+                .select("id")
+                .eq("auction_id", auctionId)
+                .eq("winner_phone", phone);
+              for (const it of wonItems ?? []) affectedItemIds.add(String(it.id));
+            }
+            for (const r of toRetract ?? []) {
+              if (r.item_id) affectedItemIds.add(String(r.item_id));
+            }
+
+            for (const iid of affectedItemIds) {
+              const { data: top } = await (supabaseAdmin as any)
+                .from("auction_bids")
+                .select("phone, bidder_name, amount")
+                .eq("auction_id", auctionId)
+                .eq("item_id", iid)
+                .neq("status", "retracted")
+                .order("amount", { ascending: false })
+                .order("created_at", { ascending: true })
+                .limit(1)
+                .maybeSingle();
+
+              if (top) {
+                await (supabaseAdmin as any)
+                  .from("auction_items")
+                  .update({
+                    final_bid: Number(top.amount),
+                    winner_phone: top.phone,
+                    winner_name: top.bidder_name || top.phone,
+                  })
+                  .eq("id", iid);
+              } else {
+                await (supabaseAdmin as any)
+                  .from("auction_items")
+                  .update({ final_bid: null, winner_phone: null, winner_name: null })
+                  .eq("id", iid);
+              }
+            }
+
             processed++;
             continue;
           }
