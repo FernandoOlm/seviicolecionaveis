@@ -258,7 +258,7 @@ function AdminPilhaPage() {
   const visibleStacks = useMemo(
     () => (showEmptyStacks ? data.stacks : data.stacks.filter((s) => s.items.length > 0))
       .filter((s) => matchesFulfillmentFilter(ff, stackRow(s), unreadTargets)),
-    [data.stacks, showEmptyStacks],
+    [data.stacks, showEmptyStacks, ff, unreadTargets, pendingOSByStack],
   );
   const hiddenEmptyCount = data.stacks.length - data.stacks.filter((s) => s.items.length > 0).length;
 
@@ -499,6 +499,8 @@ function AdminPilhaPage() {
 
 
 
+        <FulfillmentFilters value={ff} onChange={setFf} count={tab === "orders" ? filteredServiceOrders.length : visibleStacks.length} />
+
         {loading ? (
           <p className="text-sm text-muted-foreground">Carregando...</p>
         ) : tab === "orders" ? (
@@ -558,6 +560,7 @@ function AdminPilhaPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-xs text-muted-foreground font-mono">OS #{o.code}</p>
+                            <ModalityBadge modality={modalityOfServiceOrder(o.method)} scheduledAt={(o as any).scheduled_at} unread={unreadTargets.has(o.id)} />
                             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${STATUS_STYLE[o.status] ?? "bg-secondary"}`}>
                               {STATUS_LABEL[o.status] ?? o.status}
                             </span>
@@ -764,9 +767,18 @@ function AdminPilhaPage() {
                 <div
                   key={s.id}
                   className={`rounded-xl border bg-card overflow-hidden ${
-                    crit ? "border-red-400" : warn ? "border-orange-400" : "border-border"
+                    pendingOSByStack.has(s.id) ? "border-primary ring-2 ring-primary/30" : crit ? "border-red-400" : warn ? "border-orange-400" : "border-border"
                   }`}
                 >
+                  {pendingOSByStack.has(s.id) && (() => {
+                    const so = pendingOSByStack.get(s.id)!;
+                    return (
+                      <div className="flex flex-wrap items-center gap-2 bg-primary/10 px-5 py-2 text-xs font-semibold">
+                        Modalidade escolhida — aguardando a loja (OS #{so.code})
+                        <ModalityBadge modality={modalityOfServiceOrder(so.method)} scheduledAt={(so as any).scheduled_at} unread={unreadTargets.has(so.id)} />
+                      </div>
+                    );
+                  })()}
                   <div className="p-5">
                     <div className="flex flex-wrap justify-between gap-3">
                       <div className="min-w-0">
