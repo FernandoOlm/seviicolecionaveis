@@ -30,7 +30,27 @@ export const Route = createFileRoute("/api/public/bot/auctions/$id")({
             .order("created_at", { ascending: true }),
         ]);
 
-        return Response.json({ auction: { ...auction, items: items ?? [], bids: bids ?? [] } });
+        const sortedItems = (items ?? []).sort((x: any, y: any) => {
+          const b1 = Number(x.block_number || 1);
+          const b2 = Number(y.block_number || 1);
+          if (b1 !== b2) return b1 - b2;
+          return Number(x.sequence || 0) - Number(y.sequence || 0);
+        });
+
+        const blockActions = Array.isArray(auction.block_actions) ? auction.block_actions : [];
+
+        return Response.json({
+          auction: {
+            ...auction,
+            items: sortedItems,
+            bids: bids ?? [],
+            block_actions: blockActions,
+            item_delay_seconds: Number(auction.item_delay_seconds) || 3,
+            block_delay_seconds: Number(auction.block_delay_seconds) || 30,
+          },
+          items: sortedItems,
+          block_actions: blockActions,
+        });
       },
     },
   },

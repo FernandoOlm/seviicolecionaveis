@@ -1,9 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, ArrowUp, ArrowDown, Upload, ArrowLeft, Download, FileSpreadsheet } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Upload,
+  ArrowLeft,
+  Download,
+  FileSpreadsheet,
+  Layers,
+  Clock,
+  MessageSquare,
+  Terminal,
+} from "lucide-react";
 
 export const Route = createFileRoute("/admin/criar-leilao")({
   head: () => ({ meta: [{ title: "Criar Leilão — Admin" }] }),
@@ -22,6 +35,14 @@ type ItemForm = {
   values: string[];
   buyout_price: string;
   quantity: string;
+  block_number: number;
+};
+
+type BlockActionForm = {
+  id: string;
+  after_block: number;
+  type: "message" | "command";
+  content: string;
 };
 
 const MAX_VALUES = 7;
@@ -29,13 +50,14 @@ const DEFAULT_VALUES = 5;
 
 const labelForValue = (i: number) => (i === 0 ? "Inicial" : `Inc. ${i}`);
 
-const emptyItem = (): ItemForm => ({
+const emptyItem = (blockNumber = 1): ItemForm => ({
   name: "",
   description: "",
   image_url: "",
   values: Array.from({ length: DEFAULT_VALUES }, () => ""),
   buyout_price: "",
   quantity: "1",
+  block_number: blockNumber,
 });
 
 const toLocalInput = (iso?: string | null) => {
@@ -57,7 +79,10 @@ function CreateAuctionPage() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [closingMessage, setClosingMessage] = useState("Os links de pagamento foram enviados no privado!");
-  const [items, setItems] = useState<ItemForm[]>([emptyItem()]);
+  const [itemDelaySeconds, setItemDelaySeconds] = useState("3");
+  const [blockDelaySeconds, setBlockDelaySeconds] = useState("30");
+  const [items, setItems] = useState<ItemForm[]>([emptyItem(1)]);
+  const [blockActions, setBlockActions] = useState<BlockActionForm[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -80,6 +105,18 @@ function CreateAuctionPage() {
         setStart(toLocalInput(a.scheduled_start));
         setEnd(toLocalInput(a.scheduled_end));
         setClosingMessage(a.closing_message ?? "");
+        setItemDelaySeconds(String(a.item_delay_seconds ?? 3));
+        setBlockDelaySeconds(String(a.block_delay_seconds ?? 30));
+        if (Array.isArray(a.block_actions)) {
+          setBlockActions(
+            a.block_actions.map((act: any) => ({
+              id: act.id || crypto.randomUUID(),
+              after_block: Number(act.after_block) || 1,
+              type: act.type === "command" ? "command" : "message",
+              content: String(act.content ?? ""),
+            })),
+          );
+        }
       }
       if (its?.length) {
         setItems(
@@ -88,6 +125,7 @@ function CreateAuctionPage() {
             name: i.name ?? "",
             description: i.description ?? "",
             image_url: i.image_url ?? "",
+            block_number: Math.max(1, Number(i.block_number) || 1),
             values: (() => {
               const extras = Array.isArray(i.extra_prices)
                 ? i.extra_prices.map((p: any) => (p?.value != null ? String(p.value) : ""))
@@ -114,14 +152,9 @@ function CreateAuctionPage() {
     load();
   }, [isAdmin, load]);
 
-  if (authLoading || loading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
-  if (!isAdmin) {
-    nav({ to: "/" });
-    return null;
-  }
-
   const patchItem = (idx: number, patch: Partial<ItemForm>) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+
   const move = (idx: number, dir: -1 | 1) =>
     setItems((prev) => {
       const next = [...prev];
@@ -143,10 +176,10 @@ function CreateAuctionPage() {
     toast.success("Imagem enviada.");
   };
 
-
   const downloadTemplate = async () => {
     const XLSX = await import("xlsx");
     const header = [
+      "bloco",
       "nome",
       "descricao",
       "lance_inicial",
@@ -162,7 +195,8 @@ function CreateAuctionPage() {
     ];
     const example = [
       {
-        nome: "Pikachu VMAX",
+        bloco: 1,
+        nome: "Carta 1 - Pikachu VMAX",
         descricao: "NM - Português",
         lance_inicial: 50,
         inc_1: 55,
@@ -175,11 +209,41 @@ function CreateAuctionPage() {
         quantidade: 1,
         imagem_url: "",
       },
+      {
+        bloco: 1,
+        nome: "Carta 2 - Charizard GX",
+        descricao: "NM - Português",
+        lance_inicial: 100,
+        inc_1: 110,
+        inc_2: 120,
+        inc_3: 130,
+        inc_4: "",
+        inc_5: "",
+        inc_6: "",
+        arremate: 500,
+        quantidade: 1,
+        imagem_url: "",
+      },
+      {
+        bloco: 2,
+        nome: "Carta 3 - Mewtwo VSTAR",
+        descricao: "NM - Japonês",
+        lance_inicial: 40,
+        inc_1: 45,
+        inc_2: 50,
+        inc_3: "",
+        inc_4: "",
+        inc_5: "",
+        inc_6: "",
+        arremate: 200,
+        quantidade: 1,
+        imagem_url: "",
+      },
     ];
     const ws = XLSX.utils.json_to_sheet(example, { header });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Lotes");
-    XLSX.writeFile(wb, "modelo-lotes-leilao.xlsx");
+    XLSX.writeFile(wb, "modelo-lotes-leilao-blocos.xlsx");
   };
 
   const importSpreadsheet = async (file: File) => {
@@ -196,6 +260,7 @@ function CreateAuctionPage() {
           const values = [norm(r["lance_inicial"])];
           for (let n = 1; n < MAX_VALUES; n++) values.push(norm(r[`inc_${n}`]));
           while (values.length > DEFAULT_VALUES && !values[values.length - 1]) values.pop();
+          const blockRaw = Number(r["bloco"] || r["Bloco"] || 1);
           return {
             name: norm(r["nome"]),
             description: norm(r["descricao"]),
@@ -203,18 +268,58 @@ function CreateAuctionPage() {
             values,
             buyout_price: norm(r["arremate"]),
             quantity: norm(r["quantidade"]) || "1",
+            block_number: Math.max(1, isNaN(blockRaw) ? 1 : blockRaw),
           } as ItemForm;
         })
         .filter((i) => i.name);
+
       if (parsed.length === 0) return toast.error("Nenhum lote válido encontrado (coluna 'nome' obrigatória).");
       setItems((prev) => {
         const base = prev.filter((p) => p.name.trim());
         return [...base, ...parsed];
       });
-      toast.success(`${parsed.length} lote(s) importado(s).`);
+      toast.success(`${parsed.length} lote(s) importado(s) com suporte a blocos.`);
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao ler a planilha.");
     }
+  };
+
+  const existingBlocks = useMemo(() => {
+    const set = new Set<number>();
+    items.forEach((it) => set.add(it.block_number || 1));
+    blockActions.forEach((act) => set.add(act.after_block));
+    const sorted = Array.from(set).sort((a, b) => a - b);
+    return sorted.length > 0 ? sorted : [1];
+  }, [items, blockActions]);
+
+  const maxBlockNumber = useMemo(() => {
+    return Math.max(...existingBlocks, 1);
+  }, [existingBlocks]);
+
+  const addBlock = () => {
+    const nextBlock = maxBlockNumber + 1;
+    setItems((prev) => [...prev, emptyItem(nextBlock)]);
+    toast.success(`Bloco ${nextBlock} adicionado.`);
+  };
+
+  const addActionForBlock = (blockNum: number) => {
+    setBlockActions((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        after_block: blockNum,
+        type: "message",
+        content: "",
+      },
+    ]);
+  };
+
+  const removeAction = (id: string) => {
+    setBlockActions((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const patchAction = (id: string, patch: Partial<BlockActionForm>) => {
+    setBlockActions((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
   };
 
   const save = async (mode: "draft" | "scheduled") => {
@@ -229,6 +334,16 @@ function CreateAuctionPage() {
 
     setSaving(true);
     try {
+      const cleanActions = blockActions
+        .filter((a) => a.content.trim())
+        .map((a, idx) => ({
+          id: a.id || crypto.randomUUID(),
+          after_block: Number(a.after_block) || 1,
+          type: a.type || (a.content.trim().startsWith("!") ? "command" : "message"),
+          content: a.content.trim(),
+          sort_order: idx + 1,
+        }));
+
       const payload = {
         title: title.trim(),
         description: description.trim() || null,
@@ -237,6 +352,9 @@ function CreateAuctionPage() {
         scheduled_start: startIso,
         scheduled_end: endIso,
         closing_message: closingMessage.trim() || null,
+        item_delay_seconds: Math.max(1, Number(itemDelaySeconds) || 3),
+        block_delay_seconds: Math.max(0, Number(blockDelaySeconds) || 30),
+        block_actions: cleanActions,
       };
 
       let auctionId = editId;
@@ -258,6 +376,7 @@ function CreateAuctionPage() {
           return {
             auction_id: auctionId,
             sequence: idx + 1,
+            block_number: Math.max(1, Number(i.block_number) || 1),
             name: i.name.trim(),
             description: i.description.trim() || null,
             image_url: i.image_url || null,
@@ -283,10 +402,10 @@ function CreateAuctionPage() {
         if (error) throw error;
       }
 
-      toast.success(mode === "draft" ? "Rascunho salvo." : "Leilão programado!");
+      toast.success(mode === "draft" ? "Rascunho salvo com sucesso." : "Leilão programado com sucesso!");
       nav({ to: "/admin/leiloes-whatsapp" });
     } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao salvar.");
+      toast.error(e?.message ?? "Falha ao salvar o leilão.");
     } finally {
       setSaving(false);
     }
@@ -294,19 +413,41 @@ function CreateAuctionPage() {
 
   const input = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm";
 
+  if (authLoading || loading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
+  if (!isAdmin) {
+    nav({ to: "/" });
+    return null;
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <div className="flex items-center gap-3">
-        <Link to="/admin/leiloes-whatsapp" className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground">
+        <Link
+          to="/admin/leiloes-whatsapp"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-3.5 w-3.5" /> Leilões
         </Link>
       </div>
-      <h1 className="text-xl font-black uppercase tracking-tight">{editId ? "Editar Leilão" : "Criar Leilão"}</h1>
 
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-black uppercase tracking-tight">{editId ? "Editar Leilão" : "Criar Leilão"}</h1>
+          <p className="text-xs text-muted-foreground">Configure lotes por blocos, cadência de envio e transições.</p>
+        </div>
+      </div>
+
+      {/* DADOS GERAIS */}
       <section className="space-y-3 rounded-lg border border-border p-4">
         <h2 className="text-sm font-bold uppercase tracking-wide">Dados gerais</h2>
         <input className={input} placeholder="Título do leilão" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <textarea className={input} rows={2} placeholder="Descrição (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <textarea
+          className={input}
+          rows={2}
+          placeholder="Descrição (opcional)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
         <select className={input} value={groupJid} onChange={(e) => setGroupJid(e.target.value)}>
           <option value="">Selecione o grupo de destino…</option>
           {groups.map((g) => (
@@ -317,7 +458,11 @@ function CreateAuctionPage() {
         </select>
         {groups.length === 0 && (
           <p className="text-xs text-muted-foreground">
-            Nenhum grupo ativo. Ative um grupo em <Link to="/admin/conectar-bot" className="underline">Conectar Bot</Link>.
+            Nenhum grupo ativo. Ative um grupo em{" "}
+            <Link to="/admin/conectar-bot" className="underline">
+              Conectar Bot
+            </Link>
+            .
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-2">
@@ -330,12 +475,64 @@ function CreateAuctionPage() {
             <input type="datetime-local" className={input} value={end} onChange={(e) => setEnd(e.target.value)} />
           </label>
         </div>
-        <textarea className={input} rows={2} placeholder="Mensagem de encerramento" value={closingMessage} onChange={(e) => setClosingMessage(e.target.value)} />
+        <textarea
+          className={input}
+          rows={2}
+          placeholder="Mensagem de encerramento"
+          value={closingMessage}
+          onChange={(e) => setClosingMessage(e.target.value)}
+        />
       </section>
 
-      <section className="space-y-3 rounded-lg border border-border p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-wide">Lotes / Itens</h2>
+      {/* CADÊNCIA E INTERVALOS DO BOT */}
+      <section className="space-y-4 rounded-lg border border-border p-4">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-bold uppercase tracking-wide">Cadência e Tempo de Envio (Bot)</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold">Tempo de envio entre cada lote (segundos)</label>
+            <input
+              type="number"
+              min={1}
+              max={60}
+              className={input}
+              value={itemDelaySeconds}
+              onChange={(e) => setItemDelaySeconds(e.target.value)}
+              placeholder="3"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Intervalo que o bot aguarda entre o disparo de uma carta (lote) e a próxima.
+            </p>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold">Pausa de intervalo entre blocos (segundos)</label>
+            <input
+              type="number"
+              min={0}
+              max={300}
+              className={input}
+              value={blockDelaySeconds}
+              onChange={(e) => setBlockDelaySeconds(e.target.value)}
+              placeholder="30"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Tempo de respiro/espera após todas as cartas do bloco e suas mensagens serem enviadas.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* LOTES E BLOCOS */}
+      <section className="space-y-6 rounded-lg border border-border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+          <div className="flex items-center gap-2">
+            <Layers className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-bold uppercase tracking-wide">
+              Lotes e Blocos ({items.filter((i) => i.name.trim()).length} cartas em {existingBlocks.length} bloco(s))
+            </h2>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={downloadTemplate}
@@ -357,110 +554,282 @@ function CreateAuctionPage() {
               />
             </label>
             <button
-              onClick={() => setItems((p) => [...p, emptyItem()])}
+              onClick={addBlock}
+              className="inline-flex items-center gap-1.5 rounded-md border border-primary/50 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
+            >
+              <Plus className="h-3.5 w-3.5" /> Novo Bloco
+            </button>
+            <button
+              onClick={() => setItems((p) => [...p, emptyItem(maxBlockNumber)])}
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-secondary"
             >
               <Plus className="h-3.5 w-3.5" /> Adicionar Lote
             </button>
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          Cadastro em massa: baixe o modelo, preencha uma linha por lote (colunas de valores extras opcionais) e importe. Os lotes importados são adicionados à lista.
-        </p>
 
+        {/* RENDERIZAÇÃO AGRUPADA POR BLOCOS */}
+        {existingBlocks.map((blockNum) => {
+          const itemsInBlock = items
+            .map((item, originalIndex) => ({ item, originalIndex }))
+            .filter(({ item }) => (item.block_number || 1) === blockNum);
 
-        {items.map((it, idx) => (
-          <div key={idx} className="space-y-3 rounded-md border border-border p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold">Lote {idx + 1}</p>
-              <div className="flex gap-1">
-                <button onClick={() => move(idx, -1)} className="rounded border border-border p-1 hover:bg-secondary"><ArrowUp className="h-3.5 w-3.5" /></button>
-                <button onClick={() => move(idx, 1)} className="rounded border border-border p-1 hover:bg-secondary"><ArrowDown className="h-3.5 w-3.5" /></button>
-                <button
-                  onClick={() => setItems((p) => (p.length === 1 ? p : p.filter((_, i) => i !== idx)))}
-                  className="rounded border border-destructive/40 p-1 text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
+          const actionsAfterBlock = blockActions.filter((a) => a.after_block === blockNum);
 
-            <div className="flex flex-wrap items-center gap-3">
-              {it.image_url ? (
-                <img src={it.image_url} alt={it.name} className="h-20 w-20 rounded object-cover" />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded border border-dashed border-border text-[10px] text-muted-foreground">
-                  sem foto
+          return (
+            <div key={blockNum} className="space-y-4 rounded-lg border-2 border-border/80 bg-card/40 p-4">
+              {/* CABEÇALHO DO BLOCO */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">
+                    {blockNum}
+                  </span>
+                  <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
+                    Bloco {blockNum}
+                  </h3>
+                  <span className="rounded bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                    {itemsInBlock.length} carta(s)
+                  </span>
                 </div>
-              )}
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-secondary">
-                <Upload className="h-3.5 w-3.5" /> Enviar foto
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) uploadImage(idx, f);
-                  }}
-                />
-              </label>
-            </div>
-
-            <input className={input} placeholder="Nome do item" value={it.name} onChange={(e) => patchItem(idx, { name: e.target.value })} />
-            <input className={input} placeholder="Descrição / Condição" value={it.description} onChange={(e) => patchItem(idx, { description: e.target.value })} />
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                  Valores ({it.values.length}/{MAX_VALUES})
-                </p>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => patchItem(idx, { values: it.values.slice(0, Math.max(2, it.values.length - 1)) })}
-                    disabled={it.values.length <= 2}
-                    className="rounded border border-border px-2 py-1 text-[11px] font-semibold hover:bg-secondary disabled:opacity-40"
+                    onClick={() => setItems((p) => [...p, emptyItem(blockNum)])}
+                    className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[11px] font-semibold hover:bg-secondary"
                   >
-                    − Remover
+                    <Plus className="h-3 w-3" /> Adicionar Carta no Bloco {blockNum}
                   </button>
                   <button
-                    onClick={() => patchItem(idx, { values: [...it.values, ""] })}
-                    disabled={it.values.length >= MAX_VALUES}
-                    className="rounded border border-primary/50 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/10 disabled:opacity-40"
+                    onClick={() => addActionForBlock(blockNum)}
+                    className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[11px] font-semibold hover:bg-secondary"
                   >
-                    + Adicionar
+                    <MessageSquare className="h-3 w-3" /> + Mensagem/Comando pós-bloco
                   </button>
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {it.values.map((v, vi) => (
-                  <input
-                    key={vi}
-                    className={input}
-                    placeholder={labelForValue(vi)}
-                    value={v}
-                    onChange={(e) =>
-                      patchItem(idx, { values: it.values.map((x, i2) => (i2 === vi ? e.target.value : x)) })
-                    }
-                  />
+
+              {/* LISTAGEM DE CARTAS/LOTES DO BLOCO */}
+              <div className="space-y-3">
+                {itemsInBlock.length === 0 && (
+                  <p className="py-2 text-center text-xs italic text-muted-foreground">
+                    Nenhuma carta cadastrada neste bloco.
+                  </p>
+                )}
+
+                {itemsInBlock.map(({ item: it, originalIndex: idx }, itemBlockOrder) => (
+                  <div key={idx} className="space-y-3 rounded-md border border-border bg-background p-3 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-foreground">
+                          Lote {idx + 1}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          (Carta {itemBlockOrder + 1} do Bloco {it.block_number || 1})
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+                          Bloco:
+                          <select
+                            className="rounded border border-border bg-background px-1.5 py-0.5 text-xs"
+                            value={it.block_number || 1}
+                            onChange={(e) => patchItem(idx, { block_number: Math.max(1, Number(e.target.value) || 1) })}
+                          >
+                            {Array.from({ length: Math.max(maxBlockNumber + 1, 5) }, (_, i) => i + 1).map((b) => (
+                              <option key={b} value={b}>
+                                Bloco {b}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => move(idx, -1)}
+                            className="rounded border border-border p-1 hover:bg-secondary"
+                            title="Mover para cima"
+                          >
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => move(idx, 1)}
+                            className="rounded border border-border p-1 hover:bg-secondary"
+                            title="Mover para baixo"
+                          >
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setItems((p) => (p.length === 1 ? p : p.filter((_, i) => i !== idx)))}
+                            className="rounded border border-destructive/40 p-1 text-destructive hover:bg-destructive/10"
+                            title="Excluir lote"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      {it.image_url ? (
+                        <img src={it.image_url} alt={it.name} className="h-20 w-20 rounded object-cover" />
+                      ) : (
+                        <div className="flex h-20 w-20 items-center justify-center rounded border border-dashed border-border text-[10px] text-muted-foreground">
+                          sem foto
+                        </div>
+                      )}
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold hover:bg-secondary">
+                        <Upload className="h-3.5 w-3.5" /> Enviar foto
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) uploadImage(idx, f);
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <input
+                      className={input}
+                      placeholder="Nome do item (ex: Carta 1 - Charizard GX)"
+                      value={it.name}
+                      onChange={(e) => patchItem(idx, { name: e.target.value })}
+                    />
+                    <input
+                      className={input}
+                      placeholder="Descrição / Condição (NM, Português...)"
+                      value={it.description}
+                      onChange={(e) => patchItem(idx, { description: e.target.value })}
+                    />
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                          Valores ({it.values.length}/{MAX_VALUES})
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => patchItem(idx, { values: it.values.slice(0, Math.max(2, it.values.length - 1)) })}
+                            disabled={it.values.length <= 2}
+                            className="rounded border border-border px-2 py-1 text-[11px] font-semibold hover:bg-secondary disabled:opacity-40"
+                          >
+                            − Remover
+                          </button>
+                          <button
+                            onClick={() => patchItem(idx, { values: [...it.values, ""] })}
+                            disabled={it.values.length >= MAX_VALUES}
+                            className="rounded border border-primary/50 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/10 disabled:opacity-40"
+                          >
+                            + Adicionar
+                          </button>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        {it.values.map((v, vi) => (
+                          <input
+                            key={vi}
+                            className={input}
+                            placeholder={labelForValue(vi)}
+                            value={v}
+                            onChange={(e) =>
+                              patchItem(idx, { values: it.values.map((x, i2) => (i2 === vi ? e.target.value : x)) })
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="space-y-1 text-[11px] font-semibold">
+                        Arremate (R$)
+                        <input
+                          className={input}
+                          placeholder="opcional"
+                          value={it.buyout_price}
+                          onChange={(e) => patchItem(idx, { buyout_price: e.target.value })}
+                        />
+                      </label>
+                      <label className="space-y-1 text-[11px] font-semibold">
+                        Quantidade
+                        <input
+                          className={input}
+                          value={it.quantity}
+                          onChange={(e) => patchItem(idx, { quantity: e.target.value })}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 ))}
               </div>
-            </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="space-y-1 text-[11px] font-semibold">
-                Arremate (R$)
-                <input className={input} placeholder="opcional" value={it.buyout_price} onChange={(e) => patchItem(idx, { buyout_price: e.target.value })} />
-              </label>
-              <label className="space-y-1 text-[11px] font-semibold">
-                Quantidade
-                <input className={input} value={it.quantity} onChange={(e) => patchItem(idx, { quantity: e.target.value })} />
-              </label>
+              {/* AÇÕES / TRANSIÇÃO ENTRE BLOCOS */}
+              <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                    <Terminal className="h-3.5 w-3.5 text-primary" />
+                    Transição após Bloco {blockNum} (Mensagens e Comandos disparados entre os blocos)
+                  </div>
+                  <button
+                    onClick={() => addActionForBlock(blockNum)}
+                    className="inline-flex items-center gap-1 rounded bg-background px-2 py-1 text-[11px] font-semibold text-foreground shadow-sm hover:bg-secondary"
+                  >
+                    <Plus className="h-3 w-3" /> Adicionar Ação pós-bloco {blockNum}
+                  </button>
+                </div>
+
+                {actionsAfterBlock.length === 0 ? (
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Nenhuma mensagem ou comando especial cadastrado para após o Bloco {blockNum}.
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {actionsAfterBlock.map((action, aIdx) => (
+                      <div
+                        key={action.id}
+                        className="flex flex-wrap items-center gap-2 rounded border border-border bg-background p-2"
+                      >
+                        <span className="text-[11px] font-bold text-muted-foreground">#{aIdx + 1}</span>
+                        <select
+                          className="rounded border border-border bg-background px-2 py-1 text-xs"
+                          value={action.type}
+                          onChange={(e) =>
+                            patchAction(action.id, { type: e.target.value as "message" | "command" })
+                          }
+                        >
+                          <option value="message">Mensagem de Texto</option>
+                          <option value="command">Comando WhatsApp (!)</option>
+                        </select>
+                        <input
+                          className="flex-1 min-w-[200px] rounded border border-border bg-background px-2 py-1 text-xs"
+                          placeholder={
+                            action.type === "command"
+                              ? "Ex: !all Atenção para o Bloco seguinte! ou !fechar-grupo"
+                              : "Ex: Preparem os lances, o próximo bloco já vai começar!"
+                          }
+                          value={action.content}
+                          onChange={(e) => patchAction(action.id, { content: e.target.value })}
+                        />
+                        <button
+                          onClick={() => removeAction(action.id)}
+                          className="rounded border border-destructive/40 p-1 text-destructive hover:bg-destructive/10"
+                          title="Remover ação"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </section>
 
-      <div className="flex flex-wrap gap-2">
+      {/* BOTÕES DE AÇÃO */}
+      <div className="flex flex-wrap gap-2 pt-2">
         <button
           disabled={saving}
           onClick={() => save("draft")}

@@ -32,13 +32,13 @@ export const Route = createFileRoute("/api/public/bot/schedules/pending")({
           (supabaseAdmin as any)
             .from("auctions")
             .select(
-              "id, auction_number, title, description, closing_message, group_jid, status, scheduled_start, scheduled_end",
+              "id, auction_number, title, description, closing_message, group_jid, status, scheduled_start, scheduled_end, item_delay_seconds, block_delay_seconds, block_actions",
             )
             .in("id", auctionIds),
           (supabaseAdmin as any)
             .from("auction_items")
             .select(
-              "id, auction_id, sequence, name, description, image_url, starting_price, bid_increment, buyout_price, quantity, extra_prices",
+              "id, auction_id, sequence, block_number, name, description, image_url, starting_price, bid_increment, buyout_price, quantity, extra_prices",
             )
             .in("auction_id", auctionIds)
             .order("sequence", { ascending: true }),
@@ -46,9 +46,21 @@ export const Route = createFileRoute("/api/public/bot/schedules/pending")({
 
         const byAuction = new Map<string, any>();
         for (const a of auctions ?? []) {
+          const auctionItems = (items ?? [])
+            .filter((i: any) => i.auction_id === a.id)
+            .sort((x: any, y: any) => {
+              const b1 = Number(x.block_number || 1);
+              const b2 = Number(y.block_number || 1);
+              if (b1 !== b2) return b1 - b2;
+              return Number(x.sequence || 0) - Number(y.sequence || 0);
+            });
+
           byAuction.set(a.id, {
             ...a,
-            items: (items ?? []).filter((i: any) => i.auction_id === a.id),
+            items: auctionItems,
+            block_actions: Array.isArray(a.block_actions) ? a.block_actions : [],
+            item_delay_seconds: Number(a.item_delay_seconds) || 3,
+            block_delay_seconds: Number(a.block_delay_seconds) || 30,
           });
         }
 
