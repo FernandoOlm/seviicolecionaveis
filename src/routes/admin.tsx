@@ -61,7 +61,7 @@ function AdminPage() {
 
   const [selectedShippingMethods, setSelectedShippingMethods] = useState<string[]>(() => {
     if (typeof window === "undefined") return [...SHIPPING_METHODS];
-    const raw = localStorage.getItem("admin-orders-shipping-filter");
+    const raw = localStorage.getItem("admin-orders-shipping-filter-v2");
     if (!raw) return [...SHIPPING_METHODS];
     try {
       const parsed = JSON.parse(raw);
@@ -79,7 +79,7 @@ function AdminPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("admin-orders-shipping-filter", JSON.stringify(selectedShippingMethods));
+      localStorage.setItem("admin-orders-shipping-filter-v2", JSON.stringify(selectedShippingMethods));
     }
   }, [selectedShippingMethods]);
 
