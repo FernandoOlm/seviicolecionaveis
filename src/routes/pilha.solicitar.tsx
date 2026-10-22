@@ -15,6 +15,7 @@ import { EventSlotPicker, type EventSelection } from "@/components/EventSlotPick
 import { listActiveEvents } from "@/lib/events.functions";
 import { validateEventSchedule, type PickupEvent } from "@/lib/events";
 import { toast } from "sonner";
+import { isHandDeliveryArea, HAND_DELIVERY_AREA_MESSAGE } from "@/lib/hand-delivery";
 import { copyToClipboard } from "@/lib/clipboard";
 import logoUrl from "@/assets/logo.webp";
 
@@ -71,6 +72,13 @@ function SolicitarPage() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [notes, setNotes] = useState("");
+  const handDeliveryEligible = isHandDeliveryArea({ city, state, cep });
+  useEffect(() => {
+    if (!handDeliveryEligible && method === "app") {
+      setMethod("correios");
+      toast.warning(HAND_DELIVERY_AREA_MESSAGE);
+    }
+  }, [handDeliveryEligible, method]);
 
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
@@ -271,6 +279,11 @@ function SolicitarPage() {
 
   const handleSubmit = async () => {
     setErr(null);
+    if (method === "app" && !handDeliveryEligible) {
+      setMethod("correios");
+      setErr(HAND_DELIVERY_AREA_MESSAGE);
+      return;
+    }
     if (selectedIds.length === 0) {
       setErr("Nenhuma carta selecionada.");
       return;
@@ -328,7 +341,7 @@ function SolicitarPage() {
                 }
               : null,
           address:
-            method === "correios"
+            method === "correios" || method === "app"
               ? {
                   recipientName,
                   phone,
@@ -420,7 +433,7 @@ function SolicitarPage() {
                     { v: "evento", label: "🎪 Retirada em Eventos", desc: "Retire no evento que você vai comparecer — gratuito" },
                     
                   ] as { v: Method; label: string; desc: string }[]
-                ).map((opt) => {
+                ).filter((opt) => opt.v !== "app" || handDeliveryEligible).map((opt) => {
                   const disabled = opt.v === "arte_em_cards" && hasSealedSelected;
                   return (
                     <label

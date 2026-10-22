@@ -107,6 +107,14 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
     amountCents = arte.feeCents;
     arteCodeUsed = arte.codeUsed;
   } else if (input.method === "app") {
+    const { isHandDeliveryArea, HAND_DELIVERY_AREA_MESSAGE } = await import("@/lib/hand-delivery");
+    let addr: { city?: string | null; state?: string | null; cep?: string | null } | null = input.address ?? null;
+    if (!addr) {
+      const { data: saved } = await supabaseAdmin.from("addresses").select("city, state, cep")
+        .eq("user_id", input.userId).order("is_default", { ascending: false }).limit(1).maybeSingle();
+      addr = saved ?? null;
+    }
+    if (!isHandDeliveryArea(addr)) throw new Error(HAND_DELIVERY_AREA_MESSAGE);
     amountCents = 0;
   } else if (input.method === "evento") {
     if (!input.eventId || !input.eventAt) throw new Error("Escolha o evento, o dia e o horário da retirada.");
