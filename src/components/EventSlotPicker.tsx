@@ -63,7 +63,9 @@ export function EventSlotPicker({ events, value, onChange }: Props) {
   const dayEvents = dayKey ? (byDay.get(dayKey) ?? []) : [];
   const openEvents = dayEvents.filter((e) => !isEventDayClosed(e, dayKey!, now));
   const selectedEvent = value ? events.find((e) => e.id === value.eventId) ?? null : null;
-  const activeEvent = selectedEvent && dayKey && eventDays(selectedEvent).includes(dayKey) ? selectedEvent : openEvents[0] ?? null;
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const pickedEvent = pickedId ? openEvents.find((e) => e.id === pickedId) ?? null : null;
+  const activeEvent = pickedEvent ?? (selectedEvent && dayKey && eventDays(selectedEvent).includes(dayKey) ? selectedEvent : openEvents[0] ?? null);
 
   if (events.length === 0 || !firstOpenDay) {
     return (
@@ -111,7 +113,7 @@ export function EventSlotPicker({ events, value, onChange }: Props) {
                       <button
                         type="button"
                         disabled={closed}
-                        onClick={() => onChange(null)}
+                        onClick={() => { setPickedId(e.id); onChange(null); }}
                         className={cn(
                           "w-full text-left disabled:opacity-50",
                           active && !closed ? "text-primary" : "",
@@ -130,7 +132,7 @@ export function EventSlotPicker({ events, value, onChange }: Props) {
                             type="radio"
                             name="event-day-choice"
                             checked={active}
-                            onChange={() => onChange(null)}
+                            onChange={() => { setPickedId(e.id); onChange(null); }}
                             readOnly
                           />
                           Retirar neste evento
