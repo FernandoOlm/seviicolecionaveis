@@ -51,6 +51,7 @@ import { Route as AdminLeiloesRouteImport } from './routes/admin.leiloes'
 import { Route as AdminLeiloesWhatsappRouteImport } from './routes/admin.leiloes-whatsapp'
 import { Route as AdminLoyaltyRouteImport } from './routes/admin.loyalty'
 import { Route as AdminManageCardsRouteImport } from './routes/admin.manage-cards'
+import { Route as AdminNotificacoesRouteImport } from './routes/admin.notificacoes'
 import { Route as AdminOfertasRelampagoRouteImport } from './routes/admin.ofertas-relampago'
 import { Route as AdminPanelsRouteImport } from './routes/admin.panels'
 import { Route as AdminPedidoManualRouteImport } from './routes/admin.pedido-manual'
@@ -323,6 +324,11 @@ const AdminLoyaltyRoute = AdminLoyaltyRouteImport.update({
 const AdminManageCardsRoute = AdminManageCardsRouteImport.update({
   id: '/manage-cards',
   path: '/manage-cards',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNotificacoesRoute = AdminNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminOfertasRelampagoRoute = AdminOfertasRelampagoRouteImport.update({
@@ -705,6 +711,7 @@ export interface FileRoutesByFullPath {
   '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
   '/admin/loyalty': typeof AdminLoyaltyRoute
   '/admin/manage-cards': typeof AdminManageCardsRoute
+  '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
   '/admin/pedido-manual': typeof AdminPedidoManualRoute
@@ -809,6 +816,7 @@ export interface FileRoutesByTo {
   '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
   '/admin/loyalty': typeof AdminLoyaltyRoute
   '/admin/manage-cards': typeof AdminManageCardsRoute
+  '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
   '/admin/pedido-manual': typeof AdminPedidoManualRoute
@@ -917,6 +925,7 @@ export interface FileRoutesById {
   '/admin/leiloes-whatsapp': typeof AdminLeiloesWhatsappRoute
   '/admin/loyalty': typeof AdminLoyaltyRoute
   '/admin/manage-cards': typeof AdminManageCardsRoute
+  '/admin/notificacoes': typeof AdminNotificacoesRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
   '/admin/pedido-manual': typeof AdminPedidoManualRoute
@@ -1026,6 +1035,7 @@ export interface FileRouteTypes {
     | '/admin/leiloes-whatsapp'
     | '/admin/loyalty'
     | '/admin/manage-cards'
+    | '/admin/notificacoes'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
     | '/admin/pedido-manual'
@@ -1130,6 +1140,7 @@ export interface FileRouteTypes {
     | '/admin/leiloes-whatsapp'
     | '/admin/loyalty'
     | '/admin/manage-cards'
+    | '/admin/notificacoes'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
     | '/admin/pedido-manual'
@@ -1237,6 +1248,7 @@ export interface FileRouteTypes {
     | '/admin/leiloes-whatsapp'
     | '/admin/loyalty'
     | '/admin/manage-cards'
+    | '/admin/notificacoes'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
     | '/admin/pedido-manual'
@@ -1667,6 +1679,13 @@ declare module '@tanstack/react-router' {
       path: '/manage-cards'
       fullPath: '/admin/manage-cards'
       preLoaderRoute: typeof AdminManageCardsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notificacoes': {
+      id: '/admin/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/admin/notificacoes'
+      preLoaderRoute: typeof AdminNotificacoesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/ofertas-relampago': {
@@ -2130,6 +2149,7 @@ interface AdminRouteChildren {
   AdminLeiloesWhatsappRoute: typeof AdminLeiloesWhatsappRoute
   AdminLoyaltyRoute: typeof AdminLoyaltyRoute
   AdminManageCardsRoute: typeof AdminManageCardsRoute
+  AdminNotificacoesRoute: typeof AdminNotificacoesRoute
   AdminOfertasRelampagoRoute: typeof AdminOfertasRelampagoRoute
   AdminPanelsRoute: typeof AdminPanelsRoute
   AdminPedidoManualRoute: typeof AdminPedidoManualRoute
@@ -2162,6 +2182,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLeiloesWhatsappRoute: AdminLeiloesWhatsappRoute,
   AdminLoyaltyRoute: AdminLoyaltyRoute,
   AdminManageCardsRoute: AdminManageCardsRoute,
+  AdminNotificacoesRoute: AdminNotificacoesRoute,
   AdminOfertasRelampagoRoute: AdminOfertasRelampagoRoute,
   AdminPanelsRoute: AdminPanelsRoute,
   AdminPedidoManualRoute: AdminPedidoManualRoute,

@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminCancellationBell } from "@/components/AdminCancellationBell";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { ChevronRight, ImageOff, Search } from "lucide-react";
+import { FulfillmentFilters, ModalityBadge, matchesFulfillmentFilter, DEFAULT_FULFILLMENT_FILTER } from "@/components/admin/FulfillmentFilters";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { modalityOfOrder } from "@/lib/fulfillment-alerts";
 
 
 
@@ -95,6 +98,8 @@ function AdminPage() {
     );
   };
   const isOrdersRoute = location.pathname === "/admin";
+  const [ff, setFf] = useState(DEFAULT_FULFILLMENT_FILTER);
+  const { unreadTargets } = useAdminNotifications(300);
   const focusId = search.focus;
   const focusRef = useRef<HTMLDivElement>(null);
 
@@ -182,6 +187,7 @@ function AdminPage() {
   const filtered = orders.filter((o) => {
     if (!selectedStatuses.includes(o.status)) return false;
     if (!selectedShippingMethods.includes(o.shipping_method ?? "")) return false;
+    if (!matchesFulfillmentFilter(ff, { id: o.id, modality: modalityOfOrder(o), eventId: o.event_id, scheduledAt: o.scheduled_at }, unreadTargets)) return false;
     const items: any[] = o.order_items ?? [];
 
     if (!query) return true;
@@ -282,6 +288,8 @@ function AdminPage() {
 
 
 
+        <div className="mb-4"><FulfillmentFilters value={ff} onChange={setFf} count={filtered.length} /></div>
+
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
@@ -352,6 +360,7 @@ function AdminPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xs font-mono text-muted-foreground">#{o.id.slice(0, 8)}</p>
                       {o.origin === "manual" && <span className="inline-block rounded bg-foreground text-background px-1.5 py-0.5 text-[10px] font-bold uppercase">Manual</span>}
+                      <ModalityBadge modality={modalityOfOrder(o)} scheduledAt={o.scheduled_at} unread={unreadTargets.has(o.id)} />
                       {o.reschedule_required && <span className="inline-block rounded bg-amber-100 text-amber-900 px-1.5 py-0.5 text-[10px] font-bold">Retirada reaberta</span>}
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${

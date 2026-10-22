@@ -30,6 +30,7 @@ export async function reopenExpiredPickups(now = new Date()) {
       .select("id");
     if (!upd?.length) continue;
     reopened++;
+    await autoReopenAlert(o, "Retirada em mãos", null);
     if (o.email) {
       await sendTransactionalEmailSafe({
         templateName: "pickup-reopened",
@@ -90,6 +91,7 @@ export async function reopenExpiredEventPickups(now = new Date()) {
       .select("id");
     if (!upd?.length) continue;
     reopened++;
+    await autoReopenAlert(o, "Retirada em eventos", (ev as any).name ?? null);
     if (o.email) {
       const when = `${formatYmd((ev as any).start_date)}, ${eventTimeRangeLabel(ev as any)}`;
       await sendTransactionalEmailSafe({
@@ -164,6 +166,22 @@ export async function reschedulePickup(
     .select("*")
     .maybeSingle();
   if (error || !upd) throw new Error("Não foi possível reagendar. Tente novamente.");
-  await sendScheduleConfirmations(upd, `-${at}`).catch((e) => console.error("[reschedule] email", e));
+  const before = o.scheduled_at ? `${o.schedule_kind === "event" ? "Retirada em eventos" : "Retirada em mãos"} — ${formatSchedule("pickup", o.scheduled_at)} (não compareceu)` : null;
+  await sendScheduleConfirmations(upd, `-${at}`, { action: "changed", source: "customer", before }).catch((e) => console.error("[reschedule] email", e));
   return { scheduled_at: at };
+}
+
+/** Reabertura automática: registra alerta no admin (o cliente já recebe o e-mail de reabertura). */
+async function autoReopenAlert(o: any, label: string, eventName: string | null) {
+  try {
+    const { notifyFulfillmentChange } = await import("@/lib/fulfillment-alerts.server");
+    await notifyFulfillmentChange({
+      targetType: "order", targetId: o.id, code: `#${String(o.id).slice(0, 8).toUpperCase()}`,
+      action: "cancelled", source: "auto", modality: o.schedule_kind === "event" ? "event" : "pickup",
+      customerName: o.recipient_name, customerEmail: o.email, scheduledAt: o.scheduled_at,
+      when: formatSchedule("pickup", o.scheduled_at), eventId: o.event_id ?? null, eventName,
+      before: `${label} — ${formatSchedule("pickup", o.scheduled_at)} (não compareceu, retirada reaberta)`,
+      notifyClient: false, notifyStore: false,
+    });
+  } catch (e) { console.error("[pickup-reopen] alert", e); }
 }

@@ -179,8 +179,8 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
     .in("id", input.itemIds);
   if (updErr) throw new Error(updErr.message);
 
-  // TODO Fase 3: notificar admin por e-mail e adicionar contador no sino.
   console.log(`[service-orders] Nova OS #${created.code} criada (${input.method}) — ${items.length} item(s).`);
+  await notifyServiceOrderChoice(created.id).catch((e: unknown) => console.error("[service-orders] alert", e));
 
   // Sem cobrança: já está paga
   if (amountCents === 0) {
@@ -274,3 +274,54 @@ export async function checkServiceOrderStatusServer(serviceOrderId: string, user
   return { status: so.status as string };
 }
 
+
+/** Alerta central para a escolha feita pela Pilha de Cartas (um alerta único listando os pedidos incluídos). */
+export async function notifyServiceOrderChoice(
+  serviceOrderId: string,
+  opts?: { notifyClient?: boolean; source?: "customer" | "admin" | "auto" },
+) {
+  const db = supabaseAdmin as any;
+  const { data: so } = await db.from("service_orders").select("*").eq("id", serviceOrderId).maybeSingle();
+  if (!so) return;
+  const [{ data: its }, { data: userData }, ev] = await Promise.all([
+    db.from("card_stack_items").select("card_name, quantity, order_id").eq("service_order_id", so.id),
+    supabaseAdmin.auth.admin.getUserById(so.user_id),
+    so.event_id ? db.from("events").select("name").eq("id", so.event_id).maybeSingle().then((r: any) => r.data) : Promise.resolve(null),
+  ]);
+  const { data: profile } = await db.from("profiles").select("full_name, phone").eq("user_id", so.user_id).maybeSingle();
+  const { modalityOfServiceOrder } = await import("@/lib/fulfillment-alerts");
+  const { formatSchedule } = await import("@/lib/scheduling");
+  const modality = modalityOfServiceOrder(so.method);
+  const firstLine = typeof so.notes === "string" ? so.notes.split("\n")[0] : "";
+  const location = so.method === "presencial"
+    ? firstLine.replace(/^Retirada presencial:\s*/, "").replace(/\.$/, "")
+    : so.method === "correios"
+    ? [[so.street, so.number].filter(Boolean).join(", "), so.neighborhood, [so.city, so.state].filter(Boolean).join("/")].filter(Boolean).join(" · ")
+    : null;
+  const orderIds = [...new Set((its ?? []).map((i: any) => i.order_id).filter(Boolean))] as string[];
+  const name = profile?.full_name ?? so.recipient_name ?? null;
+  let calendarUrl: string | null = null;
+  if (so.scheduled_at) {
+    const start = new Date(so.scheduled_at);
+    const end = new Date(start.getTime() + 60 * 60_000);
+    const compact = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    calendarUrl = `https://calendar.google.com/calendar/render?${new URLSearchParams({
+      action: "TEMPLATE", text: `Retirada em eventos · OS #${so.code} · ${name ?? "Cliente"}`,
+      dates: `${compact(start)}/${compact(end)}`, ctz: "America/Maceio", location: ev?.name ?? "",
+      details: `OS Pilha #${so.code}\nhttps://seviicolecionaveis.com.br/admin/pilha`,
+    }).toString()}`;
+  }
+  const { notifyFulfillmentChange } = await import("@/lib/fulfillment-alerts.server");
+  await notifyFulfillmentChange({
+    targetType: "service_order", targetId: so.id, code: `OS #${so.code}`,
+    action: "defined", source: opts?.source ?? "customer", modality,
+    customerName: name, customerEmail: userData?.user?.email ?? null,
+    customerPhone: so.phone ?? profile?.phone ?? null,
+    scheduledAt: so.scheduled_at ?? null, when: so.scheduled_at ? formatSchedule("pickup", so.scheduled_at) : null,
+    eventId: so.event_id ?? null, eventName: ev?.name ?? null, location,
+    fee: so.method === "app" ? "R$ 15,00 (combinar via WhatsApp)" : so.amount_cents > 0 ? `R$ ${(so.amount_cents / 100).toFixed(2).replace(".", ",")}` : null,
+    items: (its ?? []).map((i: any) => `${i.quantity}× ${i.card_name}`),
+    relatedOrders: orderIds.map((id) => `#${id.slice(0, 8).toUpperCase()}`),
+    calendarUrl, notifyClient: opts?.notifyClient,
+  });
+}

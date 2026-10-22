@@ -4,6 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ImageOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { FulfillmentFilters, ModalityBadge, matchesFulfillmentFilter, DEFAULT_FULFILLMENT_FILTER } from "@/components/admin/FulfillmentFilters";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { modalityOfServiceOrder, type Modality } from "@/lib/fulfillment-alerts";
 import { supabase } from "@/integrations/supabase/client";
 import { adminUpdateServiceOrder, adminRestoreItemToStack, adminCheckServiceOrderPayment } from "@/lib/service-orders-admin.functions";
 import {
@@ -231,13 +234,31 @@ function AdminPilhaPage() {
   const toggleOSStatus = (s: string) =>
     setSelectedOSStatuses((curr) => (curr.includes(s) ? curr.filter((x) => x !== s) : [...curr, s]));
 
+  const [ff, setFf] = useState(DEFAULT_FULFILLMENT_FILTER);
+  const { unreadTargets } = useAdminNotifications(300);
   const filteredServiceOrders = useMemo(
-    () => data.serviceOrders.filter((o) => selectedOSStatuses.includes(o.status)),
-    [data.serviceOrders, selectedOSStatuses],
+    () => data.serviceOrders.filter((o) => selectedOSStatuses.includes(o.status) &&
+      matchesFulfillmentFilter(ff, { id: o.id, modality: modalityOfServiceOrder(o.method), eventId: (o as any).event_id, scheduledAt: (o as any).scheduled_at }, unreadTargets)),
+    [data.serviceOrders, selectedOSStatuses, ff, unreadTargets],
   );
+  // Pilhas que já escolheram a modalidade e aguardam ação da loja (OS paga ou em preparação).
+  const pendingOSByStack = useMemo(() => {
+    const m = new Map<string, AdminServiceOrder>();
+    for (const o of data.serviceOrders) {
+      const sid = (o as any).stack_id as string | undefined;
+      if (sid && ["paid", "preparing", "awaiting_payment"].includes(o.status) && !m.has(sid)) m.set(sid, o);
+    }
+    return m;
+  }, [data.serviceOrders]);
+  const stackRow = (s: AdminStack) => {
+    const so = pendingOSByStack.get(s.id);
+    const modality: Modality = so ? modalityOfServiceOrder(so.method) : "none";
+    return { id: so?.id ?? s.id, modality, eventId: (so as any)?.event_id ?? null, scheduledAt: (so as any)?.scheduled_at ?? null };
+  };
   const visibleStacks = useMemo(
-    () => (showEmptyStacks ? data.stacks : data.stacks.filter((s) => s.items.length > 0)),
-    [data.stacks, showEmptyStacks],
+    () => (showEmptyStacks ? data.stacks : data.stacks.filter((s) => s.items.length > 0))
+      .filter((s) => matchesFulfillmentFilter(ff, stackRow(s), unreadTargets)),
+    [data.stacks, showEmptyStacks, ff, unreadTargets, pendingOSByStack],
   );
   const hiddenEmptyCount = data.stacks.length - data.stacks.filter((s) => s.items.length > 0).length;
 
@@ -478,6 +499,8 @@ function AdminPilhaPage() {
 
 
 
+        <FulfillmentFilters value={ff} onChange={setFf} count={tab === "orders" ? filteredServiceOrders.length : visibleStacks.length} />
+
         {loading ? (
           <p className="text-sm text-muted-foreground">Carregando...</p>
         ) : tab === "orders" ? (
@@ -537,6 +560,7 @@ function AdminPilhaPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-xs text-muted-foreground font-mono">OS #{o.code}</p>
+                            <ModalityBadge modality={modalityOfServiceOrder(o.method)} scheduledAt={(o as any).scheduled_at} unread={unreadTargets.has(o.id)} />
                             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${STATUS_STYLE[o.status] ?? "bg-secondary"}`}>
                               {STATUS_LABEL[o.status] ?? o.status}
                             </span>
@@ -743,9 +767,18 @@ function AdminPilhaPage() {
                 <div
                   key={s.id}
                   className={`rounded-xl border bg-card overflow-hidden ${
-                    crit ? "border-red-400" : warn ? "border-orange-400" : "border-border"
+                    pendingOSByStack.has(s.id) ? "border-primary ring-2 ring-primary/30" : crit ? "border-red-400" : warn ? "border-orange-400" : "border-border"
                   }`}
                 >
+                  {pendingOSByStack.has(s.id) && (() => {
+                    const so = pendingOSByStack.get(s.id)!;
+                    return (
+                      <div className="flex flex-wrap items-center gap-2 bg-primary/10 px-5 py-2 text-xs font-semibold">
+                        Modalidade escolhida — aguardando a loja (OS #{so.code})
+                        <ModalityBadge modality={modalityOfServiceOrder(so.method)} scheduledAt={(so as any).scheduled_at} unread={unreadTargets.has(so.id)} />
+                      </div>
+                    );
+                  })()}
                   <div className="p-5">
                     <div className="flex flex-wrap justify-between gap-3">
                       <div className="min-w-0">
