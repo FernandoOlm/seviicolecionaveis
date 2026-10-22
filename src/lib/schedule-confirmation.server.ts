@@ -2,10 +2,10 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendTransactionalEmailSafe } from "@/lib/email/send.server";
 import { scheduleConfirmationData, SCHEDULE_EMAIL_SETTING, type ScheduledOrder } from "./schedule-confirmation";
 
-export async function sendScheduleConfirmations(order: ScheduledOrder, keySuffix = "") {
+export async function sendScheduleConfirmations(order: ScheduledOrder, keySuffix = "", opts?: { skipClient?: boolean }) {
   const data = scheduleConfirmationData(order);
   if (!data) return;
-  if (order.email) await sendTransactionalEmailSafe({
+  if (order.email && !opts?.skipClient) await sendTransactionalEmailSafe({
     templateName: "schedule-confirmed", recipientEmail: order.email,
     idempotencyKey: `schedule-confirmed-client-${order.id}${keySuffix}`, templateData: { ...data, calendarUrl: undefined },
   });

@@ -115,19 +115,8 @@ async function applyLoyaltyForOrder(orderId: string) {
   }
 }
 
-export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymentIntent?: string; mercadopagoPaymentId?: string }) {
-  const { data: order } = await supabaseAdmin
-    .from("orders")
-    .select("id, status")
-    .eq("id", orderId)
-    .maybeSingle();
-  if (!order) return;
-  if (order.status === "paid") return;
-  // Pedidos que já passaram do pagamento (em preparo, enviado, entregue…) já
-  // tiveram o estoque baixado — nunca baixar de novo.
-  const POST_PAID = PAID_ORDER_STATUSES;
-  if (POST_PAID.includes(order.status)) return;
-
+/** Baixa o estoque dos itens do pedido uma única vez (trava em stock_decremented). */
+export async function decrementOrderStock(orderId: string) {
   // Trava atômica: só um processamento consegue marcar stock_decremented de
   // false -> true. Webhooks repetidos/concorrentes do Mercado Pago não baixam
   // o estoque mais de uma vez.
@@ -263,6 +252,28 @@ export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymen
     }
   }
 
+}
+
+export async function markOrderPaid(
+  orderId: string,
+  paymentRef?: { stripePaymentIntent?: string; mercadopagoPaymentId?: string },
+  opts?: { notifyCustomer?: boolean },
+) {
+  const notifyCustomer = opts?.notifyCustomer !== false;
+  const { data: order } = await supabaseAdmin
+    .from("orders")
+    .select("id, status")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order) return;
+  if (order.status === "paid") return;
+  // Pedidos que já passaram do pagamento (em preparo, enviado, entregue…) já
+  // tiveram o estoque baixado — nunca baixar de novo.
+  const POST_PAID = PAID_ORDER_STATUSES;
+  if (POST_PAID.includes(order.status)) return;
+
+  await decrementOrderStock(orderId);
+
   await supabaseAdmin.from("stock_reservations").delete().eq("order_id", orderId);
 
   await supabaseAdmin
@@ -366,12 +377,12 @@ export async function markOrderPaid(orderId: string, paymentRef?: { stripePaymen
   }
 
   if (full?.scheduled_at) {
-    try { await sendScheduleConfirmations(full); }
+    try { await sendScheduleConfirmations(full, "", { skipClient: !notifyCustomer }); }
     catch (error) { console.error("[markOrderPaid] schedule confirmation failed", error); }
   }
 
   if (full?.email) {
-    if (!full.scheduled_at) await sendTransactionalEmailSafe({
+    if (!full.scheduled_at && notifyCustomer) await sendTransactionalEmailSafe({
       templateName: "payment-confirmed",
       recipientEmail: full.email,
       idempotencyKey: `payment-confirmed-${full.id}`,
