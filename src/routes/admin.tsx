@@ -27,7 +27,7 @@ export const Route = createFileRoute("/admin")({
 const STATUSES = ORDER_STATUSES;
 const STATUS_LABEL = ORDER_STATUS_LABELS;
 
-const SHIPPING_METHODS = ["fixed", "arrange", "card_stack", "arte_em_cards", "presencial", "superfrete", "delivery_app"] as const;
+const SHIPPING_METHODS = ["fixed", "arrange", "card_stack", "arte_em_cards", "presencial", "superfrete", "delivery_app", "to_define"] as const;
 const SHIPPING_METHOD_LABEL: Record<string, string> = {
   fixed: "Frete fixo",
   superfrete: "SuperFrete",
@@ -36,6 +36,7 @@ const SHIPPING_METHOD_LABEL: Record<string, string> = {
   presencial: "Retirada presencial",
   arrange: "Envio a combinar",
   delivery_app: "Aplicativo de entrega",
+  to_define: "Definir depois",
 };
 
 function AdminPage() {
@@ -60,7 +61,7 @@ function AdminPage() {
 
   const [selectedShippingMethods, setSelectedShippingMethods] = useState<string[]>(() => {
     if (typeof window === "undefined") return [...SHIPPING_METHODS];
-    const raw = localStorage.getItem("admin-orders-shipping-filter");
+    const raw = localStorage.getItem("admin-orders-shipping-filter-v2");
     if (!raw) return [...SHIPPING_METHODS];
     try {
       const parsed = JSON.parse(raw);
@@ -78,7 +79,7 @@ function AdminPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("admin-orders-shipping-filter", JSON.stringify(selectedShippingMethods));
+      localStorage.setItem("admin-orders-shipping-filter-v2", JSON.stringify(selectedShippingMethods));
     }
   }, [selectedShippingMethods]);
 
@@ -204,7 +205,10 @@ function AdminPage() {
       <main className="mx-auto max-w-6xl px-4 py-8">
 
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
-          <h1 className="text-2xl font-bold">Pedidos ({filtered.length})</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold">Pedidos ({filtered.length})</h1>
+            <Link to="/admin/pedido-manual" className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90">Novo pedido manual</Link>
+          </div>
           <div className="flex flex-wrap gap-3">
             <div className="rounded-lg border border-border bg-card p-3">
               <div className="flex items-center justify-between gap-3 mb-2">
@@ -347,6 +351,7 @@ function AdminPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xs font-mono text-muted-foreground">#{o.id.slice(0, 8)}</p>
+                      {o.origin === "manual" && <span className="inline-block rounded bg-foreground text-background px-1.5 py-0.5 text-[10px] font-bold uppercase">Manual</span>}
                       {o.reschedule_required && <span className="inline-block rounded bg-amber-100 text-amber-900 px-1.5 py-0.5 text-[10px] font-bold">Retirada reaberta</span>}
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${

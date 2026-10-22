@@ -1,3 +1,4 @@
+import { MANUAL_PAYMENT_METHODS } from "@/lib/manual-order";
 import { ORDER_STATUS_LABELS, canBuyerConfirmReceipt } from "@/lib/order-status";
 import { BuyerReceiptConfirmation } from "@/components/BuyerReceiptConfirmation";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -469,7 +470,7 @@ function OrderDetailPage() {
                   ? "Cartão de crédito (Stripe)"
                   : order.payment_method === "mercadopago_card"
                     ? "Cartão de crédito (Mercado Pago)"
-                    : order.payment_method ?? "A definir"}
+                    : MANUAL_PAYMENT_METHODS[order.payment_method as keyof typeof MANUAL_PAYMENT_METHODS] ?? order.payment_method ?? "A definir"}
             </span>
           </div>
         </section>

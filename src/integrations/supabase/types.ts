@@ -1357,6 +1357,38 @@ export type Database = {
         }
         Relationships: []
       }
+      order_admin_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          internal_notes: string | null
+          order_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          internal_notes?: string | null
+          order_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          internal_notes?: string | null
+          order_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_admin_notes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           cancelled_at: string | null
@@ -1460,12 +1492,19 @@ export type Database = {
           event_id: string | null
           hand_delivery_fee_status: string | null
           id: string
+          manual_adjustments: Json
+          manual_created_at: string | null
+          manual_created_by: string | null
+          manual_created_by_email: string | null
+          manual_source: string | null
           mercadopago_payment_id: string | null
           neighborhood: string
           notes: string | null
           number: string
           origin: string
           payment_method: string
+          payment_note: string | null
+          payment_paid_at: string | null
           phone: string | null
           pix_discount_cents: number
           pix_expires_at: string | null
@@ -1526,12 +1565,19 @@ export type Database = {
           event_id?: string | null
           hand_delivery_fee_status?: string | null
           id?: string
+          manual_adjustments?: Json
+          manual_created_at?: string | null
+          manual_created_by?: string | null
+          manual_created_by_email?: string | null
+          manual_source?: string | null
           mercadopago_payment_id?: string | null
           neighborhood: string
           notes?: string | null
           number: string
           origin?: string
           payment_method?: string
+          payment_note?: string | null
+          payment_paid_at?: string | null
           phone?: string | null
           pix_discount_cents?: number
           pix_expires_at?: string | null
@@ -1592,12 +1638,19 @@ export type Database = {
           event_id?: string | null
           hand_delivery_fee_status?: string | null
           id?: string
+          manual_adjustments?: Json
+          manual_created_at?: string | null
+          manual_created_by?: string | null
+          manual_created_by_email?: string | null
+          manual_source?: string | null
           mercadopago_payment_id?: string | null
           neighborhood?: string
           notes?: string | null
           number?: string
           origin?: string
           payment_method?: string
+          payment_note?: string | null
+          payment_paid_at?: string | null
           phone?: string | null
           pix_discount_cents?: number
           pix_expires_at?: string | null

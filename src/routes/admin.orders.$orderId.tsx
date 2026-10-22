@@ -1,3 +1,4 @@
+import { MANUAL_PAYMENT_METHODS, MANUAL_SOURCES } from "@/lib/manual-order";
 import { ORDER_STATUSES, ORDER_STATUS_LABELS, PAID_ORDER_STATUSES } from "@/lib/order-status";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { formatSchedule } from "@/lib/scheduling";
@@ -47,9 +48,12 @@ const SHIPPING_METHOD_LABEL: Record<string, string> = {
   evento: "Retirada em evento",
   combinar: "Envio a combinar",
   delivery_app: "Aplicativo de entrega",
+  arrange: "Envio a combinar",
+  to_define: "Definir depois",
 };
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  ...MANUAL_PAYMENT_METHODS,
   pix: "Pix",
   mercadopago_card: "Cartão de crédito (Mercado Pago)",
   mercadopago_pix: "Pix (Mercado Pago)",
@@ -71,6 +75,7 @@ function AdminOrderDetailPage() {
   const [stackedItemIds, setStackedItemIds] = useState<Set<string>>(new Set());
   const [selectedForStack, setSelectedForStack] = useState<Record<string, number>>({});
   const [sendingToStack, setSendingToStack] = useState(false);
+  const [internalNotes, setInternalNotes] = useState<string | null>(null);
   const addItemsToStackFn = useServerFn(adminAddOrderItemsToStack);
 
   useEffect(() => {
@@ -84,6 +89,10 @@ function AdminOrderDetailPage() {
       .eq("id", orderId)
       .maybeSingle();
     setOrder(data);
+    if (data?.origin === "manual") {
+      const { data: n } = await (supabase as any).from("order_admin_notes").select("internal_notes").eq("order_id", orderId).maybeSingle();
+      setInternalNotes(n?.internal_notes ?? null);
+    }
     if (data?.coupon_code) {
       const { data: c } = await supabase
         .from("coupons")
@@ -301,6 +310,17 @@ function AdminOrderDetailPage() {
               <p className="text-xs text-muted-foreground mt-1">
                 {new Date(order.created_at).toLocaleString("pt-BR")}
               </p>
+              {order.origin === "manual" && (
+                <div className="mt-3 rounded-md border border-border bg-secondary/40 p-3 text-xs space-y-1">
+                  <p><span className="inline-block rounded bg-foreground text-background px-1.5 py-0.5 text-[10px] font-bold uppercase mr-2">Manual</span>
+                    Criado por {order.manual_created_by_email ?? "admin"} em {new Date(order.manual_created_at ?? order.created_at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })} (Fortaleza)</p>
+                  {order.manual_source && <p>Origem: {MANUAL_SOURCES[order.manual_source as keyof typeof MANUAL_SOURCES] ?? order.manual_source}</p>}
+                  <p>Pagamento: {order.manual_adjustments?.payment_status === "pending" ? "Pendente" : "Pago"}{order.payment_paid_at ? ` em ${new Date(order.payment_paid_at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}` : ""}{order.payment_note ? ` — ${order.payment_note}` : ""}</p>
+                  {order.manual_adjustments?.discount?.cents > 0 && <p>Desconto: {fmtBRL(order.manual_adjustments.discount.cents)}{order.manual_adjustments.discount.reason ? ` — ${order.manual_adjustments.discount.reason}` : ""}</p>}
+                  {order.manual_adjustments?.surcharge?.cents > 0 && <p>Acréscimo: {fmtBRL(order.manual_adjustments.surcharge.cents)}{order.manual_adjustments.surcharge.reason ? ` — ${order.manual_adjustments.surcharge.reason}` : ""}</p>}
+                  {internalNotes && <p className="whitespace-pre-wrap"><span className="font-semibold">Observações internas:</span> {internalNotes}</p>}
+                </div>
+              )}
               {order.buyer_received_at && (
                 <div className="mt-3 text-xs text-muted-foreground space-y-1">
                   <p className="font-medium text-foreground">Recebimento confirmado pelo comprador</p>
