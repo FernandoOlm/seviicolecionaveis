@@ -14,6 +14,7 @@ import { GlobalHeaderActions } from "@/components/GlobalHeaderActions";
 import { CompareBar } from "@/components/CompareBar";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { SitePopups } from "@/components/SitePopups";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -160,6 +161,7 @@ function RootComponent() {
             <CompareBar />
             <PwaInstallBanner />
             <SitePopups />
+            <Toaster />
         </CartProvider>
       </WishlistProvider>
     </AuthProvider>
