@@ -166,7 +166,13 @@ function CheckoutPage() {
   const [stackTermsAccepted, setStackTermsAccepted] = useState(false);
   const [stackTermsOpen, setStackTermsOpen] = useState(false);
   const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | "app" | "evento" | null>(null);
-  const [form_city_state_placeholder] = [null];
+  const handDeliveryEligible = isHandDeliveryArea({ city: form.city, state: form.state, cep: form.cep });
+  useEffect(() => {
+    if (!handDeliveryEligible && pickupPoint === "app") {
+      setPickupPoint(null);
+      toast.warning(HAND_DELIVERY_AREA_MESSAGE);
+    }
+  }, [handDeliveryEligible, pickupPoint]);
   const [eventSel, setEventSel] = useState<EventSelection | null>(null);
   const [pickupEvents, setPickupEvents] = useState<PickupEvent[]>([]);
   const [scheduleAt, setScheduleAt] = useState<string | null>(null);
