@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
@@ -15,6 +15,9 @@ import {
   updateEvent,
 } from "@/lib/events.functions";
 import { notifyEventOrders } from "@/lib/event-notify.functions";
+import { AddEventOrderPanel, EventSlotChooser } from "@/components/admin/EventOrdersTools";
+import { canAddToEvent, EVENT_BLOCKED_MESSAGE } from "@/lib/event-hub";
+import { markEventOrderDeliveredFn, removeOrderFromEventFn, rescheduleEventOrderFn } from "@/lib/event-hub.functions";
 import { eventDays, eventTimeRangeLabel, formatYmd, type PickupEvent } from "@/lib/events";
 import { ORDER_STATUS_LABELS } from "@/lib/order-status";
 import { localParts } from "@/lib/scheduling";
@@ -109,6 +112,22 @@ function EventosAdminPage() {
   const listOrdersFn = useServerFn(listEventOrders);
   const flagFn = useServerFn(flagOutOfRangeEventOrders);
   const notifyFn = useServerFn(notifyEventOrders);
+  const [adding, setAdding] = useState(false);
+  const [moving, setMoving] = useState<{ id: string; at: string | null } | null>(null);
+  const [rowBusy, setRowBusy] = useState<string | null>(null);
+  const rescheduleFn = useServerFn(rescheduleEventOrderFn);
+  const removeFn = useServerFn(removeOrderFromEventFn);
+  const deliveredFn = useServerFn(markEventOrderDeliveredFn);
+  const reloadOrders = async () => {
+    if (!selected) return;
+    setOrders(await listOrdersFn({ data: { eventId: selected.id, includeFinished: true } }));
+  };
+  const rowAction = async (id: string, fn: () => Promise<unknown>, ok: string) => {
+    setRowBusy(id);
+    try { await fn(); toast.success(ok); await reloadOrders(); }
+    catch (e: any) { toast.error(e?.message ?? "Não foi possível concluir."); }
+    finally { setRowBusy(null); }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -466,6 +485,11 @@ function EventosAdminPage() {
                 </p>
               </div>
               <div className="flex gap-2">
+                <button type="button"
+                  onClick={() => (canAddToEvent(selected) ? setAdding(true) : toast.error(EVENT_BLOCKED_MESSAGE))}
+                  className="rounded-md bg-foreground px-3 py-1.5 text-xs font-semibold text-background hover:opacity-90">
+                  + Adicionar pedido
+                </button>
                 <button type="button" onClick={() => window.print()} className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary">
                   🖨️ Imprimir
                 </button>
@@ -481,6 +505,13 @@ function EventosAdminPage() {
                 {selected.end_date !== selected.start_date ? ` a ${formatYmd(selected.end_date)}` : ""} · {eventTimeRangeLabel(selected)}
               </p>
             </div>
+            <p className="mb-3 text-xs font-semibold">
+              {orders.length} pedido(s) · {orders.reduce((a, o) => a + o.itemCount, 0)} item(ns)
+            </p>
+            {adding && (
+              <AddEventOrderPanel event={selected} orders={orders} onClose={() => setAdding(false)}
+                onDone={async () => { setAdding(false); await reloadOrders(); }} />
+            )}
             {ordersLoading ? (
               <p className="text-sm text-muted-foreground">Carregando pedidos...</p>
             ) : orders.length === 0 ? (
@@ -493,11 +524,14 @@ function EventosAdminPage() {
                     <th className="py-1.5 pr-2">Cliente</th>
                     <th className="py-1.5 pr-2">Retirada</th>
                     <th className="py-1.5 pr-2">Status</th>
+                    <th className="py-1.5 pr-2 print:hidden">Ações</th>
+                    <th className="hidden py-1.5 pr-2 print:table-cell">Entregue</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((o) => (
-                    <tr key={o.id} className="border-b border-border/50">
+                  {[...orders].sort((a, b) => (a.scheduledAt ?? "").localeCompare(b.scheduledAt ?? "")).map((o) => (
+                    <Fragment key={o.id}>
+                    <tr className="border-b border-border/50">
                       <td className="py-1.5 pr-2 font-mono">
                         <Link to="/admin/orders/$orderId" params={{ orderId: o.id }} className="underline">
                           #{o.code}
@@ -508,10 +542,37 @@ function EventosAdminPage() {
                         {o.scheduledAt
                           ? `${formatYmd(localParts(o.scheduledAt).ymd)} às ${localParts(o.scheduledAt).time}`
                           : "—"}
+                        {o.manual && <span className="ml-1 rounded bg-secondary px-1 font-semibold">Adicionado manualmente</span>}
                         {o.rescheduleRequired && <span className="ml-1 rounded bg-amber-100 px-1 text-amber-800">Reagendamento necessário</span>}
                       </td>
                       <td className="py-1.5 pr-2">{ORDER_STATUS_LABELS[o.status as keyof typeof ORDER_STATUS_LABELS] ?? o.status}</td>
+                      <td className="py-1.5 pr-2 print:hidden">
+                        {!["delivered", "cancelled", "refunded"].includes(o.status) && (
+                          <div className="flex flex-wrap gap-1">
+                            <button type="button" disabled={rowBusy === o.id} onClick={() => setMoving({ id: o.id, at: o.scheduledAt })} className="rounded border border-border px-1.5 py-0.5 hover:bg-secondary">Alterar horário</button>
+                            <button type="button" disabled={rowBusy === o.id}
+                              onClick={() => window.confirm(`Remover #${o.code} do evento? O pedido volta para a modalidade anterior.`) && rowAction(o.id, () => removeFn({ data: { eventId: selected.id, orderId: o.id } }), "Pedido removido do evento.")}
+                              className="rounded border border-border px-1.5 py-0.5 hover:bg-secondary">Remover do evento</button>
+                            <button type="button" disabled={rowBusy === o.id}
+                              onClick={() => window.confirm(`Marcar #${o.code} como Entregue?`) && rowAction(o.id, () => deliveredFn({ data: { eventId: selected.id, orderId: o.id } }), "Pedido marcado como entregue.")}
+                              className="rounded bg-foreground px-1.5 py-0.5 text-background">Entregue</button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="hidden py-1.5 pr-2 print:table-cell"><span className="inline-block h-4 w-4 border border-foreground" /></td>
                     </tr>
+                    {moving?.id === o.id && (
+                      <tr className="print:hidden"><td colSpan={6} className="py-2">
+                        <EventSlotChooser event={selected} orders={orders} value={moving.at} onChange={(at) => setMoving({ id: o.id, at })} />
+                        <div className="mt-2 flex gap-2">
+                          <button type="button" onClick={() => setMoving(null)} className="rounded border border-border px-2 py-1">Cancelar</button>
+                          <button type="button" disabled={!moving.at || rowBusy === o.id}
+                            onClick={() => moving.at && rowAction(o.id, () => rescheduleFn({ data: { eventId: selected.id, orderId: o.id, at: moving.at!, notifyClient: true } }), "Horário alterado.").then(() => setMoving(null))}
+                            className="rounded bg-foreground px-2 py-1 text-background">Salvar horário</button>
+                        </div>
+                      </td></tr>
+                    )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

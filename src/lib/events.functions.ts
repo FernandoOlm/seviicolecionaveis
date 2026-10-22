@@ -139,7 +139,7 @@ export const listEventOrders = createServerFn({ method: "POST" })
     await requireAdmin(context);
     let q = context.supabase
       .from("orders")
-      .select("id, recipient_name, email, status, scheduled_at, schedule_kind, reschedule_required, total_cents, created_at")
+      .select("id, recipient_name, email, status, scheduled_at, schedule_kind, reschedule_required, total_cents, created_at, event_added_manually_at, order_items(quantity)")
       .eq("event_id", data.eventId)
       .order("scheduled_at", { ascending: true });
     if (!data.includeFinished) q = q.not("status", "in", '("delivered","cancelled")');
@@ -154,6 +154,8 @@ export const listEventOrders = createServerFn({ method: "POST" })
       scheduledAt: o.scheduled_at as string | null,
       rescheduleRequired: !!o.reschedule_required,
       totalCents: o.total_cents as number,
+      manual: !!o.event_added_manually_at,
+      itemCount: ((o.order_items ?? []) as Array<{ quantity: number }>).reduce((a, i) => a + (i.quantity ?? 0), 0),
     }));
   });
 

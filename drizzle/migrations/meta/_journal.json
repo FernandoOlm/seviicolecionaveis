@@ -57,6 +57,13 @@
       "when": 1792685567843,
       "tag": "0007_admin_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792686610572,
+      "tag": "0008_event_hub_manual_orders",
+      "breakpoints": true
     }
   ]
 }
