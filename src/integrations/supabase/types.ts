@@ -1445,6 +1445,8 @@ export type Database = {
           arte_em_cards_code: string | null
           auction_id: string | null
           bundle_discount_cents: number
+          buyer_received_at: string | null
+          buyer_received_by: string | null
           carrier: string | null
           cep: string
           city: string
@@ -1507,6 +1509,8 @@ export type Database = {
           arte_em_cards_code?: string | null
           auction_id?: string | null
           bundle_discount_cents?: number
+          buyer_received_at?: string | null
+          buyer_received_by?: string | null
           carrier?: string | null
           cep: string
           city: string
@@ -1569,6 +1573,8 @@ export type Database = {
           arte_em_cards_code?: string | null
           auction_id?: string | null
           bundle_discount_cents?: number
+          buyer_received_at?: string | null
+          buyer_received_by?: string | null
           carrier?: string | null
           cep?: string
           city?: string
@@ -2672,6 +2678,7 @@ export type Database = {
         }[]
       }
       clear_event_reserved: { Args: never; Returns: number }
+      confirm_order_receipt: { Args: { _order_id: string }; Returns: Json }
       expire_old_loyalty_points: { Args: never; Returns: number }
       find_user_by_phone: { Args: { _digits: string }; Returns: string }
       has_role: {
