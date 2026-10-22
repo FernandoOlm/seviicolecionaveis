@@ -80,7 +80,7 @@ export async function adminEditOrderShipping(
   admin: { id: string; email: string | null },
   orderId: string,
   input: AdminShippingInput,
-  opts: { notifyClient: boolean; applyToStack: boolean },
+  opts: { notifyClient: boolean; applyToStack: boolean; allowAnyMode?: boolean },
 ) {
   const err = validateAdminShippingInput(input);
   if (err) throw new Error(err);
@@ -88,7 +88,7 @@ export async function adminEditOrderShipping(
   const now = new Date();
   const { data: o } = await db.from("orders").select("*").eq("id", orderId).maybeSingle();
   if (!o) throw new Error("Pedido não encontrado.");
-  if (!canAdminEditShipping(o)) throw new Error("Este pedido não permite editar envio/retirada.");
+  if (!opts.allowAnyMode && !canAdminEditShipping(o)) throw new Error("Este pedido não permite editar envio/retirada.");
 
   let ev: PickupEvent | null = null;
   if (input.mode === "event") {
