@@ -20,6 +20,7 @@ import { template as pickupReopenedTemplate } from './pickup-reopened'
 import { template as scheduleConfirmedTemplate } from './schedule-confirmed'
 import { template as eventChangedTemplate } from './event-changed'
 import { template as buyerReceiptConfirmedTemplate } from './buyer-receipt-confirmed'
+import { template as handDeliveryFeeConfirmedTemplate } from './hand-delivery-fee-confirmed'
 import { template as fulfillmentUpdateTemplate } from './fulfillment-update'
 
 export interface TemplateEntry {
@@ -57,5 +58,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'schedule-confirmed': scheduleConfirmedTemplate,
   'event-changed': eventChangedTemplate,
   'buyer-receipt-confirmed': buyerReceiptConfirmedTemplate,
+  'hand-delivery-fee-confirmed': handDeliveryFeeConfirmedTemplate,
   'fulfillment-update': fulfillmentUpdateTemplate,
 }
