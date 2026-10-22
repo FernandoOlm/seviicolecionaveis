@@ -318,6 +318,7 @@ export type Database = {
         Row: {
           auction_id: string
           bid_increment: number
+          block_number: number
           buyout_price: number | null
           created_at: string
           description: string | null
@@ -336,6 +337,7 @@ export type Database = {
         Insert: {
           auction_id: string
           bid_increment?: number
+          block_number?: number
           buyout_price?: number | null
           created_at?: string
           description?: string | null
@@ -354,6 +356,7 @@ export type Database = {
         Update: {
           auction_id?: string
           bid_increment?: number
+          block_number?: number
           buyout_price?: number | null
           created_at?: string
           description?: string | null
@@ -426,12 +429,15 @@ export type Database = {
       auctions: {
         Row: {
           auction_number: number
+          block_actions: Json
+          block_delay_seconds: number
           closed_at: string | null
           closing_message: string | null
           created_at: string
           description: string | null
           group_jid: string
           id: string
+          item_delay_seconds: number
           scheduled_end: string
           scheduled_start: string
           status: string
@@ -440,12 +446,15 @@ export type Database = {
         }
         Insert: {
           auction_number?: number
+          block_actions?: Json
+          block_delay_seconds?: number
           closed_at?: string | null
           closing_message?: string | null
           created_at?: string
           description?: string | null
           group_jid: string
           id?: string
+          item_delay_seconds?: number
           scheduled_end: string
           scheduled_start: string
           status?: string
@@ -454,12 +463,15 @@ export type Database = {
         }
         Update: {
           auction_number?: number
+          block_actions?: Json
+          block_delay_seconds?: number
           closed_at?: string | null
           closing_message?: string | null
           created_at?: string
           description?: string | null
           group_jid?: string
           id?: string
+          item_delay_seconds?: number
           scheduled_end?: string
           scheduled_start?: string
           status?: string
