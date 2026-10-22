@@ -257,7 +257,7 @@ export async function decrementOrderStock(orderId: string) {
 export async function markOrderPaid(
   orderId: string,
   paymentRef?: { stripePaymentIntent?: string; mercadopagoPaymentId?: string },
-  opts?: { notifyCustomer?: boolean },
+  opts?: { notifyCustomer?: boolean; skipShippingLabel?: boolean },
 ) {
   const notifyCustomer = opts?.notifyCustomer !== false;
   const { data: order } = await supabaseAdmin
@@ -334,7 +334,7 @@ export async function markOrderPaid(
     } catch (e) {
       console.error("[markOrderPaid] addOrderToStack falhou:", e);
     }
-  } else {
+  } else if (!opts?.skipShippingLabel) {
     // Compra etiqueta Superfrete automaticamente (best-effort)
     try {
       const { purchaseShippingLabel } = await import("@/lib/superfrete-label.server");
