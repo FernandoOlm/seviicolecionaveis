@@ -179,8 +179,8 @@ export async function createServiceOrderServer(input: CreateServiceOrderInput): 
     .in("id", input.itemIds);
   if (updErr) throw new Error(updErr.message);
 
-  // TODO Fase 3: notificar admin por e-mail e adicionar contador no sino.
   console.log(`[service-orders] Nova OS #${created.code} criada (${input.method}) — ${items.length} item(s).`);
+  await notifyServiceOrderChoice(created.id).catch((e) => console.error("[service-orders] alert", e));
 
   // Sem cobrança: já está paga
   if (amountCents === 0) {
