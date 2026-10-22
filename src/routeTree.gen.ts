@@ -53,6 +53,7 @@ import { Route as AdminLoyaltyRouteImport } from './routes/admin.loyalty'
 import { Route as AdminManageCardsRouteImport } from './routes/admin.manage-cards'
 import { Route as AdminOfertasRelampagoRouteImport } from './routes/admin.ofertas-relampago'
 import { Route as AdminPanelsRouteImport } from './routes/admin.panels'
+import { Route as AdminPedidoManualRouteImport } from './routes/admin.pedido-manual'
 import { Route as AdminPilhaRouteImport } from './routes/admin.pilha'
 import { Route as AdminPopupsRouteImport } from './routes/admin.popups'
 import { Route as AdminPreVendaRouteImport } from './routes/admin.pre-venda'
@@ -332,6 +333,11 @@ const AdminOfertasRelampagoRoute = AdminOfertasRelampagoRouteImport.update({
 const AdminPanelsRoute = AdminPanelsRouteImport.update({
   id: '/panels',
   path: '/panels',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPedidoManualRoute = AdminPedidoManualRouteImport.update({
+  id: '/pedido-manual',
+  path: '/pedido-manual',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPilhaRoute = AdminPilhaRouteImport.update({
@@ -701,6 +707,7 @@ export interface FileRoutesByFullPath {
   '/admin/manage-cards': typeof AdminManageCardsRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
+  '/admin/pedido-manual': typeof AdminPedidoManualRoute
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
   '/admin/pre-venda': typeof AdminPreVendaRoute
@@ -804,6 +811,7 @@ export interface FileRoutesByTo {
   '/admin/manage-cards': typeof AdminManageCardsRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
+  '/admin/pedido-manual': typeof AdminPedidoManualRoute
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
   '/admin/pre-venda': typeof AdminPreVendaRoute
@@ -911,6 +919,7 @@ export interface FileRoutesById {
   '/admin/manage-cards': typeof AdminManageCardsRoute
   '/admin/ofertas-relampago': typeof AdminOfertasRelampagoRoute
   '/admin/panels': typeof AdminPanelsRoute
+  '/admin/pedido-manual': typeof AdminPedidoManualRoute
   '/admin/pilha': typeof AdminPilhaRoute
   '/admin/popups': typeof AdminPopupsRoute
   '/admin/pre-venda': typeof AdminPreVendaRoute
@@ -1019,6 +1028,7 @@ export interface FileRouteTypes {
     | '/admin/manage-cards'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
+    | '/admin/pedido-manual'
     | '/admin/pilha'
     | '/admin/popups'
     | '/admin/pre-venda'
@@ -1122,6 +1132,7 @@ export interface FileRouteTypes {
     | '/admin/manage-cards'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
+    | '/admin/pedido-manual'
     | '/admin/pilha'
     | '/admin/popups'
     | '/admin/pre-venda'
@@ -1228,6 +1239,7 @@ export interface FileRouteTypes {
     | '/admin/manage-cards'
     | '/admin/ofertas-relampago'
     | '/admin/panels'
+    | '/admin/pedido-manual'
     | '/admin/pilha'
     | '/admin/popups'
     | '/admin/pre-venda'
@@ -1669,6 +1681,13 @@ declare module '@tanstack/react-router' {
       path: '/panels'
       fullPath: '/admin/panels'
       preLoaderRoute: typeof AdminPanelsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/pedido-manual': {
+      id: '/admin/pedido-manual'
+      path: '/pedido-manual'
+      fullPath: '/admin/pedido-manual'
+      preLoaderRoute: typeof AdminPedidoManualRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/pilha': {
@@ -2113,6 +2132,7 @@ interface AdminRouteChildren {
   AdminManageCardsRoute: typeof AdminManageCardsRoute
   AdminOfertasRelampagoRoute: typeof AdminOfertasRelampagoRoute
   AdminPanelsRoute: typeof AdminPanelsRoute
+  AdminPedidoManualRoute: typeof AdminPedidoManualRoute
   AdminPilhaRoute: typeof AdminPilhaRoute
   AdminPopupsRoute: typeof AdminPopupsRoute
   AdminPreVendaRoute: typeof AdminPreVendaRoute
@@ -2144,6 +2164,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminManageCardsRoute: AdminManageCardsRoute,
   AdminOfertasRelampagoRoute: AdminOfertasRelampagoRoute,
   AdminPanelsRoute: AdminPanelsRoute,
+  AdminPedidoManualRoute: AdminPedidoManualRoute,
   AdminPilhaRoute: AdminPilhaRoute,
   AdminPopupsRoute: AdminPopupsRoute,
   AdminPreVendaRoute: AdminPreVendaRoute,
