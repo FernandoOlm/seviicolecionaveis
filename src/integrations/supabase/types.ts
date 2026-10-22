@@ -1559,6 +1559,9 @@ export type Database = {
           event_added_manually_at: string | null
           event_id: string | null
           event_previous: Json | null
+          hand_delivery_fee_confirmed_at: string | null
+          hand_delivery_fee_confirmed_by: string | null
+          hand_delivery_fee_history: Json
           hand_delivery_fee_status: string | null
           id: string
           manual_adjustments: Json
@@ -1635,6 +1638,9 @@ export type Database = {
           event_added_manually_at?: string | null
           event_id?: string | null
           event_previous?: Json | null
+          hand_delivery_fee_confirmed_at?: string | null
+          hand_delivery_fee_confirmed_by?: string | null
+          hand_delivery_fee_history?: Json
           hand_delivery_fee_status?: string | null
           id?: string
           manual_adjustments?: Json
@@ -1711,6 +1717,9 @@ export type Database = {
           event_added_manually_at?: string | null
           event_id?: string | null
           event_previous?: Json | null
+          hand_delivery_fee_confirmed_at?: string | null
+          hand_delivery_fee_confirmed_by?: string | null
+          hand_delivery_fee_history?: Json
           hand_delivery_fee_status?: string | null
           id?: string
           manual_adjustments?: Json

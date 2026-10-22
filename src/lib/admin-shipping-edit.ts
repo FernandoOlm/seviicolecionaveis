@@ -2,6 +2,7 @@
 import { formatSchedule, validateSchedule } from "./scheduling";
 import { validateEventSchedule, ymdOfIso, type PickupEvent } from "./events";
 import { localParts } from "./scheduling";
+import { isHandDeliveryArea, HAND_DELIVERY_AREA_MESSAGE } from "./hand-delivery";
 
 export type AdminShippingMode = "pickup" | "event" | "delivery" | "tracked" | "stack";
 
@@ -53,6 +54,7 @@ export function validateAdminShippingInput(i: AdminShippingInput): string | null
     case "delivery":
       if (!i.at) return "Escolha a quinta-feira da entrega.";
       if (!addrOk(i.address)) return "Preencha o endereço da entrega (rua, número e cidade).";
+      if (!isHandDeliveryArea(i.address)) return HAND_DELIVERY_AREA_MESSAGE;
       if (!i.feeStatus) return "Informe o status do pagamento do Pix de R$ 15.";
       return null;
     case "tracked":

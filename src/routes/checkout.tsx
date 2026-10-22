@@ -14,6 +14,7 @@ import {
 import { getMpCustomerForCheckout } from "@/lib/saved-cards.functions";
 import { getShippingQuotes } from "@/utils/shipping.functions";
 import { toast } from "sonner";
+import { isHandDeliveryArea, HAND_DELIVERY_AREA_MESSAGE } from "@/lib/hand-delivery";
 import { Copy, Check, QrCode, CreditCard, Loader2, ShieldCheck, Sparkles, MessageCircle, X } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { TrustBadges } from "@/components/TrustBadges";
@@ -165,6 +166,13 @@ function CheckoutPage() {
   const [stackTermsAccepted, setStackTermsAccepted] = useState(false);
   const [stackTermsOpen, setStackTermsOpen] = useState(false);
   const [pickupPoint, setPickupPoint] = useState<"aruana" | "aeroporto" | "app" | "evento" | null>(null);
+  const handDeliveryEligible = isHandDeliveryArea({ city: form.city, state: form.state, cep: form.cep });
+  useEffect(() => {
+    if (!handDeliveryEligible && pickupPoint === "app") {
+      setPickupPoint(null);
+      toast.warning(HAND_DELIVERY_AREA_MESSAGE);
+    }
+  }, [handDeliveryEligible, pickupPoint]);
   const [eventSel, setEventSel] = useState<EventSelection | null>(null);
   const [pickupEvents, setPickupEvents] = useState<PickupEvent[]>([]);
   const [scheduleAt, setScheduleAt] = useState<string | null>(null);
@@ -599,6 +607,11 @@ function CheckoutPage() {
     if (shipping === "arrange" && pickupPoint === "app" && (!form.street.trim() || !form.number.trim())) {
       return "Informe o endereço completo de entrega.";
     }
+    if (shipping === "arrange" && pickupPoint === "app" && !isHandDeliveryArea({ city: form.city, state: form.state, cep: form.cep })) {
+      setPickupPoint(null);
+      setScheduleAt(null);
+      return HAND_DELIVERY_AREA_MESSAGE;
+    }
     if (shipping === "card_stack" && !stackTermsAccepted) {
       return "Aceite os termos da Pilha de Cartas para continuar.";
     }
@@ -809,6 +822,7 @@ function CheckoutPage() {
                 </div>
               </label>
 
+              {handDeliveryEligible && (
               <div className="rounded-lg border border-border">
                 <label className="flex items-start gap-3 p-4 cursor-pointer hover:bg-secondary/50">
                   <input
@@ -855,6 +869,7 @@ function CheckoutPage() {
                   </div>
                 )}
               </div>
+              )}
 
               <div className="rounded-lg border border-border">
                 <label className="flex items-start gap-3 p-4 cursor-pointer hover:bg-secondary/50">

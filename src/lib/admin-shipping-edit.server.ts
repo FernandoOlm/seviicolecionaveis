@@ -41,6 +41,10 @@ async function applyToOrder(o: any, input: AdminShippingInput, ev: PickupEvent |
     scheduled_at: scheduled ? input.at : null,
     event_id: input.mode === "event" ? input.eventId : null,
     hand_delivery_fee_status: input.mode === "delivery" ? input.feeStatus : null,
+    ...(input.mode === "delivery" && input.feeStatus === "confirmed" && o.hand_delivery_fee_status !== "confirmed" ? {
+      hand_delivery_fee_confirmed_at: now.toISOString(), hand_delivery_fee_confirmed_by: admin.id,
+      hand_delivery_fee_history: [...(Array.isArray(o.hand_delivery_fee_history) ? o.hand_delivery_fee_history : []), { at: now.toISOString(), admin_id: admin.id, admin_email: admin.email, previous: o.hand_delivery_fee_status ?? null, next: "confirmed", note: "Marcado como pago na edição de envio" }],
+    } : {}),
     reschedule_required: false,
     notes: rebuildShippingNotes(o.notes, input, ev?.name),
     shipping_edited_by_admin_at: now.toISOString(),
