@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { AdminNotificationsBell } from "@/components/admin/AdminNotificationsBell";
 import {
   BadgePercent,
   Bell,
@@ -40,6 +41,7 @@ export const ADMIN_NAV: NavGroup[] = [
     links: [
       { to: "/admin", label: "Pedidos", icon: ShoppingBag, exact: true },
       { to: "/admin/dashboard", label: "Dashboard", icon: Gauge },
+      { to: "/admin/notificacoes", label: "Notificações", icon: Bell },
     ],
   },
   {
@@ -138,6 +140,7 @@ export function AdminSidebar() {
   const [open, setOpen] = useState(false);
   return (
     <>
+      <AdminNotificationsBell />
       <aside className="no-print hidden lg:block w-60 shrink-0 border-r border-border bg-card">
         <div className="sticky top-0 max-h-screen overflow-y-auto">
           <NavContent />

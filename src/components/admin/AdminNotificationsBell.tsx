@@ -51,7 +51,7 @@ export function AdminNotificationsBell() {
     return () => { document.removeEventListener("mousedown", h); document.removeEventListener("keydown", k); };
   }, [open]);
   return (
-    <div ref={ref} className="no-print fixed top-3 right-4 z-40">
+    <div ref={ref} className="no-print fixed bottom-4 right-4 z-40">
       <button type="button" onClick={() => setOpen((v) => !v)} aria-label={`Notificações (${unread.length} não lidas)`}
         className="relative rounded-full border border-border bg-card p-2.5 shadow-sm hover:bg-secondary">
         <Bell className="h-5 w-5" />
@@ -62,7 +62,7 @@ export function AdminNotificationsBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-[min(92vw,380px)] rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+        <div className="absolute right-0 bottom-full mb-2 w-[min(92vw,380px)] rounded-xl border border-border bg-card shadow-lg overflow-hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b border-border">
             <p className="text-xs font-bold uppercase tracking-wider">Notificações</p>
             {unread.length > 0 && <button onClick={markAllRead} className="text-xs font-semibold hover:underline">Marcar todas como lidas</button>}
