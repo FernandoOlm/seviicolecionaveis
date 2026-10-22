@@ -15,7 +15,10 @@ describe("admin shipping edit", () => {
     expect(canAdminEditShipping({ status: "paid", shipping_method: "fixed", schedule_kind: null })).toBe(false);
   });
   it("hand delivery requires payment status", () => {
-    expect(validateAdminShippingInput({ mode: "delivery", at: toIso("2026-10-29", "19:00"), address: { street: "R", number: "1", city: "Aracaju" } })).toMatch(/pagamento/);
+    expect(validateAdminShippingInput({ mode: "delivery", at: toIso("2026-10-29", "19:00"), address: { street: "R", number: "1", city: "Aracaju", state: "SE" } })).toMatch(/pagamento/);
+  });
+  it("hand delivery is blocked outside Aracaju/SE", () => {
+    expect(validateAdminShippingInput({ mode: "delivery", at: toIso("2026-10-29", "19:00"), feeStatus: "pending", address: { street: "R", number: "1", city: "Itabaiana", state: "SE" } })).toMatch(/somente em Aracaju/);
   });
   it("tracked shipping requires shipping cost", () => {
     expect(validateAdminShippingInput({ mode: "tracked", address: { cep: "49000", street: "R", number: "1", city: "Aracaju" } })).toMatch(/frete/);
