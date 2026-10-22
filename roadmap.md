@@ -1,7 +1,7 @@
 # Confirmações de agendamento
 ## Preços de Estádio
-- [ ] Ajustar faixas por preço original e verificar valores gravados.
-- [ ] Entregar listagem dos preços originais a partir de R$ 0,51 sem alterar essas cartas.
+- [x] Ajustar faixas por preço original: 82 preços alterados e todos os 127 cadastros verificados; estoque preservado.
+- [x] Entregar listagem das 33 variantes com preço original a partir de R$ 0,51 sem alterações; planilha conferida visualmente.
 ## Confirmação de recebimento pelo comprador
 - [x] Botão discreto e confirmação acessível; Cancelar, X, Esc e clique fora verificados, sem alteração.
 - [x] Validação de dono/status com atualização atômica, data/hora/usuário persistidos e visíveis no admin.
