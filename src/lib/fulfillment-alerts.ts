@@ -14,6 +14,9 @@ export const MODALITY_LABELS: Record<Modality, string> = {
 
 export function modalityOfOrder(o: { shipping_method?: string | null; schedule_kind?: string | null }): Modality {
   const m = o.shipping_method ?? "";
+  if (o.schedule_kind === "event") return "event";
+  if (o.schedule_kind === "delivery") return "delivery";
+  if (o.schedule_kind === "pickup") return "pickup";
   if (m === "card_stack" || m === "to_define" || m === "") return "none";
   if (m === "arrange") {
     if (o.schedule_kind === "event") return "event";

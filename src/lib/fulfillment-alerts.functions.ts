@@ -27,13 +27,16 @@ export const scanMissingAlertsFn = createServerFn({ method: "POST" })
     const { PAID_ORDER_STATUSES } = await import("@/lib/order-status");
     const db = supabaseAdmin as any;
     const [{ data: sos }, { data: orders }, { data: notes }] = await Promise.all([
-      db.from("service_orders").select("id, code, method, scheduled_at, created_at, recipient_name, status").neq("status", "cancelled").order("created_at", { ascending: false }).limit(500),
-      db.from("orders").select("id, recipient_name, shipping_method, schedule_kind, scheduled_at, created_at, status").in("schedule_kind", ["pickup", "event", "delivery"]).in("status", [...PAID_ORDER_STATUSES]).not("scheduled_at", "is", null).order("created_at", { ascending: false }).limit(500),
+      db.from("service_orders").select("id, code, user_id, method, scheduled_at, created_at, recipient_name, status").not("status", "in", "(cancelled,delivered)").order("created_at", { ascending: false }).limit(500),
+      db.from("orders").select("id, recipient_name, shipping_method, schedule_kind, scheduled_at, created_at, status").in("schedule_kind", ["pickup", "event", "delivery"]).in("status", PAID_ORDER_STATUSES.filter((x) => x !== "delivered")).not("scheduled_at", "is", null).order("created_at", { ascending: false }).limit(500),
       db.from("admin_notifications").select("target_id").eq("kind", "fulfillment").limit(5000),
     ]);
+    const userIds = [...new Set((sos ?? []).map((s: any) => s.user_id))];
+    const { data: profs } = userIds.length ? await db.from("profiles").select("user_id, full_name").in("user_id", userIds) : { data: [] };
+    const nameOf = new Map((profs ?? []).map((p: any) => [p.user_id, p.full_name]));
     const seen = new Set((notes ?? []).map((n: any) => n.target_id));
     const out: MissingAlert[] = [];
-    for (const s of sos ?? []) if (!seen.has(s.id)) out.push({ type: "service_order", id: s.id, code: `OS #${s.code}`, customer: s.recipient_name, modality: modalityOfServiceOrder(s.method), scheduledAt: s.scheduled_at, createdAt: s.created_at });
+    for (const s of sos ?? []) if (!seen.has(s.id)) out.push({ type: "service_order", id: s.id, code: `OS #${s.code}`, customer: (nameOf.get(s.user_id) as string | undefined) ?? s.recipient_name, modality: modalityOfServiceOrder(s.method), scheduledAt: s.scheduled_at, createdAt: s.created_at });
     for (const o of orders ?? []) if (!seen.has(o.id)) out.push({ type: "order", id: o.id, code: `#${o.id.slice(0, 8).toUpperCase()}`, customer: o.recipient_name, modality: modalityOfOrder(o), scheduledAt: o.scheduled_at, createdAt: o.created_at });
     return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   });
