@@ -43,6 +43,13 @@
       "when": 1792682975489,
       "tag": "0005_admin_shipping_edit",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792684199430,
+      "tag": "0006_manual_admin_orders",
+      "breakpoints": true
     }
   ]
 }
