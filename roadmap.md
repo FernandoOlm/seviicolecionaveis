@@ -1,8 +1,8 @@
 # Confirmações de agendamento
 ## Confirmação de recebimento pelo comprador
-- [ ] Botão discreto e confirmação acessível na página do pedido.
-- [ ] Validar dono/status no servidor; registrar data, hora e usuário; refletir no admin.
-- [ ] Avisar a loja por e-mail e verificar regras/fluxo autenticado.
+- [x] Botão discreto e confirmação acessível; Cancelar, X, Esc e clique fora verificados, sem alteração.
+- [x] Validação de dono/status com atualização atômica, data/hora/usuário persistidos e visíveis no admin.
+- [x] Aviso à loja enviado, 12 testes passando e fluxo autenticado verificado em celular/computador com pedido temporário sem cobrança.
 ## Status de pedidos
 - [x] Adicionar os três status ao painel e ao acompanhamento, preservando pagamento e estoque; testes passando e opções verificadas no painel autenticado.
 
