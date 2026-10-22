@@ -1483,6 +1483,8 @@ export type Database = {
           schedule_reopened_at: string | null
           scheduled_at: string | null
           shipping_cost_cents: number
+          shipping_edit_history: Json
+          shipping_edited_by_admin_at: string | null
           shipping_method: string
           state: string
           status: string
@@ -1547,6 +1549,8 @@ export type Database = {
           schedule_reopened_at?: string | null
           scheduled_at?: string | null
           shipping_cost_cents?: number
+          shipping_edit_history?: Json
+          shipping_edited_by_admin_at?: string | null
           shipping_method: string
           state: string
           status?: string
@@ -1611,6 +1615,8 @@ export type Database = {
           schedule_reopened_at?: string | null
           scheduled_at?: string | null
           shipping_cost_cents?: number
+          shipping_edit_history?: Json
+          shipping_edited_by_admin_at?: string | null
           shipping_method?: string
           state?: string
           status?: string

@@ -16,6 +16,8 @@ import { ItemFacetFilter } from "@/components/admin/ItemFacetFilter";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowLeft, ImageOff, Layers, X } from "lucide-react";
+import { AdminShippingEditor } from "@/components/admin/AdminShippingEditor";
+import { canAdminEditShipping } from "@/lib/admin-shipping-edit";
 import { AdminTrackingEditor, type TrackingInfo } from "@/components/admin/AdminTrackingEditor";
 import { useCardMetaMap } from "@/hooks/useCardMetaMap";
 import { sortByCardGroup } from "@/lib/sortCards";
@@ -586,6 +588,30 @@ function AdminOrderDetailPage() {
           </dl>
         </div>
 
+
+        {(canAdminEditShipping(order) || order.shipping_edited_by_admin_at || (order.shipping_edit_history ?? []).length > 0) && (
+          <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                Envio/retirada: {order.schedule_kind === "delivery" ? "Entrega em mãos" : order.schedule_kind === "event" ? "Retirada em eventos" : order.schedule_kind === "pickup" ? "Retirada em mãos" : shippingLabel}
+                {order.shipping_edited_by_admin_at && <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold normal-case tracking-normal">Editado pelo admin</span>}
+              </h2>
+              {canAdminEditShipping(order)
+                ? <AdminShippingEditor order={order} onSaved={load} />
+                : <span className="text-xs text-muted-foreground">Pedido entregue — edição bloqueada</span>}
+            </div>
+            {(order.shipping_edit_history ?? []).length > 0 && (
+              <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+                {(order.shipping_edit_history as any[]).map((h, i) => (
+                  <li key={i}>
+                    {new Date(h.at).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })} — {h.admin_email ?? "admin"}: {h.previous} → {h.next}
+                    {h.out_of_window && <strong className="text-destructive"> (fora do prazo padrão)</strong>}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         {order.scheduled_at && (
           <div className="rounded-xl border border-border bg-card p-5 space-y-2">
