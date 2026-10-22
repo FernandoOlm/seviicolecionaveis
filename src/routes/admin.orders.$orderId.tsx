@@ -18,6 +18,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowLeft, ImageOff, Layers, X } from "lucide-react";
 import { AdminShippingEditor } from "@/components/admin/AdminShippingEditor";
+import { HandDeliveryFeePanel } from "@/components/admin/HandDeliveryFeePanel";
 import { canAdminEditShipping } from "@/lib/admin-shipping-edit";
 import { AdminTrackingEditor, type TrackingInfo } from "@/components/admin/AdminTrackingEditor";
 import { useCardMetaMap } from "@/hooks/useCardMetaMap";
@@ -654,26 +655,7 @@ function AdminOrderDetailPage() {
                 </ul>
               </div>
             )}
-            {order.schedule_kind === "delivery" && (
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-sm">
-                  Taxa R$ 15,00 (Pix manual):{" "}
-                  <strong>{order.hand_delivery_fee_status === "confirmed" ? "pagamento confirmado" : "aguardando confirmação de pagamento"}</strong>
-                </span>
-                <button
-                  type="button"
-                  className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
-                  onClick={async () => {
-                    const next = order.hand_delivery_fee_status === "confirmed" ? "pending" : "confirmed";
-                    const { error } = await supabase.from("orders").update({ hand_delivery_fee_status: next }).eq("id", order.id);
-                    if (error) toast.error(error.message);
-                    else { toast.success(next === "confirmed" ? "Pagamento da entrega confirmado" : "Confirmação desfeita"); await load(); }
-                  }}
-                >
-                  {order.hand_delivery_fee_status === "confirmed" ? "Desfazer confirmação" : "Confirmar pagamento da entrega"}
-                </button>
-              </div>
-            )}
+            {order.schedule_kind === "delivery" && <HandDeliveryFeePanel order={order} onSaved={load} />}
           </div>
         )}
 
