@@ -9,7 +9,7 @@ const code = (id: string) => id.slice(0, 8).toUpperCase();
 
 function modalityLabel(o: any): string {
   const m = MODALITY_LABELS[modalityOfOrder(o)];
-  if (o.shipping_method === "card_stack") return "Pilha de Cartas";
+  if (o.shipping_method === "card_stack" && !o.schedule_kind) return "Pilha de Cartas";
   if (o.shipping_method === "to_define") return "Sem modalidade";
   return o.scheduled_at ? `${m} ${formatSchedule("pickup", o.scheduled_at)}` : m;
 }
