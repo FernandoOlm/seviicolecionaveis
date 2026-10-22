@@ -90,8 +90,13 @@ async function resolveArteEmCardsFee(
 async function assertSchedule(data: {
   shippingMethod: string;
   schedule?: { kind: "delivery" | "pickup" | "event"; at: string; eventId?: string | null } | null;
+  address?: { city?: string | null; state?: string | null; cep?: string | null } | null;
 }) {
   if (data.shippingMethod !== "arrange") return;
+  if (data.schedule?.kind === "delivery") {
+    const { isHandDeliveryArea, HAND_DELIVERY_AREA_MESSAGE } = await import("@/lib/hand-delivery");
+    if (!isHandDeliveryArea(data.address)) throw new Error(HAND_DELIVERY_AREA_MESSAGE);
+  }
   if (!data.schedule) throw new Error("Escolha o dia e horário da entrega ou retirada.");
   if (data.schedule.kind === "event") {
     if (!data.schedule.eventId) throw new Error("Escolha o evento em que você vai retirar o pedido.");
