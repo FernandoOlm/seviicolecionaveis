@@ -71,6 +71,13 @@
       "when": 1792687170354,
       "tag": "0009_hand_delivery_fee_admin_only",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792692959932,
+      "tag": "0010_auction_blocks_and_cadence",
+      "breakpoints": true
     }
   ]
 }
