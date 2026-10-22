@@ -3,6 +3,7 @@ import { ORDER_STATUS_LABELS, canBuyerConfirmReceipt } from "@/lib/order-status"
 import { BuyerReceiptConfirmation } from "@/components/BuyerReceiptConfirmation";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { formatSchedule, HAND_DELIVERY_PIX_KEY, STORE_WHATSAPP } from "@/lib/scheduling";
+import { isHandDeliveryFeePaid } from "@/lib/hand-delivery";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -527,9 +528,9 @@ function OrderDetailPage() {
                   Taxa de entrega: <strong>R$ 15,00</strong> via Pix para a chave{" "}
                   <span className="font-mono font-semibold text-foreground">{HAND_DELIVERY_PIX_KEY}</span>.{" "}
                   Status:{" "}
-                  <strong>{(order as any).hand_delivery_fee_status === "confirmed" ? "pagamento confirmado" : "aguardando confirmação de pagamento"}</strong>
+                  <strong>{isHandDeliveryFeePaid((order as any).hand_delivery_fee_status) ? "pagamento confirmado" : "aguardando confirmação de pagamento"}</strong>
                 </p>
-                {(order as any).hand_delivery_fee_status !== "confirmed" && (
+                {!isHandDeliveryFeePaid((order as any).hand_delivery_fee_status) && (
                   <a
                     href={`https://wa.me/${STORE_WHATSAPP}?text=${encodeURIComponent(
                       `Olá! Envio o comprovante do Pix da Entrega em Mãos referente ao pedido #${order.id.slice(0, 8).toUpperCase()}`,
