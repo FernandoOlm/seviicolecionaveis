@@ -1,4 +1,7 @@
 # Confirmações de agendamento
+## Preços de Estádio
+- [ ] Ajustar faixas por preço original e verificar valores gravados.
+- [ ] Entregar listagem dos preços originais a partir de R$ 0,51 sem alterar essas cartas.
 ## Confirmação de recebimento pelo comprador
 - [x] Botão discreto e confirmação acessível; Cancelar, X, Esc e clique fora verificados, sem alteração.
 - [x] Validação de dono/status com atualização atômica, data/hora/usuário persistidos e visíveis no admin.
