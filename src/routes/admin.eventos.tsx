@@ -572,6 +572,7 @@ function EventosAdminPage() {
                         </div>
                       </td></tr>
                     )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
