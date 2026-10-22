@@ -51,7 +51,7 @@ export function AdminNotificationsBell() {
     return () => { document.removeEventListener("mousedown", h); document.removeEventListener("keydown", k); };
   }, [open]);
   return (
-    <div ref={ref} className="no-print fixed bottom-4 right-4 z-40">
+    <div ref={ref} className="no-print fixed bottom-24 right-5 z-40">
       <button type="button" onClick={() => setOpen((v) => !v)} aria-label={`Notificações (${unread.length} não lidas)`}
         className="relative rounded-full border border-border bg-card p-2.5 shadow-sm hover:bg-secondary">
         <Bell className="h-5 w-5" />
