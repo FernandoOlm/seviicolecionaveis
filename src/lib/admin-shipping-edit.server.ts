@@ -117,26 +117,23 @@ export async function adminEditOrderShipping(
   for (const t of targets) results.push(await applyToOrder(t, input, ev, admin, warnings, now));
   const main = results[0];
 
-  // E-mails (somente para modalidades com agendamento).
+  // Alerta central: notificação no admin + e-mails (cliente opcional, loja sempre).
   const data = scheduleConfirmationData(main.order);
-  const key = `admin-edit-${o.id}-${now.getTime()}`;
-  const hadSchedule = !!o.scheduled_at;
   const otherIds = results.slice(1).map((r) => `#${r.order.id.slice(0, 8).toUpperCase()}`);
-  if (data) {
-    if (opts.notifyClient && main.order.email) {
-      await sendTransactionalEmailSafe({
-        templateName: "schedule-confirmed", recipientEmail: main.order.email, idempotencyKey: `${key}-client`,
-        templateData: { ...data, calendarUrl: undefined, adminEdit: true, otherOrders: otherIds.join(", ") || undefined },
-      }).catch((e) => console.error("[admin-shipping-edit] client email", e));
-    }
-    await sendTransactionalEmailSafe({
-      templateName: "schedule-confirmed", recipientEmail: await storeEmail(), idempotencyKey: `${key}-store`,
-      templateData: {
-        ...data, storeCopy: true, adminEdit: true,
-        replacedPrevious: hadSchedule ? main.before : undefined,
-        otherOrders: otherIds.join(", ") || undefined,
-      },
-    }).catch((e) => console.error("[admin-shipping-edit] store email", e));
-  }
+  try {
+    const { notifyFulfillmentChange } = await import("@/lib/fulfillment-alerts.server");
+    const { modalityOfOrder } = await import("@/lib/fulfillment-alerts");
+    const mo = main.order;
+    await notifyFulfillmentChange({
+      targetType: "order", targetId: mo.id, code: `#${mo.id.slice(0, 8).toUpperCase()}`,
+      action: "changed", source: "admin", modality: modalityOfOrder(mo),
+      customerName: mo.recipient_name, customerEmail: mo.email, customerPhone: mo.phone ?? null,
+      scheduledAt: mo.scheduled_at ?? null, when: data?.when ?? null, eventId: mo.event_id ?? null, eventName: ev?.name ?? null,
+      location: data?.address || null, before: main.before,
+      relatedOrders: otherIds.length ? [`#${mo.id.slice(0, 8).toUpperCase()}`, ...otherIds] : undefined,
+      calendarUrl: data?.calendarUrl ?? null, notifyClient: opts.notifyClient,
+      dedupeExtra: String(now.getTime()),
+    });
+  } catch (e) { console.error("[admin-shipping-edit] alert", e); }
   return { updated: results.length, warnings, after: main.after };
 }

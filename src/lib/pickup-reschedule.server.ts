@@ -164,6 +164,7 @@ export async function reschedulePickup(
     .select("*")
     .maybeSingle();
   if (error || !upd) throw new Error("Não foi possível reagendar. Tente novamente.");
-  await sendScheduleConfirmations(upd, `-${at}`).catch((e) => console.error("[reschedule] email", e));
+  const before = o.scheduled_at ? `${o.schedule_kind === "event" ? "Retirada em eventos" : "Retirada em mãos"} — ${formatSchedule("pickup", o.scheduled_at)} (não compareceu)` : null;
+  await sendScheduleConfirmations(upd, `-${at}`, { action: "changed", source: "customer", before }).catch((e) => console.error("[reschedule] email", e));
   return { scheduled_at: at };
 }
