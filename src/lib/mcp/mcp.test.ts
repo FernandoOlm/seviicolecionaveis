@@ -8,6 +8,7 @@ import {
   ADMIN_ONLY_ERROR,
 } from "./oauth.server";
 import { tools } from "./tools.server";
+import { isAllowedPublicUrl, detectImageMagicBytes } from "./media.server";
 
 describe("OAuth Metadados e Validações", () => {
   it("Valida URLs permitidas de retorno do ChatGPT e Codex", () => {
@@ -55,33 +56,125 @@ describe("OAuth Metadados e Validações", () => {
   });
 });
 
-describe("Catálogo de Ferramentas MCP", () => {
-  it("Possui as ferramentas essenciais de consulta e operação", () => {
+describe("Proteção de Mídia e Prevenção contra SSRF", () => {
+  it("Permite URLs públicas válidas e bloqueia acessos internos / privados", () => {
+    // Permitidos
+    expect(isAllowedPublicUrl("https://images.pokemontcg.io/swsh1/1_hires.png").allowed).toBe(true);
+    expect(isAllowedPublicUrl("https://seviicolecionaveis.com.br/assets/card.jpg").allowed).toBe(true);
+    expect(isAllowedPublicUrl("http://cdn.example.com/item.webp").allowed).toBe(true);
+
+    // Bloqueados (SSRF)
+    expect(isAllowedPublicUrl("http://localhost:3000/secret").allowed).toBe(false);
+    expect(isAllowedPublicUrl("http://127.0.0.1:8080").allowed).toBe(false);
+    expect(isAllowedPublicUrl("http://10.0.0.5/internal").allowed).toBe(false);
+    expect(isAllowedPublicUrl("http://172.16.1.100").allowed).toBe(false);
+    expect(isAllowedPublicUrl("http://192.168.1.1/admin").allowed).toBe(false);
+    expect(isAllowedPublicUrl("http://169.254.169.254/latest/meta-data").allowed).toBe(false); // Cloud metadata
+    expect(isAllowedPublicUrl("http://[::1]/internal").allowed).toBe(false);
+    expect(isAllowedPublicUrl("ftp://files.example.com/img.jpg").allowed).toBe(false);
+    expect(isAllowedPublicUrl("file:///etc/passwd").allowed).toBe(false);
+  });
+
+  it("Detecta tipos MIME reais através de Magic Bytes", () => {
+    // PNG
+    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+    expect(detectImageMagicBytes(pngBytes)?.mimeType).toBe("image/png");
+
+    // JPEG
+    const jpegBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46]);
+    expect(detectImageMagicBytes(jpegBytes)?.mimeType).toBe("image/jpeg");
+
+    // WEBP
+    const webpBytes = new Uint8Array([
+      0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+    ]);
+    expect(detectImageMagicBytes(webpBytes)?.mimeType).toBe("image/webp");
+
+    // Falso / Não suportado
+    const txtBytes = new Uint8Array([0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f]);
+    expect(detectImageMagicBytes(txtBytes)).toBeNull();
+  });
+});
+
+describe("Catálogo Completo de Ferramentas MCP da Sevii", () => {
+  it("Possui todas as ferramentas de administração implementadas", () => {
     const names = tools.map((t) => t.name);
+
+    // Módulo Catálogo (Cartas, Lacrados, Acessórios, Coleções)
+    expect(names).toContain("listar_cartas");
+    expect(names).toContain("obter_carta");
+    expect(names).toContain("criar_carta");
+    expect(names).toContain("editar_carta");
+    expect(names).toContain("remover_carta");
+    expect(names).toContain("atualizar_estoque_carta");
+    expect(names).toContain("atualizar_preco_carta");
+    expect(names).toContain("operacoes_em_lote_cartas");
+    expect(names).toContain("listar_produtos_lacrados");
+    expect(names).toContain("obter_produto_lacrado");
+    expect(names).toContain("criar_produto_lacrado");
+    expect(names).toContain("editar_produto_lacrado");
+    expect(names).toContain("alterar_status_produto_lacrado");
+    expect(names).toContain("listar_acessorios");
+    expect(names).toContain("obter_acessorio");
+    expect(names).toContain("criar_acessorio");
+    expect(names).toContain("editar_acessorio");
+    expect(names).toContain("alterar_status_acessorio");
+    expect(names).toContain("listar_estoque_baixo");
+    expect(names).toContain("listar_colecoes");
+
+    // Módulo Mídia & Fotos
+    expect(names).toContain("fazer_upload_imagem");
+    expect(names).toContain("gerenciar_imagens_produto");
+
+    // Módulo Leilões
+    expect(names).toContain("listar_leiloes");
+    expect(names).toContain("obter_leilao");
+    expect(names).toContain("criar_leilao");
+    expect(names).toContain("editar_leilao");
+    expect(names).toContain("gerenciar_lotes_leilao");
+    expect(names).toContain("operar_leilao");
+    expect(names).toContain("vincular_arremate_pilha");
+
+    // Módulo Pedidos, Pilha, Cupons, Banners, Clientes, Métricas
     expect(names).toContain("meu_perfil");
     expect(names).toContain("resumo_vendas");
     expect(names).toContain("listar_pedidos");
     expect(names).toContain("obter_pedido");
     expect(names).toContain("atualizar_status_pedido");
     expect(names).toContain("adicionar_nota_pedido");
-    expect(names).toContain("listar_cartas");
-    expect(names).toContain("obter_carta");
-    expect(names).toContain("atualizar_estoque_carta");
-    expect(names).toContain("atualizar_preco_carta");
-    expect(names).toContain("listar_produtos_lacrados");
-    expect(names).toContain("listar_acessorios");
-    expect(names).toContain("listar_estoque_baixo");
-    expect(names).toContain("listar_cupons");
-    expect(names).toContain("criar_cupom");
     expect(names).toContain("listar_pilhas_ativas");
-    expect(names).toContain("listar_leiloes");
+    expect(names).toContain("obter_pilha_cliente");
+    expect(names).toContain("despachar_pilha");
+    expect(names).toContain("listar_cupons");
+    expect(names).toContain("obter_cupom");
+    expect(names).toContain("criar_cupom");
+    expect(names).toContain("atualizar_cupom");
+    expect(names).toContain("listar_banners");
+    expect(names).toContain("gerenciar_banner");
+    expect(names).toContain("listar_clientes");
+    expect(names).toContain("obter_cliente");
+
+    expect(tools.length).toBeGreaterThanOrEqual(44);
   });
 
-  it("Ferramentas de mutação possuem anotações e schemas com idempotencyKey", () => {
-    const mutators = tools.filter((t) => !t.readOnly);
-    for (const m of mutators) {
-      expect(m.readOnly).toBe(false);
-      expect(m.inputSchema).toBeDefined();
+  it("Todas as ferramentas possuem metadados válidos, handler e esquema de entrada", () => {
+    for (const t of tools) {
+      expect(t.name).toMatch(/^[a-z0-9_]+$/);
+      expect(t.title).toBeTruthy();
+      expect(t.description).toBeTruthy();
+      expect(typeof t.handler).toBe("function");
+      expect(t.inputSchema).toBeDefined();
+      expect(t.inputSchema.type).toBe("object");
     }
+  });
+
+  it("Ferramentas destrutivas estão devidamente anotadas", () => {
+    const destructiveTools = tools.filter((t) => t.destructive);
+    const names = destructiveTools.map((t) => t.name);
+    expect(names).toContain("remover_carta");
+    expect(names).toContain("alterar_status_produto_lacrado");
+    expect(names).toContain("alterar_status_acessorio");
+    expect(names).toContain("operar_leilao");
+    expect(names).toContain("despachar_pilha");
   });
 });

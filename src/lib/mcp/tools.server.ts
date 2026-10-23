@@ -1,5 +1,9 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { PAID_ORDER_STATUSES } from "@/lib/order-status";
+import { catalogTools } from "./tools/catalog.tools";
+import { mediaTools } from "./tools/media.tools";
+import { auctionTools } from "./tools/auctions.tools";
+import { storeTools } from "./tools/store.tools";
 
 export interface McpToolDefinition {
   name: string;
@@ -12,7 +16,7 @@ export interface McpToolDefinition {
   handler: (args: Record<string, any>, context: { userId: string; email: string | null }) => Promise<any>;
 }
 
-export const tools: McpToolDefinition[] = [
+const baseTools: McpToolDefinition[] = [
   // 1. MEU PERFIL ADMIN
   {
     name: "meu_perfil",
@@ -1124,7 +1128,7 @@ export const tools: McpToolDefinition[] = [
     handler: async (args) => {
       let query = supabaseAdmin
         .from("auctions")
-        .select("id, title, status, start_time, end_time, created_at")
+        .select("id, title, status, scheduled_start, scheduled_end, created_at")
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -1137,14 +1141,22 @@ export const tools: McpToolDefinition[] = [
 
       return {
         total: (data || []).length,
-        leiloes: (data || []).map((l) => ({
+        leiloes: (data || []).map((l: any) => ({
           id: l.id,
           titulo: l.title,
           status: l.status,
-          inicio: l.start_time,
-          fim: l.end_time,
+          inicio: l.scheduled_start,
+          fim: l.scheduled_end,
         })),
       };
     },
   },
+];
+
+export const tools: McpToolDefinition[] = [
+  ...baseTools,
+  ...catalogTools,
+  ...mediaTools,
+  ...auctionTools,
+  ...storeTools,
 ];
