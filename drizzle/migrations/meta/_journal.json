@@ -78,6 +78,13 @@
       "when": 1792692959932,
       "tag": "0010_auction_blocks_and_cadence",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792768843133,
+      "tag": "0011_fix_find_user_by_phone_ninth_digit",
+      "breakpoints": true
     }
   ]
 }
