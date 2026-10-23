@@ -28,7 +28,7 @@ function getSupabaseAuthClient() {
   });
 }
 
-export const Route = createFileRoute("/api/public/mcp/oauth/authorize")({
+export const Route = createFileRoute("/api/public/mcp-oauth/authorize")({
   server: {
     handlers: {
       GET: async ({ request }) => {

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { handleMcpHttpRequest } from "@/lib/mcp/handler.server";
 
-export const Route = createFileRoute("/api/public/mcp/")({
+export const Route = createFileRoute("/api/public/mcp")({
   server: {
     handlers: {
       GET: async ({ request }) => handleMcpHttpRequest(request),

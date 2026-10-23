@@ -1,8 +1,8 @@
 {
-  "issuer": "https://seviicolecionaveis.com.br/api/mcp/oauth",
-  "authorization_endpoint": "https://seviicolecionaveis.com.br/api/mcp/oauth/authorize",
-  "token_endpoint": "https://seviicolecionaveis.com.br/api/mcp/oauth/token",
-  "registration_endpoint": "https://seviicolecionaveis.com.br/api/mcp/oauth/register",
+  "issuer": "https://seviicolecionaveis.com.br/api/public/mcp-oauth",
+  "authorization_endpoint": "https://seviicolecionaveis.com.br/api/public/mcp-oauth/authorize",
+  "token_endpoint": "https://seviicolecionaveis.com.br/api/public/mcp-oauth/token",
+  "registration_endpoint": "https://seviicolecionaveis.com.br/api/public/mcp-oauth/register",
   "response_types_supported": [
     "code"
   ],

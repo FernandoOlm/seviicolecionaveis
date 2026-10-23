@@ -39,11 +39,11 @@ export function getPublicOrigin(request?: Request): string {
 }
 
 export function mcpResource(origin: string): string {
-  return `${origin}/api/mcp`;
+  return `${origin}/api/public/mcp`;
 }
 
 export function oauthIssuer(origin: string): string {
-  return `${origin}/api/mcp/oauth`;
+  return `${origin}/api/public/mcp-oauth`;
 }
 
 export function isAllowedRedirectUri(uri: string): boolean {

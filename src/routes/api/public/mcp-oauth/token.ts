@@ -7,7 +7,7 @@ const cors = {
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
 };
 
-export const Route = createFileRoute("/api/public/mcp/oauth/token")({
+export const Route = createFileRoute("/api/public/mcp-oauth/token")({
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: cors }),

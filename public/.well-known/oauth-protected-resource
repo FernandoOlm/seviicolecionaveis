@@ -1,7 +1,7 @@
 {
-  "resource": "https://seviicolecionaveis.com.br/api/mcp",
+  "resource": "https://seviicolecionaveis.com.br/api/public/mcp",
   "authorization_servers": [
-    "https://seviicolecionaveis.com.br/api/mcp/oauth"
+    "https://seviicolecionaveis.com.br/api/public/mcp-oauth"
   ],
   "bearer_methods_supported": [
     "header"

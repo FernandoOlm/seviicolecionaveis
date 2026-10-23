@@ -30,17 +30,17 @@ describe("OAuth Metadados e Validações", () => {
 
   it("Metadados OAuth Authorization Server contêm endpoints e escopos corretos", () => {
     const meta = getOAuthServerMetadata("https://seviicolecionaveis.com.br");
-    expect(meta.issuer).toBe("https://seviicolecionaveis.com.br/api/mcp/oauth");
-    expect(meta.authorization_endpoint).toBe("https://seviicolecionaveis.com.br/api/mcp/oauth/authorize");
-    expect(meta.token_endpoint).toBe("https://seviicolecionaveis.com.br/api/mcp/oauth/token");
-    expect(meta.registration_endpoint).toBe("https://seviicolecionaveis.com.br/api/mcp/oauth/register");
+    expect(meta.issuer).toBe("https://seviicolecionaveis.com.br/api/public/mcp-oauth");
+    expect(meta.authorization_endpoint).toBe("https://seviicolecionaveis.com.br/api/public/mcp-oauth/authorize");
+    expect(meta.token_endpoint).toBe("https://seviicolecionaveis.com.br/api/public/mcp-oauth/token");
+    expect(meta.registration_endpoint).toBe("https://seviicolecionaveis.com.br/api/public/mcp-oauth/register");
     expect(meta.code_challenge_methods_supported).toContain("S256");
     expect(meta.scopes_supported).toContain("sevi-colecionaveis");
   });
 
   it("Metadados de Recurso Protegido contêm recurso e escopo", () => {
     const meta = getProtectedResourceMetadata("https://seviicolecionaveis.com.br");
-    expect(meta.resource).toBe("https://seviicolecionaveis.com.br/api/mcp");
+    expect(meta.resource).toBe("https://seviicolecionaveis.com.br/api/public/mcp");
     expect(meta.scopes_supported).toContain("sevi-colecionaveis");
   });
 
