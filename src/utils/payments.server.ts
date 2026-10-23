@@ -1116,7 +1116,7 @@ export async function checkPixOrderStatusServer(orderId: string, userId: string)
     .eq("id", orderId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!order || order.user_id !== userId) throw new Error("Pedido não encontrado");
+  if (!order || !(await canPayOrder(order.user_id, userId))) throw new Error("Pedido não encontrado");
 
   if (isPaidOrderStatus(order.status)) {
     return { status: "paid" as const };
@@ -1340,7 +1340,7 @@ export async function regeneratePixForExistingOrderServer(orderId: string, userI
     .eq("id", orderId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!order || order.user_id !== userId) throw new Error("Pedido não encontrado");
+  if (!order || !(await canPayOrder(order.user_id, userId))) throw new Error("Pedido não encontrado");
   if (order.status !== "pending") throw new Error("Este pedido não está mais pendente.");
 
   const baseUrl = process.env.PUBLIC_SITE_URL ?? "https://seviicolecionaveis.com.br";
@@ -1400,7 +1400,7 @@ export async function payExistingOrderWithCardServer(
     .eq("id", orderId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!order || order.user_id !== userId) throw new Error("Pedido não encontrado");
+  if (!order || !(await canPayOrder(order.user_id, userId))) throw new Error("Pedido não encontrado");
   if (order.status !== "pending") throw new Error("Este pedido não está mais pendente.");
 
   const baseUrl = process.env.PUBLIC_SITE_URL ?? "https://seviicolecionaveis.com.br";
@@ -1615,4 +1615,17 @@ export async function createAdminTestOrderServer(data: AdminTestInput, userId: s
   await markOrderPaid(order.id);
 
   return { orderId: order.id, status: "approved" as const };
+}
+
+
+/** Dono do pedido ou admin (ex.: loja gerando Pix de pedido de leilão para o cliente). */
+async function canPayOrder(ownerId: string, userId: string): Promise<boolean> {
+  if (ownerId === userId) return true;
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  return !!data;
 }
