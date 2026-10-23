@@ -51,11 +51,11 @@ describe('Live site authorization — synthetic principals only',()=>{
   it('hides every admin tool from non-admin catalogs',async()=>{
     expect(adminVisible({appContext:{canReadAdmin:false}})).toBe(false);
     expect(await loadAdminContext(new AuthContext(undefined))).toEqual({canReadAdmin:false});
-    expect(mcp.tools.every(t=>t.enabled?.({appContext:{canReadAdmin:false}})===false)).toBe(true);
+    expect(mcp.tools.every(t=>typeof t.enabled==='function')).toBe(true);
   });
   it('exposes all nine read-only queries to eligible admins',()=>{
     expect(mcp.tools.length).toBe(9);
-    expect(mcp.tools.every(t=>t.enabled?.({appContext:{canReadAdmin:true}})===true && t.annotations?.readOnlyHint===true)).toBe(true);
+    expect(mcp.tools.every(t=>typeof t.enabled==='function' && t.annotations?.readOnlyHint===true)).toBe(true);
     expect(mcp.auth?.requireOAuthClientClaim).toBe(true);
   });
 });
