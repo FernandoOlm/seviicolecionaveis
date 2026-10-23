@@ -1,13 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { handleMcpHttpRequest } from "@/lib/mcp/handler.server";
+const retired = () => new Response(JSON.stringify({ error: "integration_replaced", message: "Reconecte usando https://seviicolecionaveis.com.br/mcp e OAuth." }), { status: 410, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 
 export const Route = createFileRoute("/api/public/mcp")({
   server: {
     handlers: {
-      GET: async ({ request }) => handleMcpHttpRequest(request),
-      POST: async ({ request }) => handleMcpHttpRequest(request),
-      OPTIONS: async ({ request }) => handleMcpHttpRequest(request),
-      DELETE: async ({ request }) => handleMcpHttpRequest(request),
+      GET: retired,
+      POST: retired,
+      OPTIONS: retired,
+      DELETE: retired,
     },
   },
 });
