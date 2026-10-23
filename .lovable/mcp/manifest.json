@@ -1,0 +1,307 @@
+{
+  "version": 1,
+  "sdk_version": "3.3.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://zuypkggpecsqormwculg.supabase.co/auth/v1",
+    "require_oauth_client_claim": true,
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "sevii-colecion-veis",
+      "version": "2.0.0",
+      "title": "Sevii Colecionáveis"
+    },
+    "tools": [
+      {
+        "name": "meu_perfil",
+        "title": "Minha conta administrativa",
+        "description": "Consulta a identidade verificada e a permissão administrativa atual da sua conta.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "resumo_vendas",
+        "title": "Vendas e relatório financeiro",
+        "description": "Consolida pedidos criados no período, valores pagos e reembolsos; não inclui taxas do provedor nem custos de aquisição.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "dias": {
+              "default": 30,
+              "description": "Período em dias, até 366.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 366
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_pedidos",
+        "title": "Pedidos da loja",
+        "description": "Consulta pedidos e pedidos de leilão por status, com paginação e sem dados de pagamento secretos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "status": {
+              "description": "Status exato do pedido.",
+              "type": "string",
+              "maxLength": 40
+            },
+            "origem": {
+              "description": "Origem do pedido.",
+              "type": "string",
+              "enum": [
+                "site",
+                "auction",
+                "manual"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "obter_pedido",
+        "title": "Detalhes operacionais de pedido",
+        "description": "Consulta valores, itens e rastreamento de um pedido, sem CPF, endereço, QR Pix ou credenciais.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "orderId": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Identificador do pedido."
+            }
+          },
+          "required": [
+            "orderId"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_envios",
+        "title": "Envios e retiradas",
+        "description": "Consulta modalidade, status, rastreamento e agendamentos dos pedidos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_leiloes",
+        "title": "Leilões cadastrados",
+        "description": "Consulta leilões cadastrados, ativos e encerrados, com filtro opcional por status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "status": {
+              "description": "Status exato do leilão.",
+              "type": "string",
+              "maxLength": 40
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_clientes",
+        "title": "Clientes da loja",
+        "description": "Consulta identificadores, nomes e datas de cadastro dos clientes; não expõe CPF, telefone ou credenciais.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_produtos",
+        "title": "Produtos e estoque",
+        "description": "Consulta cartas, lacrados, acessórios ou videogames com preço e estoque.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "tipo": {
+              "default": "cartas",
+              "description": "Categoria do catálogo.",
+              "type": "string",
+              "enum": [
+                "cartas",
+                "lacrados",
+                "acessorios",
+                "videogames"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "relatorio_operacional",
+        "title": "Relatório operacional",
+        "description": "Conta pedidos pendentes, enviados, reagendamentos e pilhas ativas no momento da consulta.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      }
+    ]
+  }
+}
