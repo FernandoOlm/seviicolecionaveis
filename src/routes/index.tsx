@@ -6,17 +6,19 @@ export const Route = createFileRoute("/")({
     meta: [
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { title: "Sevii Colecionáveis — Catálogo de Cartas Pokémon" },
+      { title: "Sevii Colecionáveis - Sua loja Pokémon em Aracaju!" },
       {
         name: "description",
         content:
           "Catálogo completo de cartas Pokémon com filtros por tipo, coleção, condição, idioma e preço. Galeria visual com estoque em tempo real.",
       },
-      { property: "og:title", content: "Sevii Colecionáveis — Catálogo de Cartas Pokémon" },
+      { property: "og:title", content: "Sevii Colecionáveis - Sua loja Pokémon em Aracaju!" },
       {
         property: "og:description",
         content: "Encontre cartas Pokémon raras e colecionáveis com filtros avançados.",
       },
+      { property: "og:image", content: "https://seviicolecionaveis.com.br/og-image.png" },
+      { name: "twitter:image", content: "https://seviicolecionaveis.com.br/og-image.png" },
     ],
   }),
   component: Index,

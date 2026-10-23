@@ -1,3 +1,5 @@
+import { resolvePaymentCpf } from "@/lib/customer-payment";
+import { assertAuctionPaymentLink } from "@/lib/auction-payment-links.server";
 import { isPaidOrderStatus } from "@/lib/order-status";
 import { localParts, validateSchedule } from "@/lib/scheduling";
 import { type StripeEnv, createStripeClient } from "@/lib/stripe.server";
@@ -1109,14 +1111,16 @@ export async function createPixOrderServer(data: PixInput, userId: string) {
   };
 }
 
-export async function checkPixOrderStatusServer(orderId: string, userId: string) {
+export async function checkPixOrderStatusServer(orderId: string, userId: string | null, paymentToken?: string) {
   const { data: order, error } = await supabaseAdmin
     .from("orders")
     .select("id, user_id, status, payment_method, mercadopago_payment_id")
     .eq("id", orderId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!order || order.user_id !== userId) throw new Error("Pedido não encontrado");
+  if (!order) throw new Error("Pedido não encontrado");
+  if (paymentToken) await assertAuctionPaymentLink(orderId, paymentToken);
+  else if (!userId || !(await canPayOrder(order.user_id, userId))) throw new Error("Pedido não encontrado");
 
   if (isPaidOrderStatus(order.status)) {
     return { status: "paid" as const };
@@ -1331,7 +1335,7 @@ export async function createCardOrderServer(data: CardInput, userId: string) {
 // Resume / change payment for an existing pending order
 // =========================================================================
 
-export async function regeneratePixForExistingOrderServer(orderId: string, userId: string) {
+export async function regeneratePixForExistingOrderServer(orderId: string, userId: string | null, paymentToken?: string) {
   const { data: order, error } = await supabaseAdmin
     .from("orders")
     .select(
@@ -1340,22 +1344,27 @@ export async function regeneratePixForExistingOrderServer(orderId: string, userI
     .eq("id", orderId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!order || order.user_id !== userId) throw new Error("Pedido não encontrado");
+  if (!order) throw new Error("Pedido não encontrado");
+  if (paymentToken) await assertAuctionPaymentLink(orderId, paymentToken);
+  else if (!userId || !(await canPayOrder(order.user_id, userId))) throw new Error("Pedido não encontrado");
   if (order.status !== "pending") throw new Error("Este pedido não está mais pendente.");
 
   const baseUrl = process.env.PUBLIC_SITE_URL ?? "https://seviicolecionaveis.com.br";
   const notificationUrl = `${baseUrl}/api/public/payments/mercadopago-webhook`;
 
-  const [firstName, ...rest] = (order.recipient_name ?? "Cliente").trim().split(/\s+/);
+  const payer = await resolveExistingOrderPayer(order);
+  const [firstName, ...rest] = payer.name.trim().split(/\s+/);
   const lastName = rest.join(" ") || "Sevii";
+
+  if (!payer.cpf) throw new Error("Complete ou corrija o CPF em Minha conta antes de gerar o Pix.");
 
   const pix = await createPixPayment({
     amountCents: order.total_cents,
     description: `Pedido Sevii Colecionáveis #${order.id.slice(0, 8)}`,
-    payerEmail: order.email ?? "",
+    payerEmail: payer.email,
     payerFirstName: firstName,
     payerLastName: lastName,
-    payerCpf: order.cpf ?? null,
+    payerCpf: payer.cpf,
     externalReference: order.id,
     notificationUrl,
     expiresInMinutes: PIX_EXPIRES_MINUTES,
@@ -1400,18 +1409,19 @@ export async function payExistingOrderWithCardServer(
     .eq("id", orderId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!order || order.user_id !== userId) throw new Error("Pedido não encontrado");
+  if (!order || !(await canPayOrder(order.user_id, userId))) throw new Error("Pedido não encontrado");
   if (order.status !== "pending") throw new Error("Este pedido não está mais pendente.");
 
   const baseUrl = process.env.PUBLIC_SITE_URL ?? "https://seviicolecionaveis.com.br";
   const notificationUrl = `${baseUrl}/api/public/payments/mercadopago-webhook`;
 
-  const [firstName, ...rest] = (order.recipient_name ?? "Cliente").trim().split(/\s+/);
+  const payer = await resolveExistingOrderPayer(order);
+  const [firstName, ...rest] = payer.name.trim().split(/\s+/);
   const lastName = rest.join(" ") || "Sevii";
 
   // Se o usuário pediu para salvar, garante o MP customer antes do pagamento
   let customerId: string | null = null;
-  if (options.saveCard) {
+  if (options.saveCard && userId === order.user_id) {
     try {
       const { ensureMpCustomerForUser } = await import("@/lib/saved-cards.server");
       customerId = await ensureMpCustomerForUser(userId);
@@ -1427,10 +1437,10 @@ export async function payExistingOrderWithCardServer(
     paymentMethodId: card.paymentMethodId,
     issuerId: card.issuerId ?? null,
     installments: card.installments,
-    payerEmail: card.payerEmail || order.email || "",
+    payerEmail: card.payerEmail || payer.email,
     payerFirstName: firstName,
     payerLastName: lastName,
-    payerCpf: card.payerCpf ?? order.cpf ?? null,
+    payerCpf: card.payerCpf || payer.cpf,
     externalReference: order.id,
     notificationUrl,
     customerId,
@@ -1615,4 +1625,28 @@ export async function createAdminTestOrderServer(data: AdminTestInput, userId: s
   await markOrderPaid(order.id);
 
   return { orderId: order.id, status: "approved" as const };
+}
+
+
+/** Dono do pedido ou admin (ex.: loja gerando Pix de pedido de leilão para o cliente). */
+async function canPayOrder(ownerId: string, userId: string): Promise<boolean> {
+  if (ownerId === userId) return true;
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  return !!data;
+}
+
+async function resolveExistingOrderPayer(order: { user_id: string; cpf: string | null; email: string; recipient_name: string }) {
+  const [{ data: profile, error }, { data: account, error: authError }] = await Promise.all([
+    supabaseAdmin.from("profiles").select("cpf, full_name").eq("user_id", order.user_id).maybeSingle(),
+    supabaseAdmin.auth.admin.getUserById(order.user_id),
+  ]);
+  if (error || authError) throw new Error("Não foi possível consultar seu cadastro. Tente novamente.");
+  const email = account.user?.email ?? order.email;
+  if (email.endsWith("@whatsapp.seviicolecionaveis.com.br")) throw new Error("Entre na sua conta da loja e confira seu WhatsApp no cadastro para vincular o pedido.");
+  return { cpf: resolvePaymentCpf(profile?.cpf, order.cpf), email, name: profile?.full_name?.trim() || order.recipient_name || "Cliente" };
 }

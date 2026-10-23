@@ -1,3 +1,4 @@
+import { normalizeBrazilianPhone } from "./customer-payment";
 // Provisionamento de clientes a partir do WhatsApp (bot_seviicolecionaveis)
 export const WHATSAPP_EMAIL_DOMAIN = "whatsapp.seviicolecionaveis.com.br";
 
@@ -34,13 +35,18 @@ export async function ensureWhatsAppUser(
   opts: { resetPassword?: boolean } = {},
 ): Promise<EnsuredUser | { error: string }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const normalizedPhone = normalizeBrazilianPhone(phone);
+  if (!normalizedPhone) return { error: "Confirme o número de WhatsApp com DDD; códigos internos não identificam uma conta." };
+  phone = `55${normalizedPhone}`;
   const placeholderEmail = `${phone}@${WHATSAPP_EMAIL_DOMAIN}`;
   const password = randomPassword();
 
   // Busca pelo telefone ignorando formatação e o prefixo 55.
-  const { data: foundId } = await (supabaseAdmin as any).rpc("find_user_by_phone", {
+  const { data: foundId, error: lookupError } = await (supabaseAdmin as any).rpc("find_user_by_phone", {
     _digits: phone,
   });
+
+  if (lookupError) return { error: lookupError.message.includes("Mais de") ? "Mais de uma conta usa este WhatsApp. A loja precisa confirmar sua identidade antes de vincular o pedido." : "Não foi possível identificar a conta. Tente novamente." };
 
   let userId: string | null = (foundId as string | null) ?? null;
   let created = false;
@@ -71,7 +77,7 @@ export async function ensureWhatsAppUser(
     if (authUser?.user?.email) email = authUser.user.email;
   }
 
-  if (!created && opts.resetPassword) {
+  if (!created && opts.resetPassword && isPlaceholderEmail(email)) {
     const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(userId, { password });
     if (updErr) return { error: updErr.message };
   }
@@ -100,10 +106,15 @@ export async function ensureWhatsAppUser(
     }
   }
 
+  if (!isPlaceholderEmail(email)) {
+    const { error: mergeError } = await supabaseAdmin.rpc("merge_whatsapp_accounts_into", { _real: userId });
+    if (mergeError) return { error: "Não foi possível vincular os pedidos. Tente novamente." };
+  }
+
   return {
     userId,
     email,
     created,
-    password: created || opts.resetPassword ? password : null,
+    password: created || (opts.resetPassword && isPlaceholderEmail(email)) ? password : null,
   };
 }

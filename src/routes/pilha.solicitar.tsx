@@ -288,6 +288,15 @@ function SolicitarPage() {
       setErr("Nenhuma carta selecionada.");
       return;
     }
+    if (method === "app") {
+      if (
+        !recipientName.trim() || phone.replace(/\D/g, "").length < 8 || !cep.trim() ||
+        street.trim().length < 2 || !number.trim() || !neighborhood.trim() || !city.trim() || state.trim().length !== 2
+      ) {
+        setErr("Preencha todos os campos do endereço de entrega, incluindo o WhatsApp.");
+        return;
+      }
+    }
     if (method === "correios") {
       if (!selectedQuote) {
         setErr("Selecione uma cotação de frete.");
@@ -463,9 +472,9 @@ function SolicitarPage() {
               </div>
             </section>
 
-            {method === "correios" && (
+            {(method === "correios" || method === "app") && (
               <section className="rounded-xl border border-border bg-card p-5 mb-6 space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-widest">Endereço de envio</h2>
+                <h2 className="text-sm font-semibold uppercase tracking-widest">{method === "app" ? "Endereço de entrega" : "Endereço de envio"}</h2>
                 <div className="grid sm:grid-cols-2 gap-3">
                   <input className="border rounded-md px-3 py-2 text-sm" placeholder="Nome completo" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} />
                   <input className="border rounded-md px-3 py-2 text-sm" placeholder="WhatsApp" value={phone} onChange={(e) => setPhone(e.target.value)} />
@@ -485,6 +494,7 @@ function SolicitarPage() {
                   <input className="border rounded-md px-3 py-2 text-sm" placeholder="CPF (para Pix)" value={cpf} onChange={(e) => setCpf(e.target.value)} />
                 </div>
 
+                {method === "correios" && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-widest mt-3 mb-2">Frete</p>
                   {quotesLoading && <p className="text-xs text-muted-foreground"><Loader2 className="inline h-3 w-3 animate-spin mr-1" /> Calculando...</p>}
@@ -504,6 +514,7 @@ function SolicitarPage() {
                     ))}
                   </div>
                 </div>
+                )}
               </section>
             )}
 

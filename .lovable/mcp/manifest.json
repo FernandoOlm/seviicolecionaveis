@@ -1,0 +1,937 @@
+{
+  "version": 1,
+  "sdk_version": "3.3.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://zuypkggpecsqormwculg.supabase.co/auth/v1",
+    "require_oauth_client_claim": true,
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "sevii-colecion-veis",
+      "version": "3.0.0",
+      "title": "Sevii Colecionáveis"
+    },
+    "tools": [
+      {
+        "name": "meu_perfil",
+        "title": "Minha conta administrativa",
+        "description": "Consulta a identidade verificada e a permissão administrativa atual da sua conta.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "resumo_vendas",
+        "title": "Vendas e relatório financeiro",
+        "description": "Consolida pedidos criados no período, valores pagos e reembolsos; não inclui taxas do provedor nem custos de aquisição.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "dias": {
+              "default": 30,
+              "description": "Período em dias, até 366.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 366
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_pedidos",
+        "title": "Pedidos da loja",
+        "description": "Consulta pedidos e pedidos de leilão por status, com paginação e sem dados de pagamento secretos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "status": {
+              "description": "Status exato do pedido.",
+              "type": "string",
+              "maxLength": 40
+            },
+            "origem": {
+              "description": "Origem do pedido.",
+              "type": "string",
+              "enum": [
+                "site",
+                "auction",
+                "manual"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "obter_pedido",
+        "title": "Detalhes operacionais de pedido",
+        "description": "Consulta valores, itens e rastreamento de um pedido, sem CPF, endereço, QR Pix ou credenciais.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "orderId": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Identificador do pedido."
+            }
+          },
+          "required": [
+            "orderId"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_envios",
+        "title": "Envios e retiradas",
+        "description": "Consulta modalidade, status, rastreamento e agendamentos dos pedidos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_leiloes",
+        "title": "Leilões cadastrados",
+        "description": "Consulta leilões cadastrados, ativos e encerrados, com filtro opcional por status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "status": {
+              "description": "Status exato do leilão.",
+              "type": "string",
+              "maxLength": 40
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_clientes",
+        "title": "Clientes da loja",
+        "description": "Consulta identificadores, nomes e datas de cadastro dos clientes; não expõe CPF, telefone ou credenciais.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "listar_produtos",
+        "title": "Produtos e estoque",
+        "description": "Consulta cartas, lacrados, acessórios ou videogames com preço e estoque.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pagina": {
+              "default": 1,
+              "description": "Página da consulta.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2000
+            },
+            "limite": {
+              "default": 20,
+              "description": "Resultados por página, no máximo 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "tipo": {
+              "default": "cartas",
+              "description": "Categoria do catálogo.",
+              "type": "string",
+              "enum": [
+                "cartas",
+                "lacrados",
+                "acessorios",
+                "videogames"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "relatorio_operacional",
+        "title": "Relatório operacional",
+        "description": "Conta pedidos pendentes, enviados, reagendamentos e pilhas ativas no momento da consulta.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "atualizar_pedido",
+        "title": "Atualizar dados do pedido",
+        "description": "Atualiza nome do destinatário, telefone, e-mail ou observações de um pedido. Endereço, frete e itens continuam pelo painel.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pedido_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "nome_destinatario": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 120
+            },
+            "telefone": {
+              "type": "string",
+              "maxLength": 30
+            },
+            "email": {
+              "type": "string",
+              "maxLength": 200,
+              "format": "email",
+              "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+            },
+            "observacoes": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "nota_pagamento": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "pedido_id",
+            "chave_idempotencia"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "alterar_status_pedido",
+        "title": "Alterar status do pedido",
+        "description": "Muda o status de um pedido com as mesmas regras do painel (estoque, pontos, e-mails). Cancelar, marcar pago, entregue ou reabrir cancelado exige confirmação explícita.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pedido_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "paid",
+                "preparing",
+                "separated",
+                "shipped",
+                "awaiting_pickup",
+                "cards_pending_delivery",
+                "delivered",
+                "cancelled"
+              ]
+            },
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "confirmacao": {
+              "description": "Obrigatória em ações críticas: frase \"CONFIRMAR <8 primeiros caracteres do id>\", após confirmação explícita do administrador.",
+              "type": "string",
+              "maxLength": 40
+            }
+          },
+          "required": [
+            "pedido_id",
+            "status",
+            "chave_idempotencia"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "atualizar_rastreamento",
+        "title": "Atualizar rastreamento",
+        "description": "Salva código/link de rastreio e marca o pedido como enviado, como o botão de rastreio do painel (envia e-mail ao cliente).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pedido_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "codigo_rastreio": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 60
+            },
+            "transportadora": {
+              "default": "correios",
+              "type": "string",
+              "enum": [
+                "correios",
+                "latam",
+                "pickup"
+              ]
+            },
+            "link_rastreio": {
+              "type": "string",
+              "maxLength": 500,
+              "format": "uri"
+            }
+          },
+          "required": [
+            "pedido_id",
+            "chave_idempotencia",
+            "codigo_rastreio"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "criar_produto",
+        "title": "Criar produto",
+        "description": "Cadastra uma carta avulsa ou um produto lacrado/acessório/videogame. Produtos não-carta são criados inativos para revisão no painel.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "tipo": {
+              "type": "string",
+              "enum": [
+                "cartas",
+                "lacrados",
+                "acessorios",
+                "videogames"
+              ]
+            },
+            "nome": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 200
+            },
+            "preco_centavos": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000000
+            },
+            "estoque": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "descricao": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "colecao": {
+              "description": "Cartas: coleção.",
+              "type": "string",
+              "maxLength": 80
+            },
+            "numero": {
+              "description": "Cartas: número.",
+              "type": "string",
+              "maxLength": 20
+            },
+            "idioma": {
+              "type": "string",
+              "enum": [
+                "Português",
+                "Inglês",
+                "Italiano",
+                "Espanhol",
+                "Japonês",
+                "Chinês"
+              ]
+            },
+            "acabamento": {
+              "type": "string",
+              "enum": [
+                "Normal",
+                "Foil",
+                "Reverse Foil",
+                "Pokebola",
+                "Energia",
+                "Promo",
+                "Ímã",
+                "Shattered Holo",
+                "Illustration Rare",
+                "Ultra Rara",
+                "Black Star Promo",
+                "Double Rare",
+                "Masterball",
+                "Rocket",
+                "Liga"
+              ]
+            },
+            "condicao": {
+              "type": "string",
+              "enum": [
+                "M",
+                "NM",
+                "SP",
+                "MP",
+                "HP",
+                "D"
+              ]
+            },
+            "categoria": {
+              "description": "Acessórios: categoria (obrigatória).",
+              "type": "string",
+              "maxLength": 60
+            }
+          },
+          "required": [
+            "chave_idempotencia",
+            "tipo",
+            "nome",
+            "preco_centavos"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "editar_produto",
+        "title": "Editar produto",
+        "description": "Edita nome, preço, descrição ou ativação de um produto. Desativar produto exige confirmação. Estoque usa atualizar_estoque.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "produto_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "tipo": {
+              "type": "string",
+              "enum": [
+                "cartas",
+                "lacrados",
+                "acessorios",
+                "videogames"
+              ]
+            },
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "confirmacao": {
+              "description": "Obrigatória em ações críticas: frase \"CONFIRMAR <8 primeiros caracteres do id>\", após confirmação explícita do administrador.",
+              "type": "string",
+              "maxLength": 40
+            },
+            "nome": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 200
+            },
+            "preco_centavos": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000000
+            },
+            "descricao": {
+              "description": "Não se aplica a cartas.",
+              "type": "string",
+              "maxLength": 4000
+            },
+            "ativo": {
+              "description": "Não se aplica a cartas.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "produto_id",
+            "tipo",
+            "chave_idempotencia"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "atualizar_estoque",
+        "title": "Atualizar estoque",
+        "description": "Define a quantidade em estoque de um produto (valor absoluto; o histórico de estoque é registrado automaticamente). Zerar estoque exige confirmação.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "produto_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "tipo": {
+              "type": "string",
+              "enum": [
+                "cartas",
+                "lacrados",
+                "acessorios",
+                "videogames"
+              ]
+            },
+            "quantidade": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "confirmacao": {
+              "description": "Obrigatória em ações críticas: frase \"CONFIRMAR <8 primeiros caracteres do id>\", após confirmação explícita do administrador.",
+              "type": "string",
+              "maxLength": 40
+            }
+          },
+          "required": [
+            "produto_id",
+            "tipo",
+            "quantidade",
+            "chave_idempotencia"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "criar_leilao",
+        "title": "Criar leilão (rascunho)",
+        "description": "Cria um leilão em rascunho para um grupo de WhatsApp conectado. Lotes e disparo continuam pelo painel.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "titulo": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 200
+            },
+            "descricao": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "grupo_jid": {
+              "type": "string",
+              "minLength": 5,
+              "maxLength": 120,
+              "description": "Identificador do grupo do bot (veja no painel)."
+            },
+            "inicio": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            },
+            "fim": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          "required": [
+            "chave_idempotencia",
+            "titulo",
+            "grupo_jid",
+            "inicio",
+            "fim"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "editar_leilao",
+        "title": "Editar leilão",
+        "description": "Edita título, descrição, mensagem de encerramento ou datas de um leilão que ainda não está ao vivo nem encerrado.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "leilao_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "titulo": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 200
+            },
+            "descricao": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "mensagem_encerramento": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "inicio": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            },
+            "fim": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            }
+          },
+          "required": [
+            "leilao_id",
+            "chave_idempotencia"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "encerrar_leilao",
+        "title": "Encerrar leilão",
+        "description": "Solicita ao bot o encerramento imediato do leilão (mesmo botão \"Encerrar\" do painel). Irreversível: exige confirmação explícita.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "leilao_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "confirmacao": {
+              "description": "Obrigatória em ações críticas: frase \"CONFIRMAR <8 primeiros caracteres do id>\", após confirmação explícita do administrador.",
+              "type": "string",
+              "maxLength": 40
+            }
+          },
+          "required": [
+            "leilao_id",
+            "chave_idempotencia"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      },
+      {
+        "name": "atualizar_cliente",
+        "title": "Atualizar cliente",
+        "description": "Atualiza nome, telefone, WhatsApp ou data de nascimento de um cliente. CPF, e-mail de login, senha e permissões não podem ser alterados por aqui.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "cliente_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "user_id retornado por listar_clientes."
+            },
+            "chave_idempotencia": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 80,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "description": "Chave de idempotência única por operação (ex.: um UUID). Repetir a mesma chave não repete a alteração."
+            },
+            "nome": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 120
+            },
+            "telefone": {
+              "type": "string",
+              "pattern": "^[0-9 ()+-]{8,20}$"
+            },
+            "whatsapp": {
+              "type": "string",
+              "pattern": "^[0-9 ()+-]{8,20}$"
+            },
+            "nascimento": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          "required": [
+            "cliente_id",
+            "chave_idempotencia"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null,
+        "conditional": true
+      }
+    ]
+  }
+}

@@ -1,4 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { readLinkedAuctionPayment, generateLinkedAuctionPix, checkLinkedAuctionPayment } from "@/lib/auction-payment.functions";
+import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +20,11 @@ export const Route = createFileRoute("/pay/$orderId")({
   head: () => ({
     meta: [
       { title: "Pagar pedido — Sevii Colecionáveis" },
+      { name: "description", content: "Pagamento seguro de pedidos e arremates na Sevii Colecionáveis." },
+      { property: "og:title", content: "Pagar pedido — Sevii Colecionáveis" },
+      { property: "og:description", content: "Pagamento seguro de pedidos e arremates na Sevii Colecionáveis." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -37,6 +45,20 @@ function PayOrderPage() {
   const { orderId } = Route.useParams();
   const { user, session, loading: authLoading } = useAuth();
   const nav = useNavigate();
+  const readLinked = useServerFn(readLinkedAuctionPayment);
+  const linkedPix = useServerFn(generateLinkedAuctionPix);
+  const authenticatedPix = useServerFn(regeneratePixForOrder);
+  const [paymentToken, setPaymentToken] = useState<string | null>(null);
+  const [linkReady, setLinkReady] = useState(false);
+  useEffect(() => {
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const token = fragment.get("payment");
+    if (token && /^[a-f0-9]{64}$/.test(token)) {
+      setPaymentToken(token);
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    setLinkReady(true);
+  }, []);
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [method, setMethod] = useState<Method>("pix");
@@ -46,12 +68,33 @@ function PayOrderPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) nav({ to: "/auth" });
-  }, [authLoading, user, nav]);
+    if (linkReady && !paymentToken && !authLoading && !user) nav({ to: "/auth", search: { redirect: `/pay/${orderId}` } });
+  }, [linkReady, paymentToken, authLoading, user, nav, orderId]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!linkReady || (!user && !paymentToken)) return;
+    let cancelled = false;
+    setLoading(true);
     (async () => {
+      if (paymentToken) {
+        try {
+          const data = await readLinked({ data: { orderId, token: paymentToken } });
+          if (!cancelled) {
+            setOrder(data);
+            const expiry = data.pix_expires_at;
+            if (data.pix_qr_code && data.pix_qr_code_base64 && expiry && new Date(expiry).getTime() > Date.now()) {
+              setPix({ orderId: data.id, qrCode: data.pix_qr_code, qrCodeBase64: data.pix_qr_code_base64, expiresAt: expiry, totalCents: data.total_cents });
+            }
+          }
+        } catch {
+          if (!cancelled) setErr("Link inválido ou expirado. Entre na sua conta para pagar este pedido.");
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+        return;
+      }
+      // Junta pedidos feitos pelo bot do WhatsApp (mesmo telefone) na conta logada
+      try { await (supabase as any).rpc("claim_my_whatsapp_orders"); } catch {}
       const { data } = await supabase
         .from("orders")
         .select("id, status, total_cents, payment_method, pix_qr_code, pix_qr_code_base64, pix_expires_at, mercadopago_payment_id, recipient_name")
@@ -75,13 +118,16 @@ function PayOrderPage() {
         setMethod("card");
       }
     })();
-  }, [user, orderId]);
+    return () => { cancelled = true; };
+  }, [user, orderId, paymentToken, linkReady, readLinked]);
 
   const startPix = async () => {
     setBusy(true);
     setErr(null);
     try {
-      const result = await regeneratePixForOrder({ data: { orderId } });
+      const result = paymentToken
+        ? await linkedPix({ data: { orderId, token: paymentToken } })
+        : await authenticatedPix({ data: { orderId } });
       setPix(result);
       setShowCard(false);
     } catch (e: any) {
@@ -99,15 +145,17 @@ function PayOrderPage() {
     setErr(null);
   };
 
-  if (authLoading || loading) {
+  if (!linkReady || authLoading || loading) {
     return <div className="min-h-screen grid place-items-center text-sm text-muted-foreground">Carregando...</div>;
   }
-  if (!user) return null;
+  if (!user && !paymentToken) return null;
   if (!order) {
     return (
       <div className="min-h-screen grid place-items-center px-4 text-center">
         <div>
-          <p className="text-sm text-muted-foreground">Pedido não encontrado.</p>
+          <p className="text-sm text-muted-foreground">{err || "Pedido não encontrado. Confira o WhatsApp em Minha conta ou peça à loja para confirmar o vínculo."}</p>
+          <Link to="/auth" search={{ redirect: `/pay/${orderId}` }} className="mt-4 block text-sm font-semibold underline">Entrar na minha conta</Link>
+          {user && <Link to="/conta" className="mt-3 block text-sm underline">Conferir cadastro</Link>}
           <Link to="/orders" className="mt-4 inline-block text-sm font-semibold underline">Meus pedidos</Link>
         </div>
       </div>
@@ -118,7 +166,7 @@ function PayOrderPage() {
       <div className="min-h-screen grid place-items-center px-4 text-center">
         <div className="max-w-md space-y-3">
           <p className="text-sm font-semibold">Este pedido já não está mais aguardando pagamento.</p>
-          <p className="text-xs text-muted-foreground">Status atual: {order.status}</p>
+          <p className="text-xs text-muted-foreground">{order.status === "pending" ? "Aguardando pagamento" : "Consulte sua conta para acompanhar o pedido."}</p>
           <Link to="/orders/$orderId" params={{ orderId }} className="mt-4 inline-block text-sm font-semibold underline">
             Ver pedido
           </Link>
@@ -169,26 +217,28 @@ function PayOrderPage() {
 
           <div className="mt-4 flex gap-2">
             {method === "pix" ? (
-              <button
+              <Button
                 onClick={startPix}
                 disabled={busy}
                 className="rounded-md bg-foreground text-background px-5 py-2.5 text-sm font-bold uppercase tracking-wider hover:opacity-90 disabled:opacity-50"
               >
                 {pix ? "Gerar novo Pix" : busy ? "Gerando..." : "Gerar Pix"}
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 onClick={startCard}
+                disabled={!user}
                 className="rounded-md bg-foreground text-background px-5 py-2.5 text-sm font-bold uppercase tracking-wider hover:opacity-90"
               >
                 {showCard ? "Reiniciar formulário" : "Pagar com cartão"}
-              </button>
+              </Button>
             )}
           </div>
-          {err && <p className="mt-3 text-xs text-red-600">{err}</p>}
+          {err && <div className="mt-3 space-y-2"><p className="text-xs text-destructive">{err}</p><Link to={user ? "/conta" : "/auth"} search={user ? {} : { redirect: `/pay/${orderId}` }} className="text-sm underline">{user ? "Corrigir meu cadastro" : "Entrar para completar o cadastro"}</Link></div>}
+          {!user && method === "card" && <Link to="/auth" search={{ redirect: `/pay/${orderId}` }} className="mt-3 block text-sm underline">Entrar na conta para pagar com cartão</Link>}
         </div>
 
-        {method === "pix" && pix && <PixDisplay pix={pix} session={session} onPaid={() => nav({ to: "/orders/$orderId", params: { orderId } })} />}
+        {method === "pix" && pix && <PixDisplay key={pix.expiresAt} pix={pix} session={session} paymentToken={paymentToken} onPaid={() => { if (user) nav({ to: "/orders/$orderId", params: { orderId } }); else setOrder((current: any) => ({ ...current, status: "paid" })); }} />}
 
         {method === "card" && showCard && (
           <CardBrick
@@ -202,7 +252,9 @@ function PayOrderPage() {
   );
 }
 
-function PixDisplay({ pix, session, onPaid }: { pix: PixState; session: any; onPaid: () => void }) {
+function PixDisplay({ pix, session, paymentToken, onPaid }: { pix: PixState; session: any; paymentToken: string | null; onPaid: () => void }) {
+  const checkLinked = useServerFn(checkLinkedAuctionPayment);
+  const checkAuthenticated = useServerFn(checkPixOrderStatus);
   const [copied, setCopied] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(() => Math.max(0, Math.floor((new Date(pix.expiresAt).getTime() - Date.now()) / 1000)));
   const [status, setStatus] = useState<"pending" | "paid" | "cancelled">("pending");
@@ -211,12 +263,11 @@ function PixDisplay({ pix, session, onPaid }: { pix: PixState; session: any; onP
   useEffect(() => {
     polling.current = true;
     const tick = async () => {
-      if (!polling.current || !session?.access_token) return;
+      if (!polling.current || (!paymentToken && !session?.access_token)) return;
       try {
-        const r = await checkPixOrderStatus({
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          data: { orderId: pix.orderId },
-        });
+        const r = paymentToken
+          ? await checkLinked({ data: { orderId: pix.orderId, token: paymentToken } })
+          : await checkAuthenticated({ data: { orderId: pix.orderId } });
         if (r.status === "paid") {
           polling.current = false;
           setStatus("paid");
@@ -229,7 +280,7 @@ function PixDisplay({ pix, session, onPaid }: { pix: PixState; session: any; onP
     tick();
     const i = setInterval(tick, 5000);
     return () => { polling.current = false; clearInterval(i); };
-  }, [pix.orderId, session, onPaid]);
+  }, [pix.orderId, session, paymentToken, onPaid, checkLinked, checkAuthenticated]);
 
   useEffect(() => {
     const t = setInterval(() => setSecondsLeft((s) => Math.max(0, s - 1)), 1000);

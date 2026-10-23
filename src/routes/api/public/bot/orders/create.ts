@@ -1,3 +1,4 @@
+import { createAuctionPaymentLink } from "@/lib/auction-payment-links.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyBotAuth } from "@/lib/bot-auth.server";
 import { ensureWhatsAppUser } from "@/lib/bot-users.server";
@@ -36,18 +37,21 @@ export const Route = createFileRoute("/api/public/bot/orders/create")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+        const user = await ensureWhatsAppUser(phone, name);
+        if ("error" in user) return Response.json({ error: user.error }, { status: 409 });
+
         // 1. Idempotência: Se informado auctionId e phone, verifica se já existe pedido não cancelado
         if (auctionId) {
           const { data: existingOrder } = await (supabaseAdmin as any)
             .from("orders")
             .select("id, total_cents, subtotal_cents, status, created_at")
             .eq("auction_id", auctionId)
-            .eq("phone", phone)
+            .eq("user_id", user.userId)
             .neq("status", "cancelled")
             .maybeSingle();
 
           if (existingOrder) {
-            console.log(`[ORDER-CREATE] Idempotência ativada: pedido já existente ${existingOrder.id} para leilão ${auctionId} e fone ${phone}`);
+            console.log(`[ORDER-CREATE] Idempotência ativada: pedido já existente ${existingOrder.id} para leilão ${auctionId}`);
             return Response.json({
               success: true,
               duplicated: true,
@@ -55,7 +59,7 @@ export const Route = createFileRoute("/api/public/bot/orders/create")({
               orderId: existingOrder.id,
               orderNumber: String(existingOrder.id).slice(0, 8).toUpperCase(),
               total: (existingOrder.total_cents ?? 0) / 100,
-              payment_link: `${SITE_URL}/pay/${existingOrder.id}`,
+              payment_link: await createAuctionPaymentLink(existingOrder.id),
               order_link: `${SITE_URL}/orders/${existingOrder.id}`,
               items: rawItems,
             });
@@ -63,10 +67,8 @@ export const Route = createFileRoute("/api/public/bot/orders/create")({
         }
 
         // 2. Localiza ou cria usuário WhatsApp
-        const user = await ensureWhatsAppUser(phone, name);
-        if ("error" in user) {
-          return Response.json({ error: user.error }, { status: 500 });
-        }
+
+        const { data: customerProfile } = await supabaseAdmin.from("profiles").select("full_name").eq("user_id", user.userId).maybeSingle();
 
         // 3. Normaliza itens e calcula totais
         const items = rawItems.map((it: any, index: number) => {
@@ -111,7 +113,7 @@ export const Route = createFileRoute("/api/public/bot/orders/create")({
             shipping_cost_cents: shippingCostCents,
             subtotal_cents: subtotalCents,
             total_cents: totalCents,
-            recipient_name: name || phone,
+            recipient_name: customerProfile?.full_name || name || phone,
             phone,
             email: user.email,
             cep: "00000000",
@@ -156,7 +158,7 @@ export const Route = createFileRoute("/api/public/bot/orders/create")({
           orderNumber: String(newOrder.id).slice(0, 8).toUpperCase(),
           phone,
           total: totalCents / 100,
-          payment_link: `${SITE_URL}/pay/${newOrder.id}`,
+          payment_link: await createAuctionPaymentLink(newOrder.id),
           order_link: `${SITE_URL}/orders/${newOrder.id}`,
           user: {
             login: user.email,

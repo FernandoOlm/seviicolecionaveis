@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { oauthReturnPath } from "@/lib/oauth-return-path";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -11,14 +12,25 @@ export const Route = createFileRoute("/auth")({
       { property: "og:description", content: "Acesse sua conta para gerenciar pedidos e favoritos." },
       { property: "og:url", content: "https://seviicolecionaveis.lovable.app/auth" },
       { name: "robots", content: "noindex, follow" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: "https://seviicolecionaveis.lovable.app/auth" }],
   }),
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => {
+    const value = s.next ?? s.redirect;
+    return typeof value === "string" ? { redirect: oauthReturnPath(value) } : {};
+  },
   component: AuthPage,
 });
 
 function AuthPage() {
   const nav = useNavigate();
+  const { redirect } = Route.useSearch();
+  const goAfter = () => {
+    if (redirect) window.location.assign(redirect);
+    else nav({ to: "/" });
+  };
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,12 +52,12 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: new URL(redirect ?? "/", window.location.origin).href,
             data: { full_name: fullName, whatsapp, birth_date: birthDate || null },
           },
         });
         if (error) throw error;
-        nav({ to: "/" });
+        goAfter();
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -55,7 +67,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        nav({ to: "/" });
+        goAfter();
       }
     } catch (e: any) {
       setErr(e?.message ?? "Erro ao autenticar");

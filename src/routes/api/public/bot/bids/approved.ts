@@ -1,3 +1,4 @@
+import { createAuctionPaymentLink } from "@/lib/auction-payment-links.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyBotAuth } from "@/lib/bot-auth.server";
 
@@ -67,7 +68,7 @@ export const Route = createFileRoute("/api/public/bot/bids/approved")({
           if (b.order_id) {
             buyer.order_number = String(b.order_id).slice(0, 8).toUpperCase();
             buyer.order_id = b.order_id;
-            buyer.payment_link = `https://seviicolecionaveis.com.br/pay/${b.order_id}`;
+            buyer.payment_link = await createAuctionPaymentLink(b.order_id);
           }
         }
 

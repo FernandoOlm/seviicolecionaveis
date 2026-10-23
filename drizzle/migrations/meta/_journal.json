@@ -78,6 +78,48 @@
       "when": 1792692959932,
       "tag": "0010_auction_blocks_and_cadence",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792768843133,
+      "tag": "0011_fix_find_user_by_phone_ninth_digit",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792769937960,
+      "tag": "0012_merge_whatsapp_shadow_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792770689109,
+      "tag": "0013_secure_auction_customer_matching_and_payment_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792770885111,
+      "tag": "0014_reject_ambiguous_auction_matches_and_untrusted_claims",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792775888954,
+      "tag": "0015_mcp_live_admin_authorization_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792778585940,
+      "tag": "0016_mcp_admin_writes",
+      "breakpoints": true
     }
   ]
 }
