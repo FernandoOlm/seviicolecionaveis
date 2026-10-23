@@ -181,7 +181,7 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
             .from("orders")
             .select("id, total_cents, created_at")
             .eq("auction_id", auctionId)
-            .eq("phone", phone)
+            .eq("user_id", user.userId)
             .neq("status", "cancelled")
             .maybeSingle();
 

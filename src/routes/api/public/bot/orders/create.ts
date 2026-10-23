@@ -37,13 +37,16 @@ export const Route = createFileRoute("/api/public/bot/orders/create")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+        const user = await ensureWhatsAppUser(phone, name);
+        if ("error" in user) return Response.json({ error: user.error }, { status: 409 });
+
         // 1. Idempotência: Se informado auctionId e phone, verifica se já existe pedido não cancelado
         if (auctionId) {
           const { data: existingOrder } = await (supabaseAdmin as any)
             .from("orders")
             .select("id, total_cents, subtotal_cents, status, created_at")
             .eq("auction_id", auctionId)
-            .eq("phone", phone)
+            .eq("user_id", user.userId)
             .neq("status", "cancelled")
             .maybeSingle();
 
@@ -64,10 +67,6 @@ export const Route = createFileRoute("/api/public/bot/orders/create")({
         }
 
         // 2. Localiza ou cria usuário WhatsApp
-        const user = await ensureWhatsAppUser(phone, name);
-        if ("error" in user) {
-          return Response.json({ error: user.error }, { status: 500 });
-        }
 
         const { data: customerProfile } = await supabaseAdmin.from("profiles").select("full_name").eq("user_id", user.userId).maybeSingle();
 

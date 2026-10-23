@@ -46,7 +46,7 @@ export async function ensureWhatsAppUser(
     _digits: phone,
   });
 
-  if (lookupError) return { error: "Não foi possível identificar a conta. Tente novamente." };
+  if (lookupError) return { error: lookupError.message.includes("Mais de") ? "Mais de uma conta usa este WhatsApp. A loja precisa confirmar sua identidade antes de vincular o pedido." : "Não foi possível identificar a conta. Tente novamente." };
 
   let userId: string | null = (foundId as string | null) ?? null;
   let created = false;
