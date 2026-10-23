@@ -53,9 +53,11 @@ describe('Live site authorization — synthetic principals only',()=>{
     expect(await loadAdminContext(new AuthContext(undefined))).toEqual({canReadAdmin:false});
     expect(mcp.tools.every(t=>typeof t.enabled==='function')).toBe(true);
   });
-  it('exposes all nine read-only queries to eligible admins',()=>{
-    expect(mcp.tools.length).toBe(9);
-    expect(mcp.tools.every(t=>typeof t.enabled==='function' && t.annotations?.readOnlyHint===true)).toBe(true);
+  it('exposes 9 read and 10 write tools only to eligible admins',()=>{
+    expect(mcp.tools.length).toBe(19);
+    expect(mcp.tools.every(t=>typeof t.enabled==='function')).toBe(true);
+    expect(mcp.tools.filter(t=>t.annotations?.readOnlyHint===true).length).toBe(9);
+    for (const n of ['alterar_status_pedido','encerrar_leilao']) expect(mcp.tools.find(t=>t.name===n)?.annotations?.destructiveHint).toBe(true);
     expect(mcp.auth?.requireOAuthClientClaim).toBe(true);
   });
 });

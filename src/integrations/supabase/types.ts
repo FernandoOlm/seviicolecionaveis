@@ -1455,6 +1455,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_write_log: {
+        Row: {
+          action: string
+          changed_fields: string[]
+          created_at: string
+          id: string
+          idempotency_key: string
+          outcome: string
+          result: Json | null
+          target_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          changed_fields?: string[]
+          created_at?: string
+          id?: string
+          idempotency_key: string
+          outcome?: string
+          result?: Json | null
+          target_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          changed_fields?: string[]
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          outcome?: string
+          result?: Json | null
+          target_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       melhorenvio_tokens: {
         Row: {
           access_token: string
@@ -2910,6 +2946,16 @@ export type Database = {
           full_name: string
           user_id: string
         }[]
+      }
+      mcp_update_customer: {
+        Args: {
+          _birth_date: string
+          _full_name: string
+          _phone: string
+          _user_id: string
+          _whatsapp: string
+        }
+        Returns: Json
       }
       merge_whatsapp_accounts_into: { Args: { _real: string }; Returns: number }
       normalize_br_phone: { Args: { _raw: string }; Returns: string }

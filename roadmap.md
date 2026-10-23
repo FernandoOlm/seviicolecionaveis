@@ -1,5 +1,7 @@
 # Confirmações de agendamento
 ## MCP administrativo pelo ChatGPT
+- [x] 10 ferramentas de escrita (pedido, status, rastreio, produto, estoque, leilão, cliente) com admin revalidado, auditoria, idempotência e confirmação vinculada; 19 ferramentas no catálogo; 32 testes.
+- [ ] Escritas reais: aguardam ambiente de testes isolado (o backend atual é o mesmo da loja) e republicação.
 - [ ] Correção recebida: auditar operações do painel, adicionar escritas reais reutilizando regras, confirmação/idempotência/auditoria, testar em ambiente isolado e publicar somente após validação; entregar cobertura e limites.
 - [ ] Inspecionar implementação existente e configurar OAuth gerenciado preservando o login do site.
 - [ ] Usar SDK MCP com consultas via permissões atuais, autorização por chamada e auditoria segura.
