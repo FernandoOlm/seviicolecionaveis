@@ -2,6 +2,7 @@ import { randomBytes, createHash } from 'crypto';
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from './supabase.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -69,11 +70,13 @@ export function isAllowedRedirectUri(uri: string): boolean {
       return true;
     }
     // ChatGPT web & mobile connectors
-    if (parsed.protocol === 'https:' && (parsed.hostname === 'chatgpt.com' || parsed.hostname === 'chat.openai.com')) {
+    if (parsed.protocol === 'https:' && (parsed.hostname === 'chatgpt.com' || parsed.hostname === 'chat.openai.com' || parsed.hostname.endsWith('.openai.com'))) {
       if (
         parsed.pathname === '/connector_platform_oauth_redirect' ||
         parsed.pathname === '/connector/oauth/redirect' ||
         parsed.pathname === '/aip/plugin-oauth/callback' ||
+        parsed.pathname.includes('/callback') ||
+        parsed.pathname.includes('/redirect') ||
         /^\/connector\/oauth\/[A-Za-z0-9_-]+$/.test(parsed.pathname)
       ) {
         return true;
@@ -400,6 +403,7 @@ export async function oauthRoutes(app: FastifyInstance) {
         const res = await fetch('/api/mcp/oauth/authorize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -451,7 +455,7 @@ export async function oauthRoutes(app: FastifyInstance) {
     const userEmail = authData.user.email || credentials.email;
 
     // 2. Valida papel de administrador no banco
-    const { data: roleData, error: roleError } = await supabase
+    const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
