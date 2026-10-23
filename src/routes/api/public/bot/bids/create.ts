@@ -1,3 +1,4 @@
+import { createAuctionPaymentLink } from "@/lib/auction-payment-links.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyBotAuth } from "@/lib/bot-auth.server";
 import { ensureWhatsAppUser } from "@/lib/bot-users.server";
@@ -168,6 +169,8 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
             continue;
           }
 
+          const { data: customerProfile } = await supabaseAdmin.from("profiles").select("full_name").eq("user_id", user.userId).maybeSingle();
+
           const subtotalCents = bids.reduce(
             (sum, b) => sum + Math.round(Number(b.amount) * 100) * b.quantity,
             0,
@@ -202,7 +205,7 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
                 shipping_cost_cents: 0,
                 subtotal_cents: subtotalCents,
                 total_cents: subtotalCents,
-                recipient_name: bidderName,
+                recipient_name: customerProfile?.full_name || bidderName,
                 phone,
                 email: user.email,
                 cep: "00000000",
@@ -255,7 +258,7 @@ export const Route = createFileRoute("/api/public/bot/bids/create")({
             orderNumber: String(order.id).slice(0, 8).toUpperCase(),
             phone,
             total: subtotalCents / 100,
-            payment_link: `${SITE_URL}/pay/${order.id}`,
+            payment_link: await createAuctionPaymentLink(order.id),
             order_link: `${SITE_URL}/orders/${order.id}`,
             user: {
               login: user.email,
