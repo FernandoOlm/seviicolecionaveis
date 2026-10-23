@@ -113,6 +113,13 @@
       "when": 1792775888954,
       "tag": "0015_mcp_live_admin_authorization_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792778585940,
+      "tag": "0016_mcp_admin_writes",
+      "breakpoints": true
     }
   ]
 }
