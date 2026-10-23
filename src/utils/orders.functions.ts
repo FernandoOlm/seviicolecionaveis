@@ -18,7 +18,6 @@ export const adminUpdateOrderStatus = createServerFn({ method: "POST" })
   )
   .middleware([requireSupabaseAuth])
   .handler(async ({ context, data }) => {
-  .handler(async ({ context, data }) => {
     const { applyAdminOrderStatus } = await import("@/lib/admin-order-status.server");
     return applyAdminOrderStatus(context.userId, data);
   });
