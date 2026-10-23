@@ -22,7 +22,7 @@ export async function loadAdminContext(auth: AuthContext): Promise<AdminContext>
   await audit(db, 'catalog', allowed ? 'allowed' : 'denied');
   return { canReadAdmin: allowed };
 }
-export async function adminRead(ctx: ToolContext, action: AuditAction, read: (db: UserClient) => Promise<unknown>) {
+export async function adminRead(ctx: ToolContext<AdminContext>, action: AuditAction, read: (db: UserClient) => Promise<unknown>) {
   const db = supabaseForUser(ctx);
   try {
     if (!await currentAdmin(db)) {

@@ -32,7 +32,7 @@ export const Route = createFileRoute('/.lovable/oauth/consent')({
     return {details:data,email:user.data.user.email};
   },
   pendingComponent:()=> <main className="mx-auto max-w-lg p-8">Carregando autorização…</main>,
-  errorComponent:({error})=><main className="mx-auto max-w-lg px-4 py-12"><h1 className="text-2xl font-bold">Conexão não autorizada</h1><p role="alert" className="mt-4 text-muted-foreground">{error.message}</p><Button asChild variant="outline" className="mt-6"><Link to="/auth">Entrar em outra conta</Link></Button></main>,
+  errorComponent:({error})=><main className="mx-auto max-w-lg px-4 py-12"><h1 className="text-2xl font-bold">Conexão não autorizada</h1><p role="alert" className="mt-4 text-muted-foreground">{error instanceof Error ? error.message : unavailable}</p><Button asChild variant="outline" className="mt-6"><Link to="/auth">Entrar em outra conta</Link></Button></main>,
   component:Consent,
 });
 function Consent(){
