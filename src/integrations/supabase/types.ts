@@ -1431,6 +1431,30 @@ export type Database = {
           },
         ]
       }
+      mcp_access_audit: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          outcome: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          outcome: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          outcome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       melhorenvio_tokens: {
         Row: {
           access_token: string
@@ -2878,6 +2902,15 @@ export type Database = {
       }
       has_user_purchased: { Args: { _user_id: string }; Returns: boolean }
       increment_card_view: { Args: { _card_key: string }; Returns: undefined }
+      mcp_admin_access: { Args: never; Returns: boolean }
+      mcp_list_customers: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: {
+          created_at: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       merge_whatsapp_accounts_into: { Args: { _real: string }; Returns: number }
       normalize_br_phone: { Args: { _raw: string }; Returns: string }
       raffle_expire_reservations: { Args: never; Returns: number }
@@ -2891,6 +2924,10 @@ export type Database = {
       raffle_run_draw: {
         Args: { _raffle_id: string; _units?: number }
         Returns: number
+      }
+      record_mcp_access: {
+        Args: { _action: string; _outcome: string }
+        Returns: undefined
       }
       set_event_reserved: { Args: { _items: Json }; Returns: number }
       user_lifetime_earned: { Args: { _user_id: string }; Returns: number }

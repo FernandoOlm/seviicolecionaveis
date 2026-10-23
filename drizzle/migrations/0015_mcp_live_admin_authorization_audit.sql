@@ -1,0 +1,15 @@
+CREATE TABLE public.mcp_access_audit (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, action text NOT NULL, outcome text NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT ON public.mcp_access_audit TO authenticated;
+GRANT ALL ON public.mcp_access_audit TO service_role;
+ALTER TABLE public.mcp_access_audit ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins read MCP audit" ON public.mcp_access_audit FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE INDEX mcp_access_audit_created_idx ON public.mcp_access_audit (created_at DESC);
+CREATE OR REPLACE FUNCTION public.mcp_admin_access() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$ SELECT EXISTS (SELECT 1 FROM public.user_roles r JOIN auth.users u ON u.id = r.user_id WHERE r.user_id = auth.uid() AND r.role = 'admin' AND u.deleted_at IS NULL AND (u.banned_until IS NULL OR u.banned_until <= now())); $$;
+REVOKE ALL ON FUNCTION public.mcp_admin_access() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.mcp_admin_access() TO authenticated;
+CREATE OR REPLACE FUNCTION public.record_mcp_access(_action text, _outcome text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF; IF _action NOT IN ('catalog','consent','meu_perfil','resumo_vendas','listar_pedidos','obter_pedido','listar_envios','listar_leiloes','listar_clientes','listar_produtos','relatorio_operacional') OR _outcome NOT IN ('allowed','denied','error') THEN RAISE EXCEPTION 'Invalid audit event'; END IF; INSERT INTO public.mcp_access_audit(user_id,action,outcome) VALUES (auth.uid(),_action,_outcome); END; $$;
+REVOKE ALL ON FUNCTION public.record_mcp_access(text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.record_mcp_access(text,text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.mcp_list_customers(_limit integer DEFAULT 20, _offset integer DEFAULT 0) RETURNS TABLE (user_id uuid, full_name text, created_at timestamptz) LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$ BEGIN IF NOT public.mcp_admin_access() THEN RAISE EXCEPTION 'Admin required'; END IF; RETURN QUERY SELECT p.user_id,p.full_name,p.created_at FROM public.profiles p ORDER BY p.created_at DESC LIMIT LEAST(50,GREATEST(1,_limit)) OFFSET LEAST(100000,GREATEST(0,_offset)); END; $$;
+REVOKE ALL ON FUNCTION public.mcp_list_customers(integer,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.mcp_list_customers(integer,integer) TO authenticated;

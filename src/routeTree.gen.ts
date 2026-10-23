@@ -26,6 +26,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as ImasRouteImport } from './routes/imas'
 import { Route as MaisVendidasRouteImport } from './routes/mais-vendidas'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PilhaRouteImport } from './routes/pilha'
 import { Route as ProdutosLacradosRouteImport } from './routes/produtos-lacrados'
@@ -36,7 +37,7 @@ import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as TiposDeCartaRouteImport } from './routes/tipos-de-carta'
 import { Route as VideogamesRouteImport } from './routes/videogames'
 import { Route as DotwellKnownOauthAuthorizationServerRouteImport } from './routes/[.]well-known.oauth-authorization-server'
-import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes/[.]well-known.oauth-protected-resource'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AdminAccessoriesRouteImport } from './routes/admin.accessories'
 import { Route as AdminAcompanharLeilaoRouteImport } from './routes/admin.acompanhar-leilao'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
@@ -84,6 +85,7 @@ import { Route as ProdutosLacradosIndexRouteImport } from './routes/produtos-lac
 import { Route as ProdutosLacradosSlugRouteImport } from './routes/produtos-lacrados.$slug'
 import { Route as SorteiosIndexRouteImport } from './routes/sorteios.index'
 import { Route as SorteiosRaffleIdRouteImport } from './routes/sorteios.$raffleId'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as DotwellKnownOauthProtectedResourceMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.mcp'
 import { Route as AdminOrdersOrderIdRouteImport } from './routes/admin.orders.$orderId'
 import { Route as ApiPublicMcpRouteImport } from './routes/api/public/mcp'
@@ -212,6 +214,11 @@ const MaisVendidasRoute = MaisVendidasRouteImport.update({
   path: '/mais-vendidas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -263,8 +270,8 @@ const DotwellKnownOauthAuthorizationServerRoute =
     path: '/.well-known/oauth-authorization-server',
     getParentRoute: () => rootRouteImport,
   } as any)
-const DotwellKnownOauthProtectedResourceRoute =
-  DotwellKnownOauthProtectedResourceRouteImport.update({
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
     path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
@@ -504,11 +511,16 @@ const SorteiosRaffleIdRoute = SorteiosRaffleIdRouteImport.update({
   path: '/sorteios/$raffleId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DotwellKnownOauthProtectedResourceMcpRoute =
   DotwellKnownOauthProtectedResourceMcpRouteImport.update({
     id: '/mcp',
     path: '/mcp',
-    getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
+    getParentRoute: () => Char91DotwellKnownChar93OauthProtectedResourceRoute,
   } as any)
 const AdminOrdersOrderIdRoute = AdminOrdersOrderIdRouteImport.update({
   id: '/orders/$orderId',
@@ -534,7 +546,7 @@ const DotwellKnownOauthProtectedResourceApiMcpRoute =
   DotwellKnownOauthProtectedResourceApiMcpRouteImport.update({
     id: '/api/mcp',
     path: '/api/mcp',
-    getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
+    getParentRoute: () => Char91DotwellKnownChar93OauthProtectedResourceRoute,
   } as any)
 const ApiPublicBotStatusRoute = ApiPublicBotStatusRouteImport.update({
   id: '/api/public/bot/status',
@@ -760,6 +772,7 @@ export interface FileRoutesByFullPath {
   '/favoritos': typeof FavoritosRoute
   '/imas': typeof ImasRoute
   '/mais-vendidas': typeof MaisVendidasRoute
+  '/mcp': typeof McpRoute
   '/orders': typeof OrdersRouteWithChildren
   '/pilha': typeof PilhaRouteWithChildren
   '/produtos-lacrados': typeof ProdutosLacradosRouteWithChildren
@@ -770,7 +783,7 @@ export interface FileRoutesByFullPath {
   '/tipos-de-carta': typeof TiposDeCartaRoute
   '/videogames': typeof VideogamesRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRouteWithChildren
   '/admin/accessories': typeof AdminAccessoriesRoute
   '/admin/acompanhar-leilao': typeof AdminAcompanharLeilaoRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -818,6 +831,7 @@ export interface FileRoutesByFullPath {
   '/pre-venda/': typeof PreVendaIndexRoute
   '/produtos-lacrados/': typeof ProdutosLacradosIndexRoute
   '/sorteios/': typeof SorteiosIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
@@ -879,6 +893,7 @@ export interface FileRoutesByTo {
   '/favoritos': typeof FavoritosRoute
   '/imas': typeof ImasRoute
   '/mais-vendidas': typeof MaisVendidasRoute
+  '/mcp': typeof McpRoute
   '/reset-password': typeof ResetPasswordRoute
   '/selados': typeof SeladosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -886,7 +901,7 @@ export interface FileRoutesByTo {
   '/tipos-de-carta': typeof TiposDeCartaRoute
   '/videogames': typeof VideogamesRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRouteWithChildren
   '/admin/accessories': typeof AdminAccessoriesRoute
   '/admin/acompanhar-leilao': typeof AdminAcompanharLeilaoRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -934,6 +949,7 @@ export interface FileRoutesByTo {
   '/pre-venda': typeof PreVendaIndexRoute
   '/produtos-lacrados': typeof ProdutosLacradosIndexRoute
   '/sorteios': typeof SorteiosIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
@@ -996,6 +1012,7 @@ export interface FileRoutesById {
   '/favoritos': typeof FavoritosRoute
   '/imas': typeof ImasRoute
   '/mais-vendidas': typeof MaisVendidasRoute
+  '/mcp': typeof McpRoute
   '/orders': typeof OrdersRouteWithChildren
   '/pilha': typeof PilhaRouteWithChildren
   '/produtos-lacrados': typeof ProdutosLacradosRouteWithChildren
@@ -1006,7 +1023,7 @@ export interface FileRoutesById {
   '/tipos-de-carta': typeof TiposDeCartaRoute
   '/videogames': typeof VideogamesRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRouteWithChildren
   '/admin/accessories': typeof AdminAccessoriesRoute
   '/admin/acompanhar-leilao': typeof AdminAcompanharLeilaoRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -1054,6 +1071,7 @@ export interface FileRoutesById {
   '/pre-venda/': typeof PreVendaIndexRoute
   '/produtos-lacrados/': typeof ProdutosLacradosIndexRoute
   '/sorteios/': typeof SorteiosIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
@@ -1117,6 +1135,7 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/imas'
     | '/mais-vendidas'
+    | '/mcp'
     | '/orders'
     | '/pilha'
     | '/produtos-lacrados'
@@ -1175,6 +1194,7 @@ export interface FileRouteTypes {
     | '/pre-venda/'
     | '/produtos-lacrados/'
     | '/sorteios/'
+    | '/.lovable/oauth/consent'
     | '/.well-known/oauth-protected-resource/mcp'
     | '/admin/orders/$orderId'
     | '/api/public/mcp'
@@ -1236,6 +1256,7 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/imas'
     | '/mais-vendidas'
+    | '/mcp'
     | '/reset-password'
     | '/selados'
     | '/sitemap.xml'
@@ -1291,6 +1312,7 @@ export interface FileRouteTypes {
     | '/pre-venda'
     | '/produtos-lacrados'
     | '/sorteios'
+    | '/.lovable/oauth/consent'
     | '/.well-known/oauth-protected-resource/mcp'
     | '/admin/orders/$orderId'
     | '/api/public/mcp'
@@ -1352,6 +1374,7 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/imas'
     | '/mais-vendidas'
+    | '/mcp'
     | '/orders'
     | '/pilha'
     | '/produtos-lacrados'
@@ -1410,6 +1433,7 @@ export interface FileRouteTypes {
     | '/pre-venda/'
     | '/produtos-lacrados/'
     | '/sorteios/'
+    | '/.lovable/oauth/consent'
     | '/.well-known/oauth-protected-resource/mcp'
     | '/admin/orders/$orderId'
     | '/api/public/mcp'
@@ -1472,6 +1496,7 @@ export interface RootRouteChildren {
   FavoritosRoute: typeof FavoritosRoute
   ImasRoute: typeof ImasRoute
   MaisVendidasRoute: typeof MaisVendidasRoute
+  McpRoute: typeof McpRoute
   OrdersRoute: typeof OrdersRouteWithChildren
   PilhaRoute: typeof PilhaRouteWithChildren
   ProdutosLacradosRoute: typeof ProdutosLacradosRouteWithChildren
@@ -1482,7 +1507,7 @@ export interface RootRouteChildren {
   TiposDeCartaRoute: typeof TiposDeCartaRoute
   VideogamesRoute: typeof VideogamesRoute
   DotwellKnownOauthAuthorizationServerRoute: typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
-  DotwellKnownOauthProtectedResourceRoute: typeof DotwellKnownOauthProtectedResourceRouteWithChildren
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteWithChildren
   BaralhoTokenRoute: typeof BaralhoTokenRoute
   CartaSlugRoute: typeof CartaSlugRoute
   ColecaoSlugRoute: typeof ColecaoSlugRoute
@@ -1492,6 +1517,7 @@ export interface RootRouteChildren {
   SorteiosRaffleIdRoute: typeof SorteiosRaffleIdRoute
   PreVendaIndexRoute: typeof PreVendaIndexRoute
   SorteiosIndexRoute: typeof SorteiosIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
@@ -1653,6 +1679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MaisVendidasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders': {
       id: '/orders'
       path: '/orders'
@@ -1727,7 +1760,7 @@ declare module '@tanstack/react-router' {
       id: '/.well-known/oauth-protected-resource'
       path: '/.well-known/oauth-protected-resource'
       fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceRouteImport
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/accessories': {
@@ -2059,12 +2092,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SorteiosRaffleIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.well-known/oauth-protected-resource/mcp': {
       id: '/.well-known/oauth-protected-resource/mcp'
       path: '/mcp'
       fullPath: '/.well-known/oauth-protected-resource/mcp'
       preLoaderRoute: typeof DotwellKnownOauthProtectedResourceMcpRouteImport
-      parentRoute: typeof DotwellKnownOauthProtectedResourceRoute
+      parentRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
     }
     '/admin/orders/$orderId': {
       id: '/admin/orders/$orderId'
@@ -2099,7 +2139,7 @@ declare module '@tanstack/react-router' {
       path: '/api/mcp'
       fullPath: '/.well-known/oauth-protected-resource/api/mcp'
       preLoaderRoute: typeof DotwellKnownOauthProtectedResourceApiMcpRouteImport
-      parentRoute: typeof DotwellKnownOauthProtectedResourceRoute
+      parentRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
     }
     '/api/public/bot/status': {
       id: '/api/public/bot/status'
@@ -2503,12 +2543,12 @@ const DotwellKnownOauthAuthorizationServerRouteWithChildren =
     DotwellKnownOauthAuthorizationServerRouteChildren,
   )
 
-interface DotwellKnownOauthProtectedResourceRouteChildren {
+interface Char91DotwellKnownChar93OauthProtectedResourceRouteChildren {
   DotwellKnownOauthProtectedResourceMcpRoute: typeof DotwellKnownOauthProtectedResourceMcpRoute
   DotwellKnownOauthProtectedResourceApiMcpRoute: typeof DotwellKnownOauthProtectedResourceApiMcpRoute
 }
 
-const DotwellKnownOauthProtectedResourceRouteChildren: DotwellKnownOauthProtectedResourceRouteChildren =
+const Char91DotwellKnownChar93OauthProtectedResourceRouteChildren: Char91DotwellKnownChar93OauthProtectedResourceRouteChildren =
   {
     DotwellKnownOauthProtectedResourceMcpRoute:
       DotwellKnownOauthProtectedResourceMcpRoute,
@@ -2516,9 +2556,9 @@ const DotwellKnownOauthProtectedResourceRouteChildren: DotwellKnownOauthProtecte
       DotwellKnownOauthProtectedResourceApiMcpRoute,
   }
 
-const DotwellKnownOauthProtectedResourceRouteWithChildren =
-  DotwellKnownOauthProtectedResourceRoute._addFileChildren(
-    DotwellKnownOauthProtectedResourceRouteChildren,
+const Char91DotwellKnownChar93OauthProtectedResourceRouteWithChildren =
+  Char91DotwellKnownChar93OauthProtectedResourceRoute._addFileChildren(
+    Char91DotwellKnownChar93OauthProtectedResourceRouteChildren,
   )
 
 const rootRouteChildren: RootRouteChildren = {
@@ -2539,6 +2579,7 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritosRoute: FavoritosRoute,
   ImasRoute: ImasRoute,
   MaisVendidasRoute: MaisVendidasRoute,
+  McpRoute: McpRoute,
   OrdersRoute: OrdersRouteWithChildren,
   PilhaRoute: PilhaRouteWithChildren,
   ProdutosLacradosRoute: ProdutosLacradosRouteWithChildren,
@@ -2550,8 +2591,8 @@ const rootRouteChildren: RootRouteChildren = {
   VideogamesRoute: VideogamesRoute,
   DotwellKnownOauthAuthorizationServerRoute:
     DotwellKnownOauthAuthorizationServerRouteWithChildren,
-  DotwellKnownOauthProtectedResourceRoute:
-    DotwellKnownOauthProtectedResourceRouteWithChildren,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRouteWithChildren,
   BaralhoTokenRoute: BaralhoTokenRoute,
   CartaSlugRoute: CartaSlugRoute,
   ColecaoSlugRoute: ColecaoSlugRoute,
@@ -2561,6 +2602,7 @@ const rootRouteChildren: RootRouteChildren = {
   SorteiosRaffleIdRoute: SorteiosRaffleIdRoute,
   PreVendaIndexRoute: PreVendaIndexRoute,
   SorteiosIndexRoute: SorteiosIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
