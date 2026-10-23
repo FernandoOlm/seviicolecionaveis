@@ -46,12 +46,14 @@ function PayOrderPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) nav({ to: "/auth" });
-  }, [authLoading, user, nav]);
+    if (!authLoading && !user) nav({ to: "/auth", search: { redirect: `/pay/${orderId}` } });
+  }, [authLoading, user, nav, orderId]);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
+      // Junta pedidos feitos pelo bot do WhatsApp (mesmo telefone) na conta logada
+      try { await (supabase as any).rpc("claim_my_whatsapp_orders"); } catch {}
       const { data } = await supabase
         .from("orders")
         .select("id, status, total_cents, payment_method, pix_qr_code, pix_qr_code_base64, pix_expires_at, mercadopago_payment_id, recipient_name")
