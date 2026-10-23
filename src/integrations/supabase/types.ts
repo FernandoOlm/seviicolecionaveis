@@ -2832,6 +2832,7 @@ export type Database = {
           points_credited: number
         }[]
       }
+      claim_my_whatsapp_orders: { Args: never; Returns: number }
       clear_event_reserved: { Args: never; Returns: number }
       confirm_order_receipt: { Args: { _order_id: string }; Returns: Json }
       expire_old_loyalty_points: { Args: never; Returns: number }
@@ -2845,6 +2846,7 @@ export type Database = {
       }
       has_user_purchased: { Args: { _user_id: string }; Returns: boolean }
       increment_card_view: { Args: { _card_key: string }; Returns: undefined }
+      merge_whatsapp_accounts_into: { Args: { _real: string }; Returns: number }
       raffle_expire_reservations: { Args: never; Returns: number }
       raffle_join: {
         Args: { _raffle_id: string }

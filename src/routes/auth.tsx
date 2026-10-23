@@ -14,11 +14,20 @@ export const Route = createFileRoute("/auth")({
     ],
     links: [{ rel: "canonical", href: "https://seviicolecionaveis.lovable.app/auth" }],
   }),
+  validateSearch: (s: Record<string, unknown>): { redirect?: string } => {
+    const r = typeof s.redirect === "string" ? s.redirect : undefined;
+    return r && r.startsWith("/") && !r.startsWith("//") ? { redirect: r } : {};
+  },
   component: AuthPage,
 });
 
 function AuthPage() {
   const nav = useNavigate();
+  const { redirect } = Route.useSearch();
+  const goAfter = () => {
+    if (redirect) window.location.assign(redirect);
+    else nav({ to: "/" });
+  };
   const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +54,7 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        nav({ to: "/" });
+        goAfter();
       } else if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/reset-password`,
@@ -55,7 +64,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        nav({ to: "/" });
+        goAfter();
       }
     } catch (e: any) {
       setErr(e?.message ?? "Erro ao autenticar");

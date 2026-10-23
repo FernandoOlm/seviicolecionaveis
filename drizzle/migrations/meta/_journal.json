@@ -85,6 +85,13 @@
       "when": 1792768843133,
       "tag": "0011_fix_find_user_by_phone_ninth_digit",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792769937960,
+      "tag": "0012_merge_whatsapp_shadow_accounts",
+      "breakpoints": true
     }
   ]
 }
