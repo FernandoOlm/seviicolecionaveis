@@ -1,0 +1,13 @@
+{
+  "resource": "https://seviicolecionaveis.com.br/api/mcp",
+  "authorization_servers": [
+    "https://seviicolecionaveis.com.br/api/mcp/oauth"
+  ],
+  "bearer_methods_supported": [
+    "header"
+  ],
+  "scopes_supported": [
+    "sevi-colecionaveis"
+  ],
+  "resource_name": "Sevi Colecionáveis"
+}

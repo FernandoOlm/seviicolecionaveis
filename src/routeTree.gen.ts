@@ -26,7 +26,6 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as ImasRouteImport } from './routes/imas'
 import { Route as MaisVendidasRouteImport } from './routes/mais-vendidas'
-import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as PilhaRouteImport } from './routes/pilha'
 import { Route as ProdutosLacradosRouteImport } from './routes/produtos-lacrados'
@@ -68,7 +67,6 @@ import { Route as AdminShippingRouteImport } from './routes/admin.shipping'
 import { Route as AdminSorteiosRouteImport } from './routes/admin.sorteios'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminVideogamesRouteImport } from './routes/admin.videogames'
-import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as BaralhoTokenRouteImport } from './routes/baralho.$token'
 import { Route as CartaSlugRouteImport } from './routes/carta.$slug'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
@@ -88,6 +86,7 @@ import { Route as SorteiosIndexRouteImport } from './routes/sorteios.index'
 import { Route as SorteiosRaffleIdRouteImport } from './routes/sorteios.$raffleId'
 import { Route as DotwellKnownOauthProtectedResourceMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.mcp'
 import { Route as AdminOrdersOrderIdRouteImport } from './routes/admin.orders.$orderId'
+import { Route as ApiMcpIndexRouteImport } from './routes/api/mcp/index'
 import { Route as ApiPublicSitemapDotxmlRouteImport } from './routes/api/public/sitemap[.]xml'
 import { Route as LovableEmailEventsRouteImport } from './routes/lovable/email/events'
 import { Route as DotwellKnownOauthProtectedResourceApiMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.api.mcp'
@@ -103,6 +102,7 @@ import { Route as ApiPublicHooksRaffleExpireRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksStackRemindersRouteImport } from './routes/api/public/hooks/stack-reminders'
 import { Route as ApiPublicHooksStockBackCheckRouteImport } from './routes/api/public/hooks/stock-back-check'
 import { Route as ApiPublicHooksUpdatePricesRouteImport } from './routes/api/public/hooks/update-prices'
+import { Route as ApiPublicMcpIndexRouteImport } from './routes/api/public/mcp/index'
 import { Route as ApiPublicMelhorenvioCallbackRouteImport } from './routes/api/public/melhorenvio/callback'
 import { Route as ApiPublicPaymentsMercadopagoWebhookRouteImport } from './routes/api/public/payments/mercadopago-webhook'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -124,6 +124,9 @@ import { Route as ApiPublicBotGroupsUpsertRouteImport } from './routes/api/publi
 import { Route as ApiPublicBotOrdersCreateRouteImport } from './routes/api/public/bot/orders/create'
 import { Route as ApiPublicBotSchedulesPendingRouteImport } from './routes/api/public/bot/schedules/pending'
 import { Route as ApiPublicBotUsersSenhaRouteImport } from './routes/api/public/bot/users/senha'
+import { Route as ApiPublicMcpOauthAuthorizeRouteImport } from './routes/api/public/mcp/oauth/authorize'
+import { Route as ApiPublicMcpOauthRegisterRouteImport } from './routes/api/public/mcp/oauth/register'
+import { Route as ApiPublicMcpOauthTokenRouteImport } from './routes/api/public/mcp/oauth/token'
 import { Route as ApiPublicBotAuctionsBidsLiveRouteImport } from './routes/api/public/bot/auctions/bids.live'
 import { Route as ApiPublicBotCommandsIdMarkRouteImport } from './routes/api/public/bot/commands/$id.mark'
 import { Route as ApiPublicBotSchedulesIdMarkRouteImport } from './routes/api/public/bot/schedules/$id.mark'
@@ -211,11 +214,6 @@ const ImasRoute = ImasRouteImport.update({
 const MaisVendidasRoute = MaisVendidasRouteImport.update({
   id: '/mais-vendidas',
   path: '/mais-vendidas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -425,11 +423,6 @@ const AdminVideogamesRoute = AdminVideogamesRouteImport.update({
   path: '/videogames',
   getParentRoute: () => AdminRoute,
 } as any)
-const ApiMcpRoute = ApiMcpRouteImport.update({
-  id: '/api/mcp',
-  path: '/api/mcp',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BaralhoTokenRoute = BaralhoTokenRouteImport.update({
   id: '/baralho/$token',
   path: '/baralho/$token',
@@ -526,6 +519,11 @@ const AdminOrdersOrderIdRoute = AdminOrdersOrderIdRouteImport.update({
   path: '/orders/$orderId',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiMcpIndexRoute = ApiMcpIndexRouteImport.update({
+  id: '/api/mcp/',
+  path: '/api/mcp/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSitemapDotxmlRoute = ApiPublicSitemapDotxmlRouteImport.update({
   id: '/api/public/sitemap.xml',
   path: '/api/public/sitemap.xml',
@@ -543,19 +541,19 @@ const DotwellKnownOauthProtectedResourceApiMcpRoute =
     getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
   } as any)
 const ApiMcpOauthAuthorizeRoute = ApiMcpOauthAuthorizeRouteImport.update({
-  id: '/oauth/authorize',
-  path: '/oauth/authorize',
-  getParentRoute: () => ApiMcpRoute,
+  id: '/api/mcp/oauth/authorize',
+  path: '/api/mcp/oauth/authorize',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMcpOauthRegisterRoute = ApiMcpOauthRegisterRouteImport.update({
-  id: '/oauth/register',
-  path: '/oauth/register',
-  getParentRoute: () => ApiMcpRoute,
+  id: '/api/mcp/oauth/register',
+  path: '/api/mcp/oauth/register',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMcpOauthTokenRoute = ApiMcpOauthTokenRouteImport.update({
-  id: '/oauth/token',
-  path: '/oauth/token',
-  getParentRoute: () => ApiMcpRoute,
+  id: '/api/mcp/oauth/token',
+  path: '/api/mcp/oauth/token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicBotStatusRoute = ApiPublicBotStatusRouteImport.update({
   id: '/api/public/bot/status',
@@ -610,6 +608,11 @@ const ApiPublicHooksUpdatePricesRoute =
     path: '/api/public/hooks/update-prices',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMcpIndexRoute = ApiPublicMcpIndexRouteImport.update({
+  id: '/api/public/mcp/',
+  path: '/api/public/mcp/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMelhorenvioCallbackRoute =
   ApiPublicMelhorenvioCallbackRouteImport.update({
     id: '/api/public/melhorenvio/callback',
@@ -727,6 +730,23 @@ const ApiPublicBotUsersSenhaRoute = ApiPublicBotUsersSenhaRouteImport.update({
   path: '/api/public/bot/users/senha',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMcpOauthAuthorizeRoute =
+  ApiPublicMcpOauthAuthorizeRouteImport.update({
+    id: '/api/public/mcp/oauth/authorize',
+    path: '/api/public/mcp/oauth/authorize',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMcpOauthRegisterRoute =
+  ApiPublicMcpOauthRegisterRouteImport.update({
+    id: '/api/public/mcp/oauth/register',
+    path: '/api/public/mcp/oauth/register',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicMcpOauthTokenRoute = ApiPublicMcpOauthTokenRouteImport.update({
+  id: '/api/public/mcp/oauth/token',
+  path: '/api/public/mcp/oauth/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBotAuctionsBidsLiveRoute =
   ApiPublicBotAuctionsBidsLiveRouteImport.update({
     id: '/api/public/bot/auctions/bids/live',
@@ -764,7 +784,6 @@ export interface FileRoutesByFullPath {
   '/favoritos': typeof FavoritosRoute
   '/imas': typeof ImasRoute
   '/mais-vendidas': typeof MaisVendidasRoute
-  '/mcp': typeof McpRoute
   '/orders': typeof OrdersRouteWithChildren
   '/pilha': typeof PilhaRouteWithChildren
   '/produtos-lacrados': typeof ProdutosLacradosRouteWithChildren
@@ -806,7 +825,6 @@ export interface FileRoutesByFullPath {
   '/admin/sorteios': typeof AdminSorteiosRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/videogames': typeof AdminVideogamesRoute
-  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/baralho/$token': typeof BaralhoTokenRoute
   '/carta/$slug': typeof CartaSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -828,6 +846,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
+  '/api/mcp/': typeof ApiMcpIndexRoute
   '/.well-known/oauth-protected-resource/api/mcp': typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   '/api/mcp/oauth/authorize': typeof ApiMcpOauthAuthorizeRoute
   '/api/mcp/oauth/register': typeof ApiMcpOauthRegisterRoute
@@ -847,6 +866,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/api/public/mcp/': typeof ApiPublicMcpIndexRoute
   '/.well-known/oauth-authorization-server/api/mcp/oauth': typeof DotwellKnownOauthAuthorizationServerApiMcpOauthRoute
   '/api/public/bot/auctions/$id': typeof ApiPublicBotAuctionsIdRoute
   '/api/public/bot/bids/approved': typeof ApiPublicBotBidsApprovedRoute
@@ -861,6 +881,9 @@ export interface FileRoutesByFullPath {
   '/api/public/bot/orders/create': typeof ApiPublicBotOrdersCreateRoute
   '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
   '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
+  '/api/public/mcp/oauth/authorize': typeof ApiPublicMcpOauthAuthorizeRoute
+  '/api/public/mcp/oauth/register': typeof ApiPublicMcpOauthRegisterRoute
+  '/api/public/mcp/oauth/token': typeof ApiPublicMcpOauthTokenRoute
   '/api/public/bot/groups/': typeof ApiPublicBotGroupsIndexRoute
   '/api/public/bot/auctions/bids/live': typeof ApiPublicBotAuctionsBidsLiveRoute
   '/api/public/bot/commands/$id/mark': typeof ApiPublicBotCommandsIdMarkRoute
@@ -884,7 +907,6 @@ export interface FileRoutesByTo {
   '/favoritos': typeof FavoritosRoute
   '/imas': typeof ImasRoute
   '/mais-vendidas': typeof MaisVendidasRoute
-  '/mcp': typeof McpRoute
   '/reset-password': typeof ResetPasswordRoute
   '/selados': typeof SeladosRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -923,7 +945,6 @@ export interface FileRoutesByTo {
   '/admin/sorteios': typeof AdminSorteiosRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/videogames': typeof AdminVideogamesRoute
-  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/baralho/$token': typeof BaralhoTokenRoute
   '/carta/$slug': typeof CartaSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -945,6 +966,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
+  '/api/mcp': typeof ApiMcpIndexRoute
   '/.well-known/oauth-protected-resource/api/mcp': typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   '/api/mcp/oauth/authorize': typeof ApiMcpOauthAuthorizeRoute
   '/api/mcp/oauth/register': typeof ApiMcpOauthRegisterRoute
@@ -964,6 +986,7 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/api/public/mcp': typeof ApiPublicMcpIndexRoute
   '/.well-known/oauth-authorization-server/api/mcp/oauth': typeof DotwellKnownOauthAuthorizationServerApiMcpOauthRoute
   '/api/public/bot/auctions/$id': typeof ApiPublicBotAuctionsIdRoute
   '/api/public/bot/bids/approved': typeof ApiPublicBotBidsApprovedRoute
@@ -978,6 +1001,9 @@ export interface FileRoutesByTo {
   '/api/public/bot/orders/create': typeof ApiPublicBotOrdersCreateRoute
   '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
   '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
+  '/api/public/mcp/oauth/authorize': typeof ApiPublicMcpOauthAuthorizeRoute
+  '/api/public/mcp/oauth/register': typeof ApiPublicMcpOauthRegisterRoute
+  '/api/public/mcp/oauth/token': typeof ApiPublicMcpOauthTokenRoute
   '/api/public/bot/groups': typeof ApiPublicBotGroupsIndexRoute
   '/api/public/bot/auctions/bids/live': typeof ApiPublicBotAuctionsBidsLiveRoute
   '/api/public/bot/commands/$id/mark': typeof ApiPublicBotCommandsIdMarkRoute
@@ -1002,7 +1028,6 @@ export interface FileRoutesById {
   '/favoritos': typeof FavoritosRoute
   '/imas': typeof ImasRoute
   '/mais-vendidas': typeof MaisVendidasRoute
-  '/mcp': typeof McpRoute
   '/orders': typeof OrdersRouteWithChildren
   '/pilha': typeof PilhaRouteWithChildren
   '/produtos-lacrados': typeof ProdutosLacradosRouteWithChildren
@@ -1044,7 +1069,6 @@ export interface FileRoutesById {
   '/admin/sorteios': typeof AdminSorteiosRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/videogames': typeof AdminVideogamesRoute
-  '/api/mcp': typeof ApiMcpRouteWithChildren
   '/baralho/$token': typeof BaralhoTokenRoute
   '/carta/$slug': typeof CartaSlugRoute
   '/checkout/return': typeof CheckoutReturnRoute
@@ -1066,6 +1090,7 @@ export interface FileRoutesById {
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/lovable/email/events': typeof LovableEmailEventsRoute
+  '/api/mcp/': typeof ApiMcpIndexRoute
   '/.well-known/oauth-protected-resource/api/mcp': typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   '/api/mcp/oauth/authorize': typeof ApiMcpOauthAuthorizeRoute
   '/api/mcp/oauth/register': typeof ApiMcpOauthRegisterRoute
@@ -1085,6 +1110,7 @@ export interface FileRoutesById {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/api/public/mcp/': typeof ApiPublicMcpIndexRoute
   '/.well-known/oauth-authorization-server/api/mcp/oauth': typeof DotwellKnownOauthAuthorizationServerApiMcpOauthRoute
   '/api/public/bot/auctions/$id': typeof ApiPublicBotAuctionsIdRoute
   '/api/public/bot/bids/approved': typeof ApiPublicBotBidsApprovedRoute
@@ -1099,6 +1125,9 @@ export interface FileRoutesById {
   '/api/public/bot/orders/create': typeof ApiPublicBotOrdersCreateRoute
   '/api/public/bot/schedules/pending': typeof ApiPublicBotSchedulesPendingRoute
   '/api/public/bot/users/senha': typeof ApiPublicBotUsersSenhaRoute
+  '/api/public/mcp/oauth/authorize': typeof ApiPublicMcpOauthAuthorizeRoute
+  '/api/public/mcp/oauth/register': typeof ApiPublicMcpOauthRegisterRoute
+  '/api/public/mcp/oauth/token': typeof ApiPublicMcpOauthTokenRoute
   '/api/public/bot/groups/': typeof ApiPublicBotGroupsIndexRoute
   '/api/public/bot/auctions/bids/live': typeof ApiPublicBotAuctionsBidsLiveRoute
   '/api/public/bot/commands/$id/mark': typeof ApiPublicBotCommandsIdMarkRoute
@@ -1124,7 +1153,6 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/imas'
     | '/mais-vendidas'
-    | '/mcp'
     | '/orders'
     | '/pilha'
     | '/produtos-lacrados'
@@ -1166,7 +1194,6 @@ export interface FileRouteTypes {
     | '/admin/sorteios'
     | '/admin/users'
     | '/admin/videogames'
-    | '/api/mcp'
     | '/baralho/$token'
     | '/carta/$slug'
     | '/checkout/return'
@@ -1188,6 +1215,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$orderId'
     | '/api/public/sitemap.xml'
     | '/lovable/email/events'
+    | '/api/mcp/'
     | '/.well-known/oauth-protected-resource/api/mcp'
     | '/api/mcp/oauth/authorize'
     | '/api/mcp/oauth/register'
@@ -1207,6 +1235,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/api/public/mcp/'
     | '/.well-known/oauth-authorization-server/api/mcp/oauth'
     | '/api/public/bot/auctions/$id'
     | '/api/public/bot/bids/approved'
@@ -1221,6 +1250,9 @@ export interface FileRouteTypes {
     | '/api/public/bot/orders/create'
     | '/api/public/bot/schedules/pending'
     | '/api/public/bot/users/senha'
+    | '/api/public/mcp/oauth/authorize'
+    | '/api/public/mcp/oauth/register'
+    | '/api/public/mcp/oauth/token'
     | '/api/public/bot/groups/'
     | '/api/public/bot/auctions/bids/live'
     | '/api/public/bot/commands/$id/mark'
@@ -1244,7 +1276,6 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/imas'
     | '/mais-vendidas'
-    | '/mcp'
     | '/reset-password'
     | '/selados'
     | '/sitemap.xml'
@@ -1283,7 +1314,6 @@ export interface FileRouteTypes {
     | '/admin/sorteios'
     | '/admin/users'
     | '/admin/videogames'
-    | '/api/mcp'
     | '/baralho/$token'
     | '/carta/$slug'
     | '/checkout/return'
@@ -1305,6 +1335,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$orderId'
     | '/api/public/sitemap.xml'
     | '/lovable/email/events'
+    | '/api/mcp'
     | '/.well-known/oauth-protected-resource/api/mcp'
     | '/api/mcp/oauth/authorize'
     | '/api/mcp/oauth/register'
@@ -1324,6 +1355,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/api/public/mcp'
     | '/.well-known/oauth-authorization-server/api/mcp/oauth'
     | '/api/public/bot/auctions/$id'
     | '/api/public/bot/bids/approved'
@@ -1338,6 +1370,9 @@ export interface FileRouteTypes {
     | '/api/public/bot/orders/create'
     | '/api/public/bot/schedules/pending'
     | '/api/public/bot/users/senha'
+    | '/api/public/mcp/oauth/authorize'
+    | '/api/public/mcp/oauth/register'
+    | '/api/public/mcp/oauth/token'
     | '/api/public/bot/groups'
     | '/api/public/bot/auctions/bids/live'
     | '/api/public/bot/commands/$id/mark'
@@ -1361,7 +1396,6 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/imas'
     | '/mais-vendidas'
-    | '/mcp'
     | '/orders'
     | '/pilha'
     | '/produtos-lacrados'
@@ -1403,7 +1437,6 @@ export interface FileRouteTypes {
     | '/admin/sorteios'
     | '/admin/users'
     | '/admin/videogames'
-    | '/api/mcp'
     | '/baralho/$token'
     | '/carta/$slug'
     | '/checkout/return'
@@ -1425,6 +1458,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$orderId'
     | '/api/public/sitemap.xml'
     | '/lovable/email/events'
+    | '/api/mcp/'
     | '/.well-known/oauth-protected-resource/api/mcp'
     | '/api/mcp/oauth/authorize'
     | '/api/mcp/oauth/register'
@@ -1444,6 +1478,7 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/api/public/mcp/'
     | '/.well-known/oauth-authorization-server/api/mcp/oauth'
     | '/api/public/bot/auctions/$id'
     | '/api/public/bot/bids/approved'
@@ -1458,6 +1493,9 @@ export interface FileRouteTypes {
     | '/api/public/bot/orders/create'
     | '/api/public/bot/schedules/pending'
     | '/api/public/bot/users/senha'
+    | '/api/public/mcp/oauth/authorize'
+    | '/api/public/mcp/oauth/register'
+    | '/api/public/mcp/oauth/token'
     | '/api/public/bot/groups/'
     | '/api/public/bot/auctions/bids/live'
     | '/api/public/bot/commands/$id/mark'
@@ -1482,7 +1520,6 @@ export interface RootRouteChildren {
   FavoritosRoute: typeof FavoritosRoute
   ImasRoute: typeof ImasRoute
   MaisVendidasRoute: typeof MaisVendidasRoute
-  McpRoute: typeof McpRoute
   OrdersRoute: typeof OrdersRouteWithChildren
   PilhaRoute: typeof PilhaRouteWithChildren
   ProdutosLacradosRoute: typeof ProdutosLacradosRouteWithChildren
@@ -1494,7 +1531,6 @@ export interface RootRouteChildren {
   VideogamesRoute: typeof VideogamesRoute
   DotwellKnownOauthAuthorizationServerRoute: typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
   DotwellKnownOauthProtectedResourceRoute: typeof DotwellKnownOauthProtectedResourceRouteWithChildren
-  ApiMcpRoute: typeof ApiMcpRouteWithChildren
   BaralhoTokenRoute: typeof BaralhoTokenRoute
   CartaSlugRoute: typeof CartaSlugRoute
   ColecaoSlugRoute: typeof ColecaoSlugRoute
@@ -1506,6 +1542,10 @@ export interface RootRouteChildren {
   SorteiosIndexRoute: typeof SorteiosIndexRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
   LovableEmailEventsRoute: typeof LovableEmailEventsRoute
+  ApiMcpIndexRoute: typeof ApiMcpIndexRoute
+  ApiMcpOauthAuthorizeRoute: typeof ApiMcpOauthAuthorizeRoute
+  ApiMcpOauthRegisterRoute: typeof ApiMcpOauthRegisterRoute
+  ApiMcpOauthTokenRoute: typeof ApiMcpOauthTokenRoute
   ApiPublicBotStatusRoute: typeof ApiPublicBotStatusRoute
   ApiPublicHooksAutoCancelUnpaidRoute: typeof ApiPublicHooksAutoCancelUnpaidRoute
   ApiPublicHooksExpireLoyaltyPointsRoute: typeof ApiPublicHooksExpireLoyaltyPointsRoute
@@ -1521,6 +1561,7 @@ export interface RootRouteChildren {
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  ApiPublicMcpIndexRoute: typeof ApiPublicMcpIndexRoute
   ApiPublicBotAuctionsIdRoute: typeof ApiPublicBotAuctionsIdRoute
   ApiPublicBotBidsApprovedRoute: typeof ApiPublicBotBidsApprovedRoute
   ApiPublicBotBidsCreateRoute: typeof ApiPublicBotBidsCreateRoute
@@ -1534,6 +1575,9 @@ export interface RootRouteChildren {
   ApiPublicBotOrdersCreateRoute: typeof ApiPublicBotOrdersCreateRoute
   ApiPublicBotSchedulesPendingRoute: typeof ApiPublicBotSchedulesPendingRoute
   ApiPublicBotUsersSenhaRoute: typeof ApiPublicBotUsersSenhaRoute
+  ApiPublicMcpOauthAuthorizeRoute: typeof ApiPublicMcpOauthAuthorizeRoute
+  ApiPublicMcpOauthRegisterRoute: typeof ApiPublicMcpOauthRegisterRoute
+  ApiPublicMcpOauthTokenRoute: typeof ApiPublicMcpOauthTokenRoute
   ApiPublicBotGroupsIndexRoute: typeof ApiPublicBotGroupsIndexRoute
   ApiPublicBotAuctionsBidsLiveRoute: typeof ApiPublicBotAuctionsBidsLiveRoute
   ApiPublicBotCommandsIdMarkRoute: typeof ApiPublicBotCommandsIdMarkRoute
@@ -1659,13 +1703,6 @@ declare module '@tanstack/react-router' {
       path: '/mais-vendidas'
       fullPath: '/mais-vendidas'
       preLoaderRoute: typeof MaisVendidasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -1955,13 +1992,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVideogamesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/api/mcp': {
-      id: '/api/mcp'
-      path: '/api/mcp'
-      fullPath: '/api/mcp'
-      preLoaderRoute: typeof ApiMcpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/baralho/$token': {
       id: '/baralho/$token'
       path: '/baralho/$token'
@@ -2095,6 +2125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersOrderIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/mcp/': {
+      id: '/api/mcp/'
+      path: '/api/mcp'
+      fullPath: '/api/mcp/'
+      preLoaderRoute: typeof ApiMcpIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/sitemap.xml': {
       id: '/api/public/sitemap.xml'
       path: '/api/public/sitemap.xml'
@@ -2118,24 +2155,24 @@ declare module '@tanstack/react-router' {
     }
     '/api/mcp/oauth/authorize': {
       id: '/api/mcp/oauth/authorize'
-      path: '/oauth/authorize'
+      path: '/api/mcp/oauth/authorize'
       fullPath: '/api/mcp/oauth/authorize'
       preLoaderRoute: typeof ApiMcpOauthAuthorizeRouteImport
-      parentRoute: typeof ApiMcpRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/mcp/oauth/register': {
       id: '/api/mcp/oauth/register'
-      path: '/oauth/register'
+      path: '/api/mcp/oauth/register'
       fullPath: '/api/mcp/oauth/register'
       preLoaderRoute: typeof ApiMcpOauthRegisterRouteImport
-      parentRoute: typeof ApiMcpRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/mcp/oauth/token': {
       id: '/api/mcp/oauth/token'
-      path: '/oauth/token'
+      path: '/api/mcp/oauth/token'
       fullPath: '/api/mcp/oauth/token'
       preLoaderRoute: typeof ApiMcpOauthTokenRouteImport
-      parentRoute: typeof ApiMcpRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/bot/status': {
       id: '/api/public/bot/status'
@@ -2198,6 +2235,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/update-prices'
       fullPath: '/api/public/hooks/update-prices'
       preLoaderRoute: typeof ApiPublicHooksUpdatePricesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mcp/': {
+      id: '/api/public/mcp/'
+      path: '/api/public/mcp'
+      fullPath: '/api/public/mcp/'
+      preLoaderRoute: typeof ApiPublicMcpIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/melhorenvio/callback': {
@@ -2345,6 +2389,27 @@ declare module '@tanstack/react-router' {
       path: '/api/public/bot/users/senha'
       fullPath: '/api/public/bot/users/senha'
       preLoaderRoute: typeof ApiPublicBotUsersSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mcp/oauth/authorize': {
+      id: '/api/public/mcp/oauth/authorize'
+      path: '/api/public/mcp/oauth/authorize'
+      fullPath: '/api/public/mcp/oauth/authorize'
+      preLoaderRoute: typeof ApiPublicMcpOauthAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mcp/oauth/register': {
+      id: '/api/public/mcp/oauth/register'
+      path: '/api/public/mcp/oauth/register'
+      fullPath: '/api/public/mcp/oauth/register'
+      preLoaderRoute: typeof ApiPublicMcpOauthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mcp/oauth/token': {
+      id: '/api/public/mcp/oauth/token'
+      path: '/api/public/mcp/oauth/token'
+      fullPath: '/api/public/mcp/oauth/token'
+      preLoaderRoute: typeof ApiPublicMcpOauthTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/bot/auctions/bids/live': {
@@ -2536,21 +2601,6 @@ const DotwellKnownOauthProtectedResourceRouteWithChildren =
     DotwellKnownOauthProtectedResourceRouteChildren,
   )
 
-interface ApiMcpRouteChildren {
-  ApiMcpOauthAuthorizeRoute: typeof ApiMcpOauthAuthorizeRoute
-  ApiMcpOauthRegisterRoute: typeof ApiMcpOauthRegisterRoute
-  ApiMcpOauthTokenRoute: typeof ApiMcpOauthTokenRoute
-}
-
-const ApiMcpRouteChildren: ApiMcpRouteChildren = {
-  ApiMcpOauthAuthorizeRoute: ApiMcpOauthAuthorizeRoute,
-  ApiMcpOauthRegisterRoute: ApiMcpOauthRegisterRoute,
-  ApiMcpOauthTokenRoute: ApiMcpOauthTokenRoute,
-}
-
-const ApiMcpRouteWithChildren =
-  ApiMcpRoute._addFileChildren(ApiMcpRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcessoriosRoute: AcessoriosRoute,
@@ -2569,7 +2619,6 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritosRoute: FavoritosRoute,
   ImasRoute: ImasRoute,
   MaisVendidasRoute: MaisVendidasRoute,
-  McpRoute: McpRoute,
   OrdersRoute: OrdersRouteWithChildren,
   PilhaRoute: PilhaRouteWithChildren,
   ProdutosLacradosRoute: ProdutosLacradosRouteWithChildren,
@@ -2583,7 +2632,6 @@ const rootRouteChildren: RootRouteChildren = {
     DotwellKnownOauthAuthorizationServerRouteWithChildren,
   DotwellKnownOauthProtectedResourceRoute:
     DotwellKnownOauthProtectedResourceRouteWithChildren,
-  ApiMcpRoute: ApiMcpRouteWithChildren,
   BaralhoTokenRoute: BaralhoTokenRoute,
   CartaSlugRoute: CartaSlugRoute,
   ColecaoSlugRoute: ColecaoSlugRoute,
@@ -2595,6 +2643,10 @@ const rootRouteChildren: RootRouteChildren = {
   SorteiosIndexRoute: SorteiosIndexRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
   LovableEmailEventsRoute: LovableEmailEventsRoute,
+  ApiMcpIndexRoute: ApiMcpIndexRoute,
+  ApiMcpOauthAuthorizeRoute: ApiMcpOauthAuthorizeRoute,
+  ApiMcpOauthRegisterRoute: ApiMcpOauthRegisterRoute,
+  ApiMcpOauthTokenRoute: ApiMcpOauthTokenRoute,
   ApiPublicBotStatusRoute: ApiPublicBotStatusRoute,
   ApiPublicHooksAutoCancelUnpaidRoute: ApiPublicHooksAutoCancelUnpaidRoute,
   ApiPublicHooksExpireLoyaltyPointsRoute:
@@ -2612,6 +2664,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  ApiPublicMcpIndexRoute: ApiPublicMcpIndexRoute,
   ApiPublicBotAuctionsIdRoute: ApiPublicBotAuctionsIdRoute,
   ApiPublicBotBidsApprovedRoute: ApiPublicBotBidsApprovedRoute,
   ApiPublicBotBidsCreateRoute: ApiPublicBotBidsCreateRoute,
@@ -2625,6 +2678,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBotOrdersCreateRoute: ApiPublicBotOrdersCreateRoute,
   ApiPublicBotSchedulesPendingRoute: ApiPublicBotSchedulesPendingRoute,
   ApiPublicBotUsersSenhaRoute: ApiPublicBotUsersSenhaRoute,
+  ApiPublicMcpOauthAuthorizeRoute: ApiPublicMcpOauthAuthorizeRoute,
+  ApiPublicMcpOauthRegisterRoute: ApiPublicMcpOauthRegisterRoute,
+  ApiPublicMcpOauthTokenRoute: ApiPublicMcpOauthTokenRoute,
   ApiPublicBotGroupsIndexRoute: ApiPublicBotGroupsIndexRoute,
   ApiPublicBotAuctionsBidsLiveRoute: ApiPublicBotAuctionsBidsLiveRoute,
   ApiPublicBotCommandsIdMarkRoute: ApiPublicBotCommandsIdMarkRoute,
