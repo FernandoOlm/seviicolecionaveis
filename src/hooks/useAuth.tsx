@@ -57,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       setTimeout(async () => {
+        // Junta pedidos/pilha feitos pelo bot do WhatsApp com o mesmo telefone
+        void (supabase as any).rpc("claim_my_whatsapp_orders").then(() => {}, () => {});
         setIsAdmin(await checkIsAdmin(s.user.id));
       }, 0);
     });
