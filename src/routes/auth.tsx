@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { oauthReturnPath } from "@/lib/oauth-return-path";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -11,12 +12,14 @@ export const Route = createFileRoute("/auth")({
       { property: "og:description", content: "Acesse sua conta para gerenciar pedidos e favoritos." },
       { property: "og:url", content: "https://seviicolecionaveis.lovable.app/auth" },
       { name: "robots", content: "noindex, follow" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: "https://seviicolecionaveis.lovable.app/auth" }],
   }),
   validateSearch: (s: Record<string, unknown>): { redirect?: string } => {
-    const r = typeof s.redirect === "string" ? s.redirect : undefined;
-    return r && r.startsWith("/") && !r.startsWith("//") ? { redirect: r } : {};
+    const value = s.next ?? s.redirect;
+    return typeof value === "string" ? { redirect: oauthReturnPath(value) } : {};
   },
   component: AuthPage,
 });
@@ -49,7 +52,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: new URL(redirect ?? "/", window.location.origin).href,
             data: { full_name: fullName, whatsapp, birth_date: birthDate || null },
           },
         });
