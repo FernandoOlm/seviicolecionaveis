@@ -382,6 +382,38 @@ export type Database = {
           },
         ]
       }
+      auction_payment_links: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          order_id: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          order_id: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          order_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auction_payment_links_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auction_schedules: {
         Row: {
           action: string
@@ -2847,6 +2879,7 @@ export type Database = {
       has_user_purchased: { Args: { _user_id: string }; Returns: boolean }
       increment_card_view: { Args: { _card_key: string }; Returns: undefined }
       merge_whatsapp_accounts_into: { Args: { _real: string }; Returns: number }
+      normalize_br_phone: { Args: { _raw: string }; Returns: string }
       raffle_expire_reservations: { Args: never; Returns: number }
       raffle_join: {
         Args: { _raffle_id: string }
