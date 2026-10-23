@@ -1,4 +1,9 @@
 # Confirmações de agendamento
+## MCP administrativo pelo ChatGPT
+- [ ] Inspecionar implementação existente e configurar OAuth gerenciado preservando o login do site.
+- [ ] Usar SDK MCP com consultas via permissões atuais, autorização por chamada e auditoria segura.
+- [ ] Testar admins existentes sem personificação, remoção/inclusão simuladas e bloqueio de usuários comuns.
+- [ ] Verificar consentimento e catálogo, entregar instruções de conexão e limites de validação externa.
 ## Pix e vinculação de leilões
 - [x] Diagnosticar: Pix ignorava CPF do perfil; telefone escolhia arbitrariamente contas e mesclava pedidos pagos.
 - [x] Correspondência única, CPF do dono recuperado no pagamento, links exclusivos com hash; atualizados nome/e-mail de 15 pedidos pendentes, sem alterar valores ou itens. Quatro pedidos não têm conta correspondente.
