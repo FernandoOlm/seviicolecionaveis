@@ -187,8 +187,6 @@ function AdminPage() {
   const query = searchQuery.trim().toLowerCase();
 
   const filtered = orders.filter((o) => {
-    // Pedidos de leilão são geridos exclusivamente em /admin/pedidos-leilao
-    if (o.origin === "auction") return false;
     if (!selectedStatuses.includes(o.status)) return false;
     if (!selectedShippingMethods.includes(o.shipping_method ?? "")) return false;
     if (!matchesFulfillmentFilter(ff, { id: o.id, modality: modalityOfOrder(o), eventId: o.event_id, scheduledAt: o.scheduled_at, feeStatus: (o as any).hand_delivery_fee_status }, unreadTargets)) return false;
@@ -364,6 +362,7 @@ function AdminPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xs font-mono text-muted-foreground">#{o.id.slice(0, 8)}</p>
                       {o.origin === "manual" && <span className="inline-block rounded bg-foreground text-background px-1.5 py-0.5 text-[10px] font-bold uppercase">Manual</span>}
+                      {o.origin === "auction" && <span className="inline-block rounded bg-primary text-primary-foreground px-1.5 py-0.5 text-[10px] font-bold uppercase">Leilão</span>}
                       <ModalityBadge modality={modalityOfOrder(o)} scheduledAt={o.scheduled_at} unread={unreadTargets.has(o.id)} />
                       {o.schedule_kind === "delivery" && <HandDeliveryFeeBadge status={(o as any).hand_delivery_fee_status} />}
                       {o.schedule_kind === "delivery" && !isHandDeliveryArea({ city: o.city, state: o.state, cep: (o as any).cep }) && (
