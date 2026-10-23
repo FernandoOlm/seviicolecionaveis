@@ -62,6 +62,16 @@ export const regeneratePixForOrder = createServerFn({ method: "POST" })
     return regeneratePixForExistingOrderServer(data.orderId, context.userId);
   });
 
+export const getAuctionPaymentLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ orderId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: admin, error } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (error || !admin) throw new Error("Acesso negado.");
+    const { createAuctionPaymentLink } = await import("@/lib/auction-payment-links.server");
+    return { link: await createAuctionPaymentLink(data.orderId) };
+  });
+
 export const payExistingOrderWithCard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => CardForOrderSchema.parse(data))
