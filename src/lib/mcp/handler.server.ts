@@ -139,6 +139,7 @@ export async function handleMcpHttpRequest(request: Request): Promise<Response> 
               inputSchema: t.inputSchema,
               annotations: {
                 readOnlyHint: t.readOnly,
+                openWorldHint: ["fazer_upload_imagem", "operar_leilao", "despachar_pilha", "atualizar_status_pedido", "vincular_arremate_pilha"].includes(t.name),
                 destructiveHint: t.destructive,
                 idempotentHint: t.idempotent,
               },

@@ -233,16 +233,19 @@ function TrackAuctionPage() {
                   <p className="text-xs font-semibold">
                     {it.final_bid ? `Vencedor: ${brl(Number(it.final_bid))}` : `Inicial: ${brl(Number(it.starting_price))}`}
                   </p>
-                  {it.winner_phone && (
-                    <p className="text-[11px] text-muted-foreground">{maskPhone(it.winner_phone)}</p>
-                  )}
+                  {it.winner_name || it.winner_phone ? (
+                    <p className="text-[11px] font-medium text-emerald-600">
+                      🏆 {it.winner_name || maskPhone(it.winner_phone)}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               {hist.length > 0 && (
                 <ul className="space-y-0.5 border-t border-border pt-2 text-[11px] text-muted-foreground">
                   {hist.map((b: any) => (
-                    <li key={b.id}>
-                      {maskPhone(b.phone)} — {brl(Number(b.amount))}
+                    <li key={b.id} className="flex justify-between">
+                      <span>{b.bidder_name && b.bidder_name !== b.phone ? `${b.bidder_name} (${maskPhone(b.phone)})` : maskPhone(b.phone)}</span>
+                      <span className="font-semibold">{brl(Number(b.amount))}</span>
                     </li>
                   ))}
                 </ul>
@@ -284,8 +287,8 @@ function TrackAuctionPage() {
                     <tr key={b.id} className="border-t border-border">
                       <td className="py-1.5">#{b.sequence}</td>
                       <td>{b.item_name}</td>
-                      <td>{maskPhone(b.phone)}</td>
-                      <td>{brl(Number(b.amount))}</td>
+                      <td>{b.bidder_name && b.bidder_name !== b.phone ? `${b.bidder_name} (${maskPhone(b.phone)})` : maskPhone(b.phone)}</td>
+                      <td className="font-semibold">{brl(Number(b.amount))}</td>
                       <td>{b.status}</td>
                       <td>{b.announced ? <Megaphone className="h-3.5 w-3.5" /> : "—"}</td>
                     </tr>

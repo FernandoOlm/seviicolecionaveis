@@ -30,8 +30,12 @@ type ItemForm = {
   id?: string;
   name: string;
   description: string;
+  condition: string;
+  language: string;
+  finish: string;
+  liga_price: string;
   image_url: string;
-  /** [0] = lance inicial, [1..] = incrementos (Inc. 1, Inc. 2, …) */
+  /** Opções de lances que serão enviadas para a enquete */
   values: string[];
   buyout_price: string;
   quantity: string;
@@ -48,11 +52,15 @@ type BlockActionForm = {
 const MAX_VALUES = 7;
 const DEFAULT_VALUES = 5;
 
-const labelForValue = (i: number) => (i === 0 ? "Inicial" : `Inc. ${i}`);
+const labelForValue = (i: number) => (i === 0 ? "Lance 1 (Inicial)" : `Lance ${i + 1}`);
 
 const emptyItem = (blockNumber = 1): ItemForm => ({
   name: "",
   description: "",
+  condition: "NM",
+  language: "Português",
+  finish: "Normal",
+  liga_price: "",
   image_url: "",
   values: Array.from({ length: DEFAULT_VALUES }, () => ""),
   buyout_price: "",
@@ -120,27 +128,43 @@ function CreateAuctionPage() {
       }
       if (its?.length) {
         setItems(
-          its.map((i: any) => ({
-            id: i.id,
-            name: i.name ?? "",
-            description: i.description ?? "",
-            image_url: i.image_url ?? "",
-            block_number: Math.max(1, Number(i.block_number) || 1),
-            values: (() => {
-              const extras = Array.isArray(i.extra_prices)
-                ? i.extra_prices.map((p: any) => (p?.value != null ? String(p.value) : ""))
-                : [];
-              const vals = [
-                i.starting_price != null ? String(i.starting_price) : "",
-                i.bid_increment != null ? String(i.bid_increment) : "",
-                ...extras,
-              ].slice(0, MAX_VALUES);
-              while (vals.length < DEFAULT_VALUES) vals.push("");
-              return vals;
-            })(),
-            buyout_price: i.buyout_price != null ? String(i.buyout_price) : "",
-            quantity: String(i.quantity ?? 1),
-          })),
+          its.map((i: any) => {
+            const isObj = i.extra_prices && typeof i.extra_prices === "object" && !Array.isArray(i.extra_prices);
+            const extraObj = isObj ? i.extra_prices : {};
+            return {
+              id: i.id,
+              name: i.name ?? "",
+              description: i.description ?? "",
+              condition: extraObj.condition || "NM",
+              language: extraObj.language || "Português",
+              finish: extraObj.finish || "Normal",
+              liga_price: extraObj.liga_price != null ? String(extraObj.liga_price) : "",
+              image_url: i.image_url ?? "",
+              block_number: Math.max(1, Number(i.block_number) || 1),
+              values: (() => {
+                if (isObj && Array.isArray(extraObj.values)) {
+                  const vals = [
+                    i.starting_price != null ? String(i.starting_price) : "",
+                    ...extraObj.values.map(String),
+                  ].slice(0, MAX_VALUES);
+                  while (vals.length < DEFAULT_VALUES) vals.push("");
+                  return vals;
+                }
+                const extras = Array.isArray(i.extra_prices)
+                  ? i.extra_prices.map((p: any) => (p?.value != null ? String(p.value) : ""))
+                  : [];
+                const vals = [
+                  i.starting_price != null ? String(i.starting_price) : "",
+                  i.bid_increment != null ? String(i.bid_increment) : "",
+                  ...extras,
+                ].slice(0, MAX_VALUES);
+                while (vals.length < DEFAULT_VALUES) vals.push("");
+                return vals;
+              })(),
+              buyout_price: i.buyout_price != null ? String(i.buyout_price) : "",
+              quantity: String(i.quantity ?? 1),
+            };
+          }),
         );
       }
     }
@@ -181,6 +205,10 @@ function CreateAuctionPage() {
     const header = [
       "bloco",
       "nome",
+      "condicao",
+      "idioma",
+      "acabamento",
+      "valor_liga",
       "descricao",
       "lance_inicial",
       "inc_1",
@@ -197,12 +225,16 @@ function CreateAuctionPage() {
       {
         bloco: 1,
         nome: "Carta 1 - Pikachu VMAX",
-        descricao: "NM - Português",
+        condicao: "NM",
+        idioma: "Português",
+        acabamento: "Foil",
+        valor_liga: 120,
+        descricao: "Perfeito estado, inclui sleeve",
         lance_inicial: 50,
-        inc_1: 55,
-        inc_2: 60,
-        inc_3: 70,
-        inc_4: "",
+        inc_1: 60,
+        inc_2: 70,
+        inc_3: 80,
+        inc_4: 90,
         inc_5: "",
         inc_6: "",
         arremate: 300,
@@ -212,30 +244,19 @@ function CreateAuctionPage() {
       {
         bloco: 1,
         nome: "Carta 2 - Charizard GX",
-        descricao: "NM - Português",
+        condicao: "NM",
+        idioma: "Inglês",
+        acabamento: "Reverse Foil",
+        valor_liga: 250,
+        descricao: "Edição especial",
         lance_inicial: 100,
-        inc_1: 110,
-        inc_2: 120,
-        inc_3: 130,
+        inc_1: 120,
+        inc_2: 140,
+        inc_3: 160,
         inc_4: "",
         inc_5: "",
         inc_6: "",
         arremate: 500,
-        quantidade: 1,
-        imagem_url: "",
-      },
-      {
-        bloco: 2,
-        nome: "Carta 3 - Mewtwo VSTAR",
-        descricao: "NM - Japonês",
-        lance_inicial: 40,
-        inc_1: 45,
-        inc_2: 50,
-        inc_3: "",
-        inc_4: "",
-        inc_5: "",
-        inc_6: "",
-        arremate: 200,
         quantidade: 1,
         imagem_url: "",
       },
@@ -257,13 +278,20 @@ function CreateAuctionPage() {
       const norm = (v: any) => String(v ?? "").trim();
       const parsed: ItemForm[] = rows
         .map((r) => {
-          const values = [norm(r["lance_inicial"])];
-          for (let n = 1; n < MAX_VALUES; n++) values.push(norm(r[`inc_${n}`]));
+          const values = [norm(r["lance_inicial"] || r["lance_1"])];
+          for (let n = 1; n < MAX_VALUES; n++) {
+            const val = norm(r[`inc_${n}`] || r[`lance_${n + 1}`]);
+            values.push(val);
+          }
           while (values.length > DEFAULT_VALUES && !values[values.length - 1]) values.pop();
           const blockRaw = Number(r["bloco"] || r["Bloco"] || 1);
           return {
             name: norm(r["nome"]),
-            description: norm(r["descricao"]),
+            condicao: norm(r["condicao"] || r["condição"]) || "NM",
+            idioma: norm(r["idioma"]) || "Português",
+            acabamento: norm(r["acabamento"]) || "Normal",
+            liga_price: norm(r["valor_liga"] || r["liga_price"]),
+            description: norm(r["descricao"] || r["descrição"]),
             image_url: norm(r["imagem_url"]),
             values,
             buyout_price: norm(r["arremate"]),
@@ -370,24 +398,30 @@ function CreateAuctionPage() {
       }
 
       if (validItems.length > 0) {
-        const num = (v: string) => Number(String(v ?? "").replace(",", "."));
         const rows = validItems.map((i, idx) => {
-          const vals = i.values.map(num).map((n) => (Number.isFinite(n) ? n : 0));
+          const vals = i.values.map(num).filter((n) => Number.isFinite(n) && n > 0);
+          const startPrice = vals[0] || 1;
+          const secondVal = vals[1];
+          const calculatedIncrement = secondVal != null && secondVal > startPrice ? (secondVal - startPrice) : 1;
+
           return {
             auction_id: auctionId,
             sequence: idx + 1,
             block_number: Math.max(1, Number(i.block_number) || 1),
             name: i.name.trim(),
-            description: i.description.trim() || null,
+            description: i.description?.trim() || null,
             image_url: i.image_url || null,
-            starting_price: vals[0] || 1,
-            bid_increment: vals[1] || 1,
+            starting_price: startPrice,
+            bid_increment: calculatedIncrement,
             buyout_price: i.buyout_price ? num(i.buyout_price) : null,
             quantity: Number(i.quantity) || 1,
-            extra_prices: i.values
-              .slice(2, MAX_VALUES)
-              .map((v, k) => ({ label: labelForValue(k + 2), value: num(v) }))
-              .filter((p) => Number.isFinite(p.value) && p.value > 0),
+            extra_prices: {
+              values: vals.slice(1), // Todos os lances seguintes (Lance 2, Lance 3, etc.)
+              condition: i.condition?.trim() || "NM",
+              language: i.language?.trim() || "Português",
+              finish: i.finish?.trim() || "Normal",
+              liga_price: i.liga_price ? num(i.liga_price) : null,
+            },
           };
         });
         const { error } = await (supabase as any).from("auction_items").insert(rows);
@@ -697,9 +731,58 @@ function CreateAuctionPage() {
                       value={it.name}
                       onChange={(e) => patchItem(idx, { name: e.target.value })}
                     />
+
+                    <div className="grid gap-2 sm:grid-cols-4">
+                      <label className="space-y-1 text-[11px] font-semibold text-muted-foreground">
+                        Condição
+                        <select
+                          className={input}
+                          value={it.condition || "NM"}
+                          onChange={(e) => patchItem(idx, { condition: e.target.value })}
+                        >
+                          <option value="NM">NM (Near Mint)</option>
+                          <option value="SP">SP (Slightly Played)</option>
+                          <option value="MP">MP (Moderately Played)</option>
+                          <option value="HP">HP (Heavily Played)</option>
+                          <option value="D">D (Damaged)</option>
+                        </select>
+                      </label>
+                      <label className="space-y-1 text-[11px] font-semibold text-muted-foreground">
+                        Idioma
+                        <select
+                          className={input}
+                          value={it.language || "Português"}
+                          onChange={(e) => patchItem(idx, { language: e.target.value })}
+                        >
+                          <option value="Português">Português</option>
+                          <option value="Inglês">Inglês</option>
+                          <option value="Japonês">Japonês</option>
+                          <option value="Espanhol">Espanhol</option>
+                        </select>
+                      </label>
+                      <label className="space-y-1 text-[11px] font-semibold text-muted-foreground">
+                        Acabamento
+                        <input
+                          className={input}
+                          placeholder="Normal, Foil, Reverse..."
+                          value={it.finish || ""}
+                          onChange={(e) => patchItem(idx, { finish: e.target.value })}
+                        />
+                      </label>
+                      <label className="space-y-1 text-[11px] font-semibold text-muted-foreground">
+                        Valor Liga (R$)
+                        <input
+                          className={input}
+                          placeholder="ex: 45,00"
+                          value={it.liga_price || ""}
+                          onChange={(e) => patchItem(idx, { liga_price: e.target.value })}
+                        />
+                      </label>
+                    </div>
+
                     <input
                       className={input}
-                      placeholder="Descrição / Condição (NM, Português...)"
+                      placeholder="Descrição / Informações adicionais do lote (opcional)"
                       value={it.description}
                       onChange={(e) => patchItem(idx, { description: e.target.value })}
                     />

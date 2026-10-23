@@ -129,6 +129,8 @@ export const Route = createFileRoute("/api/public/bot/auctions/bids/live")({
 
           if (bidValue <= 0 || !Number.isFinite(bidValue)) continue;
 
+          const bidderName = String(b.voterName || b.bidder_name || b.displayLabel || phone).trim();
+
           // Se tiver itemId, busca a sequence e nome real do item caso não venha no payload
           let sequence = 1;
           let realItemName = itemName;
@@ -151,7 +153,7 @@ export const Route = createFileRoute("/api/public/bot/auctions/bids/live")({
                   .update({
                     final_bid: bidValue,
                     winner_phone: phone,
-                    winner_name: phone,
+                    winner_name: bidderName,
                   })
                   .eq("id", itemId);
               }
@@ -165,7 +167,7 @@ export const Route = createFileRoute("/api/public/bot/auctions/bids/live")({
             sequence,
             item_name: realItemName,
             phone,
-            bidder_name: phone,
+            bidder_name: bidderName,
             amount: bidValue,
             status: "pending",
             announced: false,

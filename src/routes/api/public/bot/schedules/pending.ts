@@ -48,6 +48,18 @@ export const Route = createFileRoute("/api/public/bot/schedules/pending")({
         for (const a of auctions ?? []) {
           const auctionItems = (items ?? [])
             .filter((i: any) => i.auction_id === a.id)
+            .map((i: any) => {
+              const extra = typeof i.extra_prices === "object" && i.extra_prices !== null
+                ? (Array.isArray(i.extra_prices) ? (i.extra_prices.find((x: any) => x?._meta) || {}) : i.extra_prices)
+                : {};
+              return {
+                ...i,
+                condition: extra.condition || null,
+                language: extra.language || null,
+                finish: extra.finish || null,
+                liga_price: extra.liga_price || null,
+              };
+            })
             .sort((x: any, y: any) => {
               const b1 = Number(x.block_number || 1);
               const b2 = Number(y.block_number || 1);
