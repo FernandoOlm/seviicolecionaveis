@@ -209,7 +209,14 @@ export async function oauthRoutes(app: FastifyInstance) {
 
   // GET: Página de Autorização / Login HTML
   app.get('/api/mcp/oauth/authorize', async (req, reply) => {
-    const query = authQuery.parse(req.query);
+    const parsed = authQuery.safeParse(req.query);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: 'invalid_request',
+        message: 'Parâmetros de autorização OAuth ausentes ou inválidos. Inicie o fluxo a partir do ChatGPT.',
+      });
+    }
+    const query = parsed.data;
     const store = loadStore();
     const client = store.clients[query.client_id];
 
