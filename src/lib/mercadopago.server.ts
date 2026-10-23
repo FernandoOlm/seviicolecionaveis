@@ -1,5 +1,6 @@
 // Mercado Pago server helper — Pix + Cartão (Card Brick).
 // Docs: https://www.mercadopago.com.br/developers/pt/reference/payments/_payments/post
+import { validCpf as validateCpf } from "./customer-payment";
 
 const MP_API = "https://api.mercadopago.com";
 const MP_TIMEOUT_MS = 20000;
@@ -23,25 +24,6 @@ function getAccessToken(): string {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
   if (!token) throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");
   return token;
-}
-
-// Valida CPF (algoritmo dos dígitos verificadores).
-// Retorna o CPF limpo (11 dígitos) ou null se inválido.
-function validateCpf(raw: string | null | undefined): string | null {
-  const cpf = raw?.replace(/\D/g, "") ?? "";
-  if (cpf.length !== 11) return null;
-  if (/^(\d)\1{10}$/.test(cpf)) return null; // todos iguais
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(cpf[i], 10) * (10 - i);
-  let d1 = (sum * 10) % 11;
-  if (d1 === 10) d1 = 0;
-  if (d1 !== parseInt(cpf[9], 10)) return null;
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(cpf[i], 10) * (11 - i);
-  let d2 = (sum * 10) % 11;
-  if (d2 === 10) d2 = 0;
-  if (d2 !== parseInt(cpf[10], 10)) return null;
-  return cpf;
 }
 
 export function getMercadoPagoPublicKeyServer(): string {
@@ -126,9 +108,8 @@ export async function createCardPaymentMP(input: CreateCardInput): Promise<CardP
 
   const json: any = await res.json().catch(() => ({}));
   if (!res.ok) {
-    console.error("MP create card payment failed", res.status, json);
-    const msg = json?.message || json?.error || `erro ${res.status}`;
-    throw new Error(`Mercado Pago: ${String(msg).slice(0, 300)}`);
+    console.error("MP create card payment failed", res.status);
+    throw new Error("O Mercado Pago não conseguiu processar o cartão. Confira os dados ou tente novamente.");
   }
 
   const card = json.card ?? {};
@@ -283,9 +264,8 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    console.error("MP create payment failed", res.status, text);
-    throw new Error(`Mercado Pago erro ${res.status}: ${text.slice(0, 300)}`);
+    console.error("MP create payment failed", res.status);
+    throw new Error("O Mercado Pago não conseguiu gerar o Pix. Confira seu cadastro ou tente novamente.");
   }
 
   const json: any = await res.json();

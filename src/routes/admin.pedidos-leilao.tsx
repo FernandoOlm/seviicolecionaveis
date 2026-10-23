@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { adminUpdateOrderStatus } from "@/utils/orders.functions";
+import { getAuctionPaymentLink } from "@/utils/payments.functions";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Gavel,
@@ -25,7 +26,15 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/pedidos-leilao")({
-  head: () => ({ meta: [{ title: "Pedidos Leilão — Sevii Admin" }] }),
+  head: () => ({ meta: [
+    { title: "Pedidos Leilão — Sevii Admin" },
+    { name: "description", content: "Gerenciamento dos pedidos de leilão da Sevii Colecionáveis." },
+    { property: "og:title", content: "Pedidos Leilão — Sevii Admin" },
+    { property: "og:description", content: "Gerenciamento dos pedidos de leilão da Sevii Colecionáveis." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+    { name: "robots", content: "noindex, nofollow" },
+  ] }),
   component: AuctionOrdersPage,
 });
 
@@ -100,6 +109,7 @@ export function AuctionOrdersPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const updateStatus = useServerFn(adminUpdateOrderStatus);
+  const paymentLink = useServerFn(getAuctionPaymentLink);
 
   const loadData = useCallback(async (showSpinner = false) => {
     if (showSpinner) setLoading(true);
@@ -178,23 +188,29 @@ export function AuctionOrdersPage() {
     }
   };
 
-  const handleCopyPaymentLink = (order: any) => {
-    const siteUrl = window.location.origin;
-    const link = `${siteUrl}/pay/${order.id}`;
-    navigator.clipboard.writeText(link);
-    setCopiedId(order.id);
-    toast.success("Link de pagamento copiado!");
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopyPaymentLink = async (order: any) => {
+    try {
+      const { link } = await paymentLink({ data: { orderId: order.id } });
+      await navigator.clipboard.writeText(link);
+      setCopiedId(order.id);
+      toast.success("Link de pagamento copiado!");
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      toast.error("Não foi possível copiar o link. Tente novamente.");
+    }
   };
 
-  const handleOpenWhatsAppCobrar = (order: any) => {
+  const handleOpenWhatsAppCobrar = async (order: any) => {
     const phone = order.phone?.replace(/\D/g, "");
     if (!phone) {
       toast.error("Telefone não disponível para cobrança.");
       return;
     }
-    const siteUrl = window.location.origin;
-    const link = `${siteUrl}/pay/${order.id}`;
+    const popup = window.open("about:blank", "_blank");
+    if (popup) popup.opener = null;
+    let link: string;
+    try { ({ link } = await paymentLink({ data: { orderId: order.id } })); }
+    catch { popup?.close(); toast.error("Não foi possível preparar a cobrança."); return; }
     const total = (order.total_cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
     const items = (order.order_items || [])
       .map((it: any) => `• ${it.quantity}x ${it.card_name} (R$ ${((it.unit_price_cents || 0) / 100).toFixed(2).replace('.', ',')})`)
@@ -210,7 +226,8 @@ export function AuctionOrdersPage() {
 
     let digits = phone;
     if (!digits.startsWith("55")) digits = `55${digits}`;
-    window.open(`https://wa.me/${digits}?text=${text}`, "_blank");
+    if (popup) popup.location.href = `https://wa.me/${digits}?text=${text}`;
+    else toast.error("Permita abrir a janela do WhatsApp ou copie o link de pagamento.");
   };
 
   // KPIs

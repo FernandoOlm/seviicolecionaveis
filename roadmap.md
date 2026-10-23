@@ -1,4 +1,11 @@
 # Confirmações de agendamento
+## Pix e vinculação de leilões
+- [x] Diagnosticar: Pix ignorava CPF do perfil; telefone escolhia arbitrariamente contas e mesclava pedidos pagos.
+- [x] Correspondência única, CPF do dono recuperado no pagamento, links exclusivos com hash; atualizados nome/e-mail de 15 pedidos pendentes, sem alterar valores ou itens. Quatro pedidos não têm conta correspondente.
+- [x] 14 testes: CPF, telefone, ausência, ambiguidade de vínculo, links inválidos/expirados, autorização, pedidos pagos e cartão simulado.
+- [x] Pix real gerado pelo link copiado no admin sem login, QR e copia e cola persistidos para #0FB6E2B5 (R$75), ainda pendente; nenhum pagamento efetuado.
+- [ ] Aprovação real de pagamento e cartão: aguardam transação autorizada pelo responsável; cartão apenas simulado, pipeline de confirmação preservado.
+- [ ] Novos links devem ser reenviados após publicação; links antigos continuam exigindo login. Quatro clientes sem correspondência aguardam confirmação segura pela loja; sem mesclar por telefone editável no perfil.
 ## Preços de Estádio
 - [x] Ajustar faixas por preço original: 82 preços alterados e todos os 127 cadastros verificados; estoque preservado.
 - [x] Entregar listagem das 33 variantes com preço original a partir de R$ 0,51 sem alterações; planilha conferida visualmente.
