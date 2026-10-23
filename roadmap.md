@@ -1,4 +1,9 @@
 # Confirmações de agendamento
+## Pix e vinculação de leilões
+- [ ] Diagnosticar criação pelo bot, associação de conta, CPF e segurança dos links.
+- [ ] Corrigir correspondência única de telefone e recuperação do CPF cadastrado, preservando valores e pedidos finalizados.
+- [ ] Validar cenários de cadastro completo, ausente, ambíguo, telefone formatado e pedidos existentes.
+- [ ] Verificar geração de Pix pelo link e relatar limitações antes de liberar.
 ## Preços de Estádio
 - [x] Ajustar faixas por preço original: 82 preços alterados e todos os 127 cadastros verificados; estoque preservado.
 - [x] Entregar listagem das 33 variantes com preço original a partir de R$ 0,51 sem alterações; planilha conferida visualmente.
