@@ -1,3 +1,4 @@
+import { ToolError } from '@lovable.dev/mcp-js';
 import { z } from 'zod';
 import { Constants } from '@/integrations/supabase/types';
 import { defineAdminTool, adminVisible, writeAnnotations, adminWrite } from '../access';
@@ -8,7 +9,7 @@ export default defineAdminTool({ name: 'criar_produto', title: 'Criar produto', 
     idioma: z.enum(Constants.public.Enums.card_language).optional(), acabamento: z.enum(Constants.public.Enums.card_finish).optional(), condicao: z.enum(Constants.public.Enums.card_condition).optional(), categoria: z.string().trim().max(60).optional().describe('Acessórios: categoria (obrigatória).') },
   handler: (a, ctx) => adminWrite(ctx, 'criar_produto', { chave: a.chave_idempotencia, alvo: null, campos: ['novo'] }, async (db, userId) => {
     if (a.tipo === 'cartas') {
-      if (!a.colecao || !a.numero || !a.idioma || !a.acabamento) throw new Error('campos');
+      if (!a.colecao || !a.numero || !a.idioma || !a.acabamento) throw new ToolError('Cartas exigem coleção, número, idioma e acabamento.');
       const { data, error } = await db.from('cards').insert({ name: a.nome, collection: a.colecao, card_number: a.numero, language: a.idioma, finish: a.acabamento, condition: a.condicao ?? 'NM', base_price_cents: a.preco_centavos, stock: a.estoque, created_by: userId }).select('id,name,collection,card_number,stock,base_price_cents').single();
       if (error) throw error;
       return { tipo: a.tipo, produto: data };

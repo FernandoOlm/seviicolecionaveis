@@ -1,3 +1,4 @@
+import { ToolError } from '@lovable.dev/mcp-js';
 import { z } from 'zod';
 import { defineAdminTool, adminVisible, writeAnnotations, adminWrite, requireConfirmation } from '../access';
 import { uuid, chave, confirmacao, estoque, PRODUCT_TABLES } from '../write-rules';
@@ -8,7 +9,7 @@ export default defineAdminTool({ name: 'atualizar_estoque', title: 'Atualizar es
     const table = a.tipo === 'cartas' ? 'cards' : PRODUCT_TABLES[a.tipo];
     const { data: before, error: e1 } = await db.from(table).select('id,stock').eq('id', a.produto_id).maybeSingle();
     if (e1) throw e1;
-    if (!before) throw new Error('não encontrado');
+    if (!before) throw new ToolError('Registro não encontrado.');
     const { error } = await db.from(table).update({ stock: a.quantidade }).eq('id', a.produto_id);
     if (error) throw error;
     return { produto_id: a.produto_id, tipo: a.tipo, estoque_anterior: before.stock, estoque_novo: a.quantidade };

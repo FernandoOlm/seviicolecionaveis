@@ -1,3 +1,4 @@
+import { ToolError } from '@lovable.dev/mcp-js';
 import { z } from 'zod';
 import { ORDER_STATUSES } from '@/lib/order-status';
 import { defineAdminTool, adminVisible, criticalAnnotations, adminWrite, requireConfirmation } from '../access';
@@ -7,7 +8,7 @@ export default defineAdminTool({ name: 'alterar_status_pedido', title: 'Alterar 
   handler: (a, ctx) => adminWrite(ctx, 'alterar_status_pedido', { chave: a.chave_idempotencia, alvo: a.pedido_id, campos: ['status'] }, async (db, userId) => {
     const { data: order, error } = await db.from('orders').select('id,status').eq('id', a.pedido_id).maybeSingle();
     if (error) throw error;
-    if (!order) throw new Error('não encontrado');
+    if (!order) throw new ToolError('Registro não encontrado.');
     if (isCriticalStatusChange(order.status, a.status)) requireConfirmation(a.confirmacao, a.pedido_id, `${order.status} → ${a.status}`);
     const { applyAdminOrderStatus } = await import('@/lib/admin-order-status.server');
     await applyAdminOrderStatus(userId, { order_id: a.pedido_id, status: a.status });
